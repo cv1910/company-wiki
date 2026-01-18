@@ -38,6 +38,9 @@ import {
   Bell,
   Shield,
   CheckSquare,
+  Calendar,
+  Star,
+  Keyboard,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -45,6 +48,10 @@ import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { trpc } from "@/lib/trpc";
+import { ThemeSwitcher } from "./ThemeSwitcher";
+import { useKeyboardShortcuts, KeyboardShortcutsHelp } from "./KeyboardShortcuts";
+import { FavoritesList } from "./FavoriteButton";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 const menuItems = [
   { icon: Home, label: "Dashboard", path: "/" },
@@ -52,11 +59,13 @@ const menuItems = [
   { icon: ClipboardList, label: "SOPs", path: "/sops" },
   { icon: Search, label: "Suche", path: "/search" },
   { icon: MessageCircle, label: "AI-Assistent", path: "/chat" },
+  { icon: Calendar, label: "Urlaub", path: "/leave" },
 ];
 
 const adminMenuItems = [
   { icon: FolderOpen, label: "Kategorien", path: "/admin/categories" },
   { icon: Users, label: "Benutzer", path: "/admin/users" },
+  { icon: Calendar, label: "Urlaubsanträge", path: "/admin/leave" },
   { icon: CheckSquare, label: "Reviews", path: "/admin/reviews" },
   { icon: MessageSquare, label: "Feedback", path: "/admin/feedback" },
   { icon: Shield, label: "Audit-Log", path: "/admin/audit-log" },
@@ -146,7 +155,11 @@ function DashboardLayoutContent({
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  
+  // Enable keyboard shortcuts
+  useKeyboardShortcuts(true);
   const activeMenuItem = [...menuItems, ...adminMenuItems].find(
     (item) => location === item.path || location.startsWith(item.path + "/")
   );
@@ -371,6 +384,40 @@ function DashboardLayoutContent({
       </div>
 
       <SidebarInset className="bg-background">
+        {/* Desktop Header */}
+        {!isMobile && (
+          <div className="flex border-b h-14 items-center justify-between bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
+            <div className="flex items-center gap-3">
+              <span className="font-medium text-foreground">
+                {activeMenuItem?.label ?? "Company Wiki"}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <Star className="h-4 w-4" />
+                    <span className="sr-only">Favoriten</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-80 p-3">
+                  <h3 className="font-medium mb-3">Favoriten</h3>
+                  <FavoritesList />
+                </PopoverContent>
+              </Popover>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowShortcuts(true)}
+                title="Tastaturkürzel"
+              >
+                <Keyboard className="h-4 w-4" />
+              </Button>
+              <ThemeSwitcher />
+            </div>
+          </div>
+        )}
+        {/* Mobile Header */}
         {isMobile && (
           <div className="flex border-b h-14 items-center justify-between bg-background/95 px-3 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
             <div className="flex items-center gap-3">
@@ -382,9 +429,13 @@ function DashboardLayoutContent({
                 </span>
               </div>
             </div>
+            <div className="flex items-center gap-1">
+              <ThemeSwitcher />
+            </div>
           </div>
         )}
-        <main className="flex-1 p-6 animate-fade-in">{children}</main>
+        <main className="flex-1 p-6 page-transition">{children}</main>
+        {showShortcuts && <KeyboardShortcutsHelp onClose={() => setShowShortcuts(false)} />}
       </SidebarInset>
     </>
   );

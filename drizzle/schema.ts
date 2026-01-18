@@ -313,3 +313,84 @@ export const articleReviews = mysqlTable("articleReviews", {
 
 export type ArticleReview = typeof articleReviews.$inferSelect;
 export type InsertArticleReview = typeof articleReviews.$inferInsert;
+
+
+/**
+ * User favorites for quick access to frequently used articles.
+ */
+export const favorites = mysqlTable("favorites", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  articleId: int("articleId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Favorite = typeof favorites.$inferSelect;
+export type InsertFavorite = typeof favorites.$inferInsert;
+
+/**
+ * Recently viewed articles for user history.
+ */
+export const recentlyViewed = mysqlTable("recentlyViewed", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  articleId: int("articleId").notNull(),
+  viewedAt: timestamp("viewedAt").defaultNow().notNull(),
+});
+
+export type RecentlyViewed = typeof recentlyViewed.$inferSelect;
+export type InsertRecentlyViewed = typeof recentlyViewed.$inferInsert;
+
+/**
+ * User preferences for personalization (theme, shortcuts, etc.).
+ */
+export const userPreferences = mysqlTable("userPreferences", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  theme: mysqlEnum("theme", ["light", "dark", "system"]).default("system").notNull(),
+  sidebarCollapsed: boolean("sidebarCollapsed").default(false).notNull(),
+  keyboardShortcutsEnabled: boolean("keyboardShortcutsEnabled").default(true).notNull(),
+  emailNotifications: boolean("emailNotifications").default(true).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserPreference = typeof userPreferences.$inferSelect;
+export type InsertUserPreference = typeof userPreferences.$inferInsert;
+
+/**
+ * Leave/vacation requests for employees.
+ */
+export const leaveRequests = mysqlTable("leaveRequests", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  leaveType: mysqlEnum("leaveType", ["vacation", "sick", "personal", "parental", "other"]).notNull(),
+  startDate: timestamp("startDate").notNull(),
+  endDate: timestamp("endDate").notNull(),
+  totalDays: int("totalDays").notNull(),
+  reason: text("reason"),
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "cancelled"]).default("pending").notNull(),
+  approverId: int("approverId"),
+  approverComment: text("approverComment"),
+  requestedAt: timestamp("requestedAt").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewedAt"),
+});
+
+export type LeaveRequest = typeof leaveRequests.$inferSelect;
+export type InsertLeaveRequest = typeof leaveRequests.$inferInsert;
+
+/**
+ * Leave balances for tracking remaining vacation days.
+ */
+export const leaveBalances = mysqlTable("leaveBalances", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  year: int("year").notNull(),
+  totalDays: int("totalDays").default(30).notNull(),
+  usedDays: int("usedDays").default(0).notNull(),
+  pendingDays: int("pendingDays").default(0).notNull(),
+  carryOverDays: int("carryOverDays").default(0).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LeaveBalance = typeof leaveBalances.$inferSelect;
+export type InsertLeaveBalance = typeof leaveBalances.$inferInsert;

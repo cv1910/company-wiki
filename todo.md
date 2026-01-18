@@ -127,3 +127,26 @@
 - [x] Benutzer, Aktion, Zeitstempel, Details speichern
 - [x] Admin-Ansicht für Audit-Log mit Filterung
 - [ ] Export-Funktion für Compliance
+
+## UX-Verbesserungen
+- [x] Favoriten-System für Artikel
+- [x] Keyboard-Shortcuts (⌘K für Suche, etc.)
+- [x] Dark Mode mit Theme-Switcher
+- [x] Zuletzt angesehene Artikel
+
+## Urlaubsantrag-System
+- [x] Datenbank-Tabelle für Urlaubsanträge
+- [x] Backend-API für Anträge (erstellen, genehmigen, ablehnen)
+- [x] Urlaubsantrag-Formular für Mitarbeiter
+- [x] Genehmigungsworkflow für Vorgesetzte
+- [x] Kalenderübersicht der Abwesenheiten
+- [x] Resturlaub-Anzeige
+- [x] Benachrichtigungen bei Status-Änderungen
+
+## Design-Polish
+- [x] Micro-Animationen für Übergänge
+- [x] Glassmorphism-Elemente (macOS-Stil)
+- [x] Verbesserte Typografie mit mehr Weißraum
+- [x] Hover-Effekte und Loading-States
+- [x] Sanfte Farbverläufe
+- [x] Leere-Zustände mit Illustrationen

@@ -27,6 +27,10 @@ import AdminFeedback from "./pages/admin/Feedback";
 import AdminReviews from "./pages/admin/Reviews";
 import AdminAuditLog from "./pages/admin/AuditLog";
 
+// Leave/Vacation Pages
+import Leave from "./pages/Leave";
+import AdminLeave from "./pages/admin/Leave";
+
 function Router() {
   return (
     <DashboardLayout>
@@ -50,6 +54,9 @@ function Router() {
         <Route path="/chat" component={Chat} />
         <Route path="/notifications" component={Notifications} />
         
+        {/* Leave/Vacation Routes */}
+        <Route path="/leave" component={Leave} />
+        
         {/* Admin Routes */}
         <Route path="/admin/categories" component={AdminCategories} />
         <Route path="/admin/users" component={AdminUsers} />
@@ -57,6 +64,7 @@ function Router() {
         <Route path="/admin/feedback" component={AdminFeedback} />
         <Route path="/admin/reviews" component={AdminReviews} />
         <Route path="/admin/audit-log" component={AdminAuditLog} />
+        <Route path="/admin/leave" component={AdminLeave} />
         
         {/* Fallback */}
         <Route path="/404" component={NotFound} />
@@ -69,7 +77,7 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="light">
+      <ThemeProvider defaultTheme="system" switchable>
         <TooltipProvider>
           <Toaster />
           <Router />

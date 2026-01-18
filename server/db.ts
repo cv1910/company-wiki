@@ -33,6 +33,16 @@ import {
   InsertAuditLogEntry,
   articleReviews,
   InsertArticleReview,
+  favorites,
+  InsertFavorite,
+  recentlyViewed,
+  InsertRecentlyViewed,
+  userPreferences,
+  InsertUserPreference,
+  leaveRequests,
+  InsertLeaveRequest,
+  leaveBalances,
+  InsertLeaveBalance,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -951,4 +961,389 @@ export async function getUserReviewRequests(userId: number) {
     .from(articleReviews)
     .where(eq(articleReviews.requestedById, userId))
     .orderBy(desc(articleReviews.requestedAt));
+}
+
+
+// ==================== FAVORITES ====================
+
+export async function addFavorite(userId: number, articleId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  // Check if already favorited
+  const existing = await db
+    .select()
+    .from(favorites)
+    .where(and(eq(favorites.userId, userId), eq(favorites.articleId, articleId)))
+    .limit(1);
+  
+  if (existing.length > 0) return existing[0];
+  
+  const result = await db.insert(favorites).values({ userId, articleId });
+  return { id: result[0].insertId, userId, articleId };
+}
+
+export async function removeFavorite(userId: number, articleId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.delete(favorites).where(
+    and(eq(favorites.userId, userId), eq(favorites.articleId, articleId))
+  );
+  return true;
+}
+
+export async function getUserFavorites(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: favorites.id,
+      articleId: favorites.articleId,
+      createdAt: favorites.createdAt,
+      article: {
+        id: articles.id,
+        title: articles.title,
+        slug: articles.slug,
+        excerpt: articles.excerpt,
+      },
+    })
+    .from(favorites)
+    .leftJoin(articles, eq(favorites.articleId, articles.id))
+    .where(eq(favorites.userId, userId))
+    .orderBy(desc(favorites.createdAt));
+}
+
+export async function isFavorite(userId: number, articleId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db
+    .select()
+    .from(favorites)
+    .where(and(eq(favorites.userId, userId), eq(favorites.articleId, articleId)))
+    .limit(1);
+  return result.length > 0;
+}
+
+// ==================== RECENTLY VIEWED ====================
+
+export async function addRecentlyViewed(userId: number, articleId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  // Remove existing entry for this article
+  await db.delete(recentlyViewed).where(
+    and(eq(recentlyViewed.userId, userId), eq(recentlyViewed.articleId, articleId))
+  );
+  
+  // Add new entry
+  const result = await db.insert(recentlyViewed).values({ userId, articleId });
+  
+  // Keep only last 20 entries
+  const allViewed = await db
+    .select({ id: recentlyViewed.id })
+    .from(recentlyViewed)
+    .where(eq(recentlyViewed.userId, userId))
+    .orderBy(desc(recentlyViewed.viewedAt));
+  
+  if (allViewed.length > 20) {
+    const idsToDelete = allViewed.slice(20).map(v => v.id);
+    await db.delete(recentlyViewed).where(inArray(recentlyViewed.id, idsToDelete));
+  }
+  
+  return { id: result[0].insertId, userId, articleId };
+}
+
+export async function getRecentlyViewed(userId: number, limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: recentlyViewed.id,
+      articleId: recentlyViewed.articleId,
+      viewedAt: recentlyViewed.viewedAt,
+      article: {
+        id: articles.id,
+        title: articles.title,
+        slug: articles.slug,
+        excerpt: articles.excerpt,
+      },
+    })
+    .from(recentlyViewed)
+    .leftJoin(articles, eq(recentlyViewed.articleId, articles.id))
+    .where(eq(recentlyViewed.userId, userId))
+    .orderBy(desc(recentlyViewed.viewedAt))
+    .limit(limit);
+}
+
+// ==================== USER PREFERENCES ====================
+
+export async function getUserPreferences(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(userPreferences)
+    .where(eq(userPreferences.userId, userId))
+    .limit(1);
+  return result[0] || null;
+}
+
+export async function upsertUserPreferences(userId: number, prefs: Partial<InsertUserPreference>) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const existing = await getUserPreferences(userId);
+  
+  if (existing) {
+    await db
+      .update(userPreferences)
+      .set(prefs)
+      .where(eq(userPreferences.userId, userId));
+    return { ...existing, ...prefs };
+  } else {
+    const result = await db.insert(userPreferences).values({ userId, ...prefs });
+    return { id: result[0].insertId, userId, ...prefs };
+  }
+}
+
+// ==================== LEAVE REQUESTS ====================
+
+export async function createLeaveRequest(data: InsertLeaveRequest) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(leaveRequests).values(data);
+  
+  // Update pending days in balance
+  const year = new Date(data.startDate).getFullYear();
+  await updateLeaveBalance(data.userId, year, { pendingDays: data.totalDays });
+  
+  return { id: result[0].insertId, ...data };
+}
+
+export async function getLeaveRequest(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(leaveRequests).where(eq(leaveRequests.id, id)).limit(1);
+  return result[0] || null;
+}
+
+export async function getUserLeaveRequests(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(leaveRequests)
+    .where(eq(leaveRequests.userId, userId))
+    .orderBy(desc(leaveRequests.requestedAt));
+}
+
+export async function getPendingLeaveRequests() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      request: leaveRequests,
+      user: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(leaveRequests)
+    .leftJoin(users, eq(leaveRequests.userId, users.id))
+    .where(eq(leaveRequests.status, "pending"))
+    .orderBy(leaveRequests.requestedAt);
+}
+
+export async function getAllLeaveRequests(filters?: { status?: string; userId?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db
+    .select({
+      request: leaveRequests,
+      user: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(leaveRequests)
+    .leftJoin(users, eq(leaveRequests.userId, users.id));
+  
+  const conditions = [];
+  if (filters?.status) {
+    conditions.push(eq(leaveRequests.status, filters.status as any));
+  }
+  if (filters?.userId) {
+    conditions.push(eq(leaveRequests.userId, filters.userId));
+  }
+  
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as any;
+  }
+  
+  return query.orderBy(desc(leaveRequests.requestedAt));
+}
+
+export async function approveLeaveRequest(id: number, approverId: number, comment?: string) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const request = await getLeaveRequest(id);
+  if (!request) return null;
+  
+  await db
+    .update(leaveRequests)
+    .set({
+      status: "approved",
+      approverId,
+      approverComment: comment,
+      reviewedAt: new Date(),
+    })
+    .where(eq(leaveRequests.id, id));
+  
+  // Update leave balance
+  const year = new Date(request.startDate).getFullYear();
+  const balance = await getLeaveBalance(request.userId, year);
+  if (balance) {
+    await updateLeaveBalance(request.userId, year, {
+      usedDays: balance.usedDays + request.totalDays,
+      pendingDays: Math.max(0, balance.pendingDays - request.totalDays),
+    });
+  }
+  
+  return { ...request, status: "approved", approverId, approverComment: comment };
+}
+
+export async function rejectLeaveRequest(id: number, approverId: number, comment?: string) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const request = await getLeaveRequest(id);
+  if (!request) return null;
+  
+  await db
+    .update(leaveRequests)
+    .set({
+      status: "rejected",
+      approverId,
+      approverComment: comment,
+      reviewedAt: new Date(),
+    })
+    .where(eq(leaveRequests.id, id));
+  
+  // Update pending days
+  const year = new Date(request.startDate).getFullYear();
+  const balance = await getLeaveBalance(request.userId, year);
+  if (balance) {
+    await updateLeaveBalance(request.userId, year, {
+      pendingDays: Math.max(0, balance.pendingDays - request.totalDays),
+    });
+  }
+  
+  return { ...request, status: "rejected", approverId, approverComment: comment };
+}
+
+export async function cancelLeaveRequest(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const request = await getLeaveRequest(id);
+  if (!request || request.userId !== userId) return null;
+  if (request.status !== "pending") return null;
+  
+  await db
+    .update(leaveRequests)
+    .set({ status: "cancelled" })
+    .where(eq(leaveRequests.id, id));
+  
+  // Update pending days
+  const year = new Date(request.startDate).getFullYear();
+  const balance = await getLeaveBalance(request.userId, year);
+  if (balance) {
+    await updateLeaveBalance(request.userId, year, {
+      pendingDays: Math.max(0, balance.pendingDays - request.totalDays),
+    });
+  }
+  
+  return { ...request, status: "cancelled" };
+}
+
+// ==================== LEAVE BALANCES ====================
+
+export async function getLeaveBalance(userId: number, year: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(leaveBalances)
+    .where(and(eq(leaveBalances.userId, userId), eq(leaveBalances.year, year)))
+    .limit(1);
+  
+  if (result.length === 0) {
+    // Create default balance
+    const newBalance = await db.insert(leaveBalances).values({
+      userId,
+      year,
+      totalDays: 30,
+      usedDays: 0,
+      pendingDays: 0,
+      carryOverDays: 0,
+    });
+    return {
+      id: newBalance[0].insertId,
+      userId,
+      year,
+      totalDays: 30,
+      usedDays: 0,
+      pendingDays: 0,
+      carryOverDays: 0,
+    };
+  }
+  
+  return result[0];
+}
+
+export async function updateLeaveBalance(userId: number, year: number, data: Partial<InsertLeaveBalance>) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const existing = await getLeaveBalance(userId, year);
+  if (!existing) return null;
+  
+  await db
+    .update(leaveBalances)
+    .set(data)
+    .where(and(eq(leaveBalances.userId, userId), eq(leaveBalances.year, year)));
+  
+  return { ...existing, ...data };
+}
+
+export async function getTeamLeaveCalendar(startDate: Date, endDate: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select({
+      request: leaveRequests,
+      user: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(leaveRequests)
+    .leftJoin(users, eq(leaveRequests.userId, users.id))
+    .where(
+      and(
+        eq(leaveRequests.status, "approved"),
+        sql`${leaveRequests.startDate} <= ${endDate}`,
+        sql`${leaveRequests.endDate} >= ${startDate}`
+      )
+    )
+    .orderBy(leaveRequests.startDate);
 }

@@ -1315,6 +1315,235 @@ ${context || "Keine relevanten Inhalte gefunden."}`,
         return { success: true };
       }),
   }),
+
+  // ==================== FAVORITES ====================
+  favorites: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserFavorites(ctx.user.id);
+    }),
+
+    add: protectedProcedure
+      .input(z.object({ articleId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        return db.addFavorite(ctx.user.id, input.articleId);
+      }),
+
+    remove: protectedProcedure
+      .input(z.object({ articleId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        return db.removeFavorite(ctx.user.id, input.articleId);
+      }),
+
+    check: protectedProcedure
+      .input(z.object({ articleId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        return db.isFavorite(ctx.user.id, input.articleId);
+      }),
+  }),
+
+  // ==================== RECENTLY VIEWED ====================
+  recentlyViewed: router({
+    list: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ input, ctx }) => {
+        return db.getRecentlyViewed(ctx.user.id, input?.limit || 10);
+      }),
+
+    add: protectedProcedure
+      .input(z.object({ articleId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        return db.addRecentlyViewed(ctx.user.id, input.articleId);
+      }),
+  }),
+
+  // ==================== USER PREFERENCES ====================
+  preferences: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserPreferences(ctx.user.id);
+    }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          theme: z.enum(["light", "dark", "system"]).optional(),
+          sidebarCollapsed: z.boolean().optional(),
+          keyboardShortcutsEnabled: z.boolean().optional(),
+          emailNotifications: z.boolean().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        return db.upsertUserPreferences(ctx.user.id, input);
+      }),
+  }),
+
+  // ==================== LEAVE REQUESTS ====================
+  leave: router({
+    // Get current user's leave requests
+    myRequests: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserLeaveRequests(ctx.user.id);
+    }),
+
+    // Get current user's leave balance
+    myBalance: protectedProcedure
+      .input(z.object({ year: z.number().optional() }).optional())
+      .query(async ({ input, ctx }) => {
+        const year = input?.year || new Date().getFullYear();
+        return db.getLeaveBalance(ctx.user.id, year);
+      }),
+
+    // Create a new leave request
+    create: protectedProcedure
+      .input(
+        z.object({
+          leaveType: z.enum(["vacation", "sick", "personal", "parental", "other"]),
+          startDate: z.string(),
+          endDate: z.string(),
+          reason: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const startDate = new Date(input.startDate);
+        const endDate = new Date(input.endDate);
+        
+        // Validate date range
+        if (endDate < startDate) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Enddatum darf nicht vor dem Startdatum liegen",
+          });
+        }
+        
+        // Calculate total days (simple calculation, excluding weekends)
+        let totalDays = 0;
+        const current = new Date(startDate);
+        while (current <= endDate) {
+          const dayOfWeek = current.getDay();
+          if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+            totalDays++;
+          }
+          current.setDate(current.getDate() + 1);
+        }
+
+        const request = await db.createLeaveRequest({
+          userId: ctx.user.id,
+          leaveType: input.leaveType,
+          startDate,
+          endDate,
+          totalDays,
+          reason: input.reason,
+        });
+
+        // Notify admins
+        const admins = await db.getAllUsers();
+        for (const admin of admins.filter(u => u.role === "admin")) {
+          await db.createNotification({
+            userId: admin.id,
+            type: "leave_request",
+            title: "Neuer Urlaubsantrag",
+            message: `${ctx.user.name || "Ein Mitarbeiter"} hat einen Urlaubsantrag gestellt.`,
+            resourceType: "leave",
+            resourceId: request?.id,
+          });
+        }
+
+        return request;
+      }),
+
+    // Cancel own leave request
+    cancel: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        return db.cancelLeaveRequest(input.id, ctx.user.id);
+      }),
+
+    // Get all pending requests (for admins)
+    pending: adminProcedure.query(async () => {
+      return db.getPendingLeaveRequests();
+    }),
+
+    // Get all requests with filters (for admins)
+    all: adminProcedure
+      .input(
+        z.object({
+          status: z.string().optional(),
+          userId: z.number().optional(),
+        }).optional()
+      )
+      .query(async ({ input }) => {
+        return db.getAllLeaveRequests(input);
+      }),
+
+    // Approve leave request (for admins)
+    approve: adminProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          comment: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const request = await db.approveLeaveRequest(input.id, ctx.user.id, input.comment);
+        
+        if (request) {
+          await db.createNotification({
+            userId: request.userId,
+            type: "leave_approved",
+            title: "Urlaubsantrag genehmigt",
+            message: `Ihr Urlaubsantrag wurde genehmigt.${input.comment ? ` Kommentar: ${input.comment}` : ""}`,
+            resourceType: "leave",
+            resourceId: request.id,
+          });
+        }
+
+        return request;
+      }),
+
+    // Reject leave request (for admins)
+    reject: adminProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          comment: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const request = await db.rejectLeaveRequest(input.id, ctx.user.id, input.comment);
+        
+        if (request) {
+          await db.createNotification({
+            userId: request.userId,
+            type: "leave_rejected",
+            title: "Urlaubsantrag abgelehnt",
+            message: `Ihr Urlaubsantrag wurde abgelehnt.${input.comment ? ` Grund: ${input.comment}` : ""}`,
+            resourceType: "leave",
+            resourceId: request.id,
+          });
+        }
+
+        return request;
+      }),
+
+    // Get team calendar (approved leaves)
+    calendar: protectedProcedure
+      .input(
+        z.object({
+          startDate: z.string(),
+          endDate: z.string(),
+        })
+      )
+      .query(async ({ input }) => {
+        return db.getTeamLeaveCalendar(
+          new Date(input.startDate),
+          new Date(input.endDate)
+        );
+      }),
+
+    // Pending count for badge
+    pendingCount: adminProcedure.query(async () => {
+      const pending = await db.getPendingLeaveRequests();
+      return pending.length;
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
