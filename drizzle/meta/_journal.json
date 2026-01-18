@@ -22,6 +22,13 @@
       "when": 1768763780590,
       "tag": "0002_outgoing_domino",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1768768810030,
+      "tag": "0003_hot_rhodey",
+      "breakpoints": true
     }
   ]
 }

@@ -226,3 +226,46 @@ export const articleFeedback = mysqlTable("articleFeedback", {
 
 export type ArticleFeedback = typeof articleFeedback.$inferSelect;
 export type InsertArticleFeedback = typeof articleFeedback.$inferInsert;
+
+
+/**
+ * Article templates for quick content creation.
+ * Provides predefined structures for common document types.
+ */
+export const articleTemplates = mysqlTable("articleTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  description: text("description"),
+  content: text("content").notNull(),
+  icon: varchar("icon", { length: 64 }),
+  isSystem: boolean("isSystem").default(false).notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdById: int("createdById"),
+});
+
+export type ArticleTemplate = typeof articleTemplates.$inferSelect;
+export type InsertArticleTemplate = typeof articleTemplates.$inferInsert;
+
+/**
+ * Media files uploaded by users.
+ * Stores S3 references and metadata for images and documents.
+ */
+export const media = mysqlTable("media", {
+  id: int("id").autoincrement().primaryKey(),
+  filename: varchar("filename", { length: 500 }).notNull(),
+  originalFilename: varchar("originalFilename", { length: 500 }).notNull(),
+  mimeType: varchar("mimeType", { length: 128 }).notNull(),
+  size: int("size").notNull(),
+  url: text("url").notNull(),
+  fileKey: varchar("fileKey", { length: 500 }).notNull(),
+  width: int("width"),
+  height: int("height"),
+  uploadedById: int("uploadedById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Media = typeof media.$inferSelect;
+export type InsertMedia = typeof media.$inferInsert;

@@ -89,3 +89,17 @@
 - [x] Feedback-Übersicht für Editoren/Admins
 - [x] Benachrichtigungen bei neuem Feedback
 - [x] Tests für Feedback-Funktionen
+
+## Vorlagen-System
+- [x] Datenbank-Tabelle für Artikelvorlagen
+- [x] Backend-API für Vorlagen (CRUD)
+- [x] Vorlagen-Auswahl beim Erstellen neuer Artikel
+- [x] Standard-Vorlagen (Onboarding, Prozessbeschreibung, Meeting-Protokoll, FAQ)
+- [x] Admin-Bereich für Vorlagenverwaltung
+
+## Drag & Drop Bildupload
+- [x] S3-Integration für Bildupload
+- [x] Drag & Drop Zone im Editor
+- [x] Bildvorschau und Fortschrittsanzeige
+- [x] Automatische Markdown-Bildeinbettung
+- [x] Bildgröße-Validierung

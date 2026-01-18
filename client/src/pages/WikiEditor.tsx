@@ -14,12 +14,17 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Eye, Save } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowLeft, Eye, Save, Sparkles, Image, Upload } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import TemplateSelector from "@/components/TemplateSelector";
+import { cn } from "@/lib/utils";
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 
 export default function WikiEditor() {
   const { slug } = useParams<{ slug: string }>();
@@ -36,6 +41,11 @@ export default function WikiEditor() {
   const [isPinned, setIsPinned] = useState(false);
   const [changeDescription, setChangeDescription] = useState("");
   const [activeTab, setActiveTab] = useState("edit");
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: article, isLoading: articleLoading } = trpc.articles.getBySlug.useQuery(
     { slug: slug || "" },
@@ -43,6 +53,8 @@ export default function WikiEditor() {
   );
 
   const { data: categories } = trpc.categories.list.useQuery();
+
+  const uploadMedia = trpc.media.upload.useMutation();
 
   const createArticle = trpc.articles.create.useMutation({
     onSuccess: (data) => {
@@ -74,6 +86,163 @@ export default function WikiEditor() {
       setIsPinned(article.isPinned);
     }
   }, [article]);
+
+  // Show template selector for new articles
+  useEffect(() => {
+    if (!isEditing && !content) {
+      setShowTemplateSelector(true);
+    }
+  }, [isEditing, content]);
+
+  // Upload file to S3
+  const uploadToS3 = async (file: File): Promise<{ url: string; fileKey: string }> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error("Upload failed");
+    }
+
+    return response.json();
+  };
+
+  // Handle image upload
+  const handleImageUpload = useCallback(
+    async (file: File) => {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        toast.error("Ungültiger Dateityp. Erlaubt sind: JPG, PNG, GIF, WebP");
+        return;
+      }
+
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error("Datei zu groß. Maximale Größe: 5MB");
+        return;
+      }
+
+      setIsUploading(true);
+
+      try {
+        const { url, fileKey } = await uploadToS3(file);
+
+        // Get image dimensions
+        const img = new window.Image();
+        img.src = URL.createObjectURL(file);
+        await new Promise((resolve) => {
+          img.onload = resolve;
+        });
+
+        // Save media metadata
+        await uploadMedia.mutateAsync({
+          filename: fileKey.split("/").pop() || file.name,
+          originalFilename: file.name,
+          mimeType: file.type,
+          size: file.size,
+          url,
+          fileKey,
+          width: img.width,
+          height: img.height,
+        });
+
+        // Insert markdown at cursor position
+        const markdown = `\n![${file.name}](${url})\n`;
+        const textarea = textareaRef.current;
+        if (textarea) {
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const newContent = content.substring(0, start) + markdown + content.substring(end);
+          setContent(newContent);
+          // Set cursor after inserted markdown
+          setTimeout(() => {
+            textarea.selectionStart = textarea.selectionEnd = start + markdown.length;
+            textarea.focus();
+          }, 0);
+        } else {
+          setContent((prev) => prev + markdown);
+        }
+
+        toast.success("Bild eingefügt");
+      } catch (error) {
+        console.error("Upload error:", error);
+        toast.error("Fehler beim Hochladen des Bildes");
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [content, uploadMedia]
+  );
+
+  // Drag and drop handlers
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.types.includes("Files")) {
+      setIsDragging(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+
+      const files = Array.from(e.dataTransfer.files);
+      const imageFile = files.find((f) => ALLOWED_TYPES.includes(f.type));
+
+      if (imageFile) {
+        handleImageUpload(imageFile);
+      } else if (files.length > 0) {
+        toast.error("Bitte nur Bilder hochladen (JPG, PNG, GIF, WebP)");
+      }
+    },
+    [handleImageUpload]
+  );
+
+  // Paste handler for images
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent) => {
+      const items = Array.from(e.clipboardData.items);
+      const imageItem = items.find((item) => item.type.startsWith("image/"));
+
+      if (imageItem) {
+        const file = imageItem.getAsFile();
+        if (file) {
+          e.preventDefault();
+          handleImageUpload(file);
+        }
+      }
+    },
+    [handleImageUpload]
+  );
+
+  // File input handler
+  const handleFileSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        handleImageUpload(file);
+      }
+      e.target.value = "";
+    },
+    [handleImageUpload]
+  );
+
+  // Template selection handler
+  const handleTemplateSelect = (templateContent: string, templateName: string) => {
+    setContent(templateContent);
+    if (!title && templateName !== "Leere Seite") {
+      setTitle(templateName.replace(/\[.*?\]/g, "").trim());
+    }
+    toast.success(`Vorlage "${templateName}" angewendet`);
+  };
 
   if (!isEditor) {
     return (
@@ -132,6 +301,22 @@ export default function WikiEditor() {
 
   return (
     <div className="space-y-6">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={ALLOWED_TYPES.join(",")}
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+
+      {/* Template Selector */}
+      <TemplateSelector
+        open={showTemplateSelector}
+        onOpenChange={setShowTemplateSelector}
+        onSelect={handleTemplateSelect}
+      />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -149,6 +334,12 @@ export default function WikiEditor() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
+          {!isEditing && (
+            <Button variant="outline" onClick={() => setShowTemplateSelector(true)}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              Vorlage
+            </Button>
+          )}
           <Button variant="outline" onClick={() => setActiveTab("preview")}>
             <Eye className="h-4 w-4 mr-2" />
             Vorschau
@@ -194,15 +385,63 @@ export default function WikiEditor() {
               </div>
 
               <div>
-                <Label htmlFor="content">Inhalt (Markdown)</Label>
-                <Textarea
-                  id="content"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="Artikelinhalt in Markdown..."
-                  rows={20}
-                  className="mt-1.5 font-mono text-sm"
-                />
+                <div className="flex items-center justify-between mb-1.5">
+                  <Label htmlFor="content">Inhalt (Markdown)</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Bild hochladen
+                  </Button>
+                </div>
+                <div
+                  className={cn(
+                    "relative rounded-lg transition-all",
+                    isDragging && "ring-2 ring-primary ring-offset-2"
+                  )}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <Textarea
+                    ref={textareaRef}
+                    id="content"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    onPaste={handlePaste}
+                    placeholder="Artikelinhalt in Markdown... (Bilder per Drag & Drop oder Strg+V einfügen)"
+                    rows={20}
+                    className="font-mono text-sm"
+                    disabled={isUploading}
+                  />
+
+                  {/* Drag overlay */}
+                  {isDragging && (
+                    <div className="absolute inset-0 bg-primary/10 border-2 border-dashed border-primary rounded-lg flex items-center justify-center pointer-events-none">
+                      <div className="bg-background/95 backdrop-blur-sm rounded-xl p-6 shadow-lg text-center">
+                        <Image className="h-10 w-10 text-primary mx-auto mb-2" />
+                        <p className="font-medium">Bild hier ablegen</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upload indicator */}
+                  {isUploading && (
+                    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                      <div className="flex items-center gap-3">
+                        <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        <span className="font-medium">Bild wird hochgeladen...</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Tipp: Bilder per Drag & Drop oder aus der Zwischenablage (Strg+V) einfügen
+                </p>
               </div>
 
               {isEditing && (
@@ -292,8 +531,24 @@ export default function WikiEditor() {
                 <p><code>**fett**</code></p>
                 <p><code>*kursiv*</code></p>
                 <p><code>[Link](url)</code></p>
+                <p><code>![Bild](url)</code></p>
                 <p><code>- Liste</code></p>
                 <p><code>```code```</code></p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="card-shadow bg-primary/5 border-primary/20">
+            <CardContent className="p-4">
+              <h3 className="font-medium mb-2 flex items-center gap-2">
+                <Image className="h-4 w-4" />
+                Bilder einfügen
+              </h3>
+              <div className="text-sm text-muted-foreground space-y-2">
+                <p>• Bilder per Drag & Drop in den Editor ziehen</p>
+                <p>• Aus Zwischenablage einfügen (Strg+V)</p>
+                <p>• Über den "Bild hochladen" Button</p>
+                <p className="text-xs mt-2">Max. 5MB • JPG, PNG, GIF, WebP</p>
               </div>
             </CardContent>
           </Card>

@@ -769,6 +769,140 @@ ${context || "Keine relevanten Inhalte gefunden."}`,
     }),
   }),
 
+  // ==================== ARTICLE TEMPLATES ====================
+  templates: router({
+    list: protectedProcedure.query(async () => {
+      return db.getAllTemplates();
+    }),
+
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getTemplateById(input.id);
+      }),
+
+    getBySlug: protectedProcedure
+      .input(z.object({ slug: z.string() }))
+      .query(async ({ input }) => {
+        return db.getTemplateBySlug(input.slug);
+      }),
+
+    getSystem: protectedProcedure.query(async () => {
+      return db.getSystemTemplates();
+    }),
+
+    getCustom: protectedProcedure.query(async () => {
+      return db.getCustomTemplates();
+    }),
+
+    create: editorProcedure
+      .input(
+        z.object({
+          name: z.string().min(1),
+          description: z.string().optional(),
+          content: z.string(),
+          icon: z.string().optional(),
+          sortOrder: z.number().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const slug = generateSlug(input.name) + "-" + nanoid(6);
+        const id = await db.createTemplate({
+          ...input,
+          slug,
+          isSystem: false,
+          createdById: ctx.user.id,
+        });
+        return { id, slug };
+      }),
+
+    update: editorProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().min(1).optional(),
+          description: z.string().optional(),
+          content: z.string().optional(),
+          icon: z.string().optional(),
+          sortOrder: z.number().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        // Don't allow editing system templates' core content
+        const template = await db.getTemplateById(id);
+        if (template?.isSystem) {
+          delete (data as any).content;
+        }
+        await db.updateTemplate(id, data);
+        return { success: true };
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteTemplate(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ==================== MEDIA UPLOAD ====================
+  media: router({
+    list: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ input, ctx }) => {
+        return db.getUserMedia(ctx.user.id, input?.limit || 50);
+      }),
+
+    listAll: editorProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return db.getAllMedia(input?.limit || 100);
+      }),
+
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getMediaById(input.id);
+      }),
+
+    upload: protectedProcedure
+      .input(
+        z.object({
+          filename: z.string(),
+          originalFilename: z.string(),
+          mimeType: z.string(),
+          size: z.number(),
+          url: z.string(),
+          fileKey: z.string(),
+          width: z.number().optional(),
+          height: z.number().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const id = await db.createMedia({
+          ...input,
+          uploadedById: ctx.user.id,
+        });
+        return { id, url: input.url };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        // Check ownership or admin
+        const mediaItem = await db.getMediaById(input.id);
+        if (!mediaItem) {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+        if (mediaItem.uploadedById !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        await db.deleteMedia(input.id);
+        return { success: true };
+      }),
+  }),
+
   // ==================== ARTICLE FEEDBACK ====================
   feedback: router({
     // Get feedback for an article

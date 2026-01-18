@@ -25,6 +25,10 @@ import {
   InsertNotification,
   articleFeedback,
   InsertArticleFeedback,
+  articleTemplates,
+  InsertArticleTemplate,
+  media,
+  InsertMedia,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -664,4 +668,113 @@ export async function getPendingFeedbackCount(): Promise<number> {
     .from(articleFeedback)
     .where(eq(articleFeedback.status, "pending"));
   return result[0]?.count || 0;
+}
+
+
+// ==================== ARTICLE TEMPLATE FUNCTIONS ====================
+
+export async function createTemplate(data: InsertArticleTemplate) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(articleTemplates).values(data);
+  return result[0].insertId;
+}
+
+export async function updateTemplate(id: number, data: Partial<InsertArticleTemplate>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(articleTemplates).set(data).where(eq(articleTemplates.id, id));
+}
+
+export async function deleteTemplate(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  // Don't allow deleting system templates
+  await db.delete(articleTemplates).where(and(eq(articleTemplates.id, id), eq(articleTemplates.isSystem, false)));
+}
+
+export async function getTemplateById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(articleTemplates).where(eq(articleTemplates.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getTemplateBySlug(slug: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(articleTemplates).where(eq(articleTemplates.slug, slug)).limit(1);
+  return result[0];
+}
+
+export async function getAllTemplates() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(articleTemplates).orderBy(articleTemplates.sortOrder, articleTemplates.name);
+}
+
+export async function getSystemTemplates() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(articleTemplates)
+    .where(eq(articleTemplates.isSystem, true))
+    .orderBy(articleTemplates.sortOrder);
+}
+
+export async function getCustomTemplates() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(articleTemplates)
+    .where(eq(articleTemplates.isSystem, false))
+    .orderBy(articleTemplates.sortOrder, articleTemplates.name);
+}
+
+// ==================== MEDIA FUNCTIONS ====================
+
+export async function createMedia(data: InsertMedia) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(media).values(data);
+  return result[0].insertId;
+}
+
+export async function getMediaById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(media).where(eq(media.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getMediaByFileKey(fileKey: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(media).where(eq(media.fileKey, fileKey)).limit(1);
+  return result[0];
+}
+
+export async function getUserMedia(userId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(media)
+    .where(eq(media.uploadedById, userId))
+    .orderBy(desc(media.createdAt))
+    .limit(limit);
+}
+
+export async function getAllMedia(limit: number = 100) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(media).orderBy(desc(media.createdAt)).limit(limit);
+}
+
+export async function deleteMedia(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(media).where(eq(media.id, id));
 }
