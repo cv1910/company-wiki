@@ -24,6 +24,8 @@ import AdminCategories from "./pages/admin/Categories";
 import AdminUsers from "./pages/admin/Users";
 import AdminSettings from "./pages/admin/Settings";
 import AdminFeedback from "./pages/admin/Feedback";
+import AdminReviews from "./pages/admin/Reviews";
+import AdminAuditLog from "./pages/admin/AuditLog";
 
 function Router() {
   return (
@@ -53,6 +55,8 @@ function Router() {
         <Route path="/admin/users" component={AdminUsers} />
         <Route path="/admin/settings" component={AdminSettings} />
         <Route path="/admin/feedback" component={AdminFeedback} />
+        <Route path="/admin/reviews" component={AdminReviews} />
+        <Route path="/admin/audit-log" component={AdminAuditLog} />
         
         {/* Fallback */}
         <Route path="/404" component={NotFound} />

@@ -103,3 +103,27 @@
 - [x] Bildvorschau und Fortschrittsanzeige
 - [x] Automatische Markdown-Bildeinbettung
 - [x] Bildgröße-Validierung
+
+## WYSIWYG-Editor
+- [x] TipTap Editor Integration
+- [x] Toolbar mit Formatierungsoptionen (Bold, Italic, Headings, Listen)
+- [x] Bildeinbettung im WYSIWYG-Modus
+- [x] Link-Einfügung mit Dialog
+- [x] Code-Blöcke und Inline-Code
+- [x] Tabellen-Unterstützung
+- [x] Markdown-Import/Export Kompatibilität
+
+## Entwürfe & Freigabe-Workflow
+- [x] Draft-Status für Artikel (draft, pending_review, published, archived)
+- [x] Entwürfe speichern ohne Veröffentlichung
+- [x] Review-Anfrage an Editoren/Admins
+- [x] Freigabe-/Ablehnungs-Workflow
+- [x] Benachrichtigungen bei Status-Änderungen
+- [x] Übersicht ausstehender Reviews für Editoren
+
+## Audit-Log
+- [x] Datenbank-Tabelle für Audit-Einträge
+- [x] Automatische Protokollierung aller wichtigen Aktionen
+- [x] Benutzer, Aktion, Zeitstempel, Details speichern
+- [x] Admin-Ansicht für Audit-Log mit Filterung
+- [ ] Export-Funktion für Compliance

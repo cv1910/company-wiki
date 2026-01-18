@@ -49,7 +49,7 @@ export const articles = mysqlTable("articles", {
   content: text("content"),
   excerpt: text("excerpt"),
   categoryId: int("categoryId"),
-  status: mysqlEnum("status", ["draft", "published", "archived"]).default("draft").notNull(),
+  status: mysqlEnum("status", ["draft", "pending_review", "published", "archived"]).default("draft").notNull(),
   isPinned: boolean("isPinned").default(false).notNull(),
   viewCount: int("viewCount").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -269,3 +269,47 @@ export const media = mysqlTable("media", {
 
 export type Media = typeof media.$inferSelect;
 export type InsertMedia = typeof media.$inferInsert;
+
+
+/**
+ * Comprehensive audit log for tracking all system actions.
+ * Essential for compliance and security monitoring.
+ */
+export const auditLog = mysqlTable("auditLog", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  userEmail: varchar("userEmail", { length: 320 }),
+  userName: varchar("userName", { length: 255 }),
+  action: varchar("action", { length: 64 }).notNull(),
+  resourceType: varchar("resourceType", { length: 64 }).notNull(),
+  resourceId: int("resourceId"),
+  resourceTitle: varchar("resourceTitle", { length: 500 }),
+  oldValue: json("oldValue"),
+  newValue: json("newValue"),
+  ipAddress: varchar("ipAddress", { length: 64 }),
+  userAgent: text("userAgent"),
+  metadata: json("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AuditLogEntry = typeof auditLog.$inferSelect;
+export type InsertAuditLogEntry = typeof auditLog.$inferInsert;
+
+/**
+ * Article review requests for the approval workflow.
+ * Tracks draft submissions and their review status.
+ */
+export const articleReviews = mysqlTable("articleReviews", {
+  id: int("id").autoincrement().primaryKey(),
+  articleId: int("articleId").notNull(),
+  requestedById: int("requestedById").notNull(),
+  reviewerId: int("reviewerId"),
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "changes_requested"]).default("pending").notNull(),
+  requestMessage: text("requestMessage"),
+  reviewMessage: text("reviewMessage"),
+  requestedAt: timestamp("requestedAt").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewedAt"),
+});
+
+export type ArticleReview = typeof articleReviews.$inferSelect;
+export type InsertArticleReview = typeof articleReviews.$inferInsert;

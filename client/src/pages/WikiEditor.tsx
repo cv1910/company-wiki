@@ -13,18 +13,29 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Eye, Save, Sparkles, Image, Upload } from "lucide-react";
+import { ArrowLeft, Eye, Save, Sparkles, Send, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TemplateSelector from "@/components/TemplateSelector";
-import { cn } from "@/lib/utils";
+import TipTapEditor from "@/components/TipTapEditor";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+
+type ArticleStatus = "draft" | "pending_review" | "published" | "archived";
 
 export default function WikiEditor() {
   const { slug } = useParams<{ slug: string }>();
@@ -37,14 +48,13 @@ export default function WikiEditor() {
   const [content, setContent] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [categoryId, setCategoryId] = useState<string>("");
-  const [status, setStatus] = useState<"draft" | "published">("draft");
+  const [status, setStatus] = useState<ArticleStatus>("draft");
   const [isPinned, setIsPinned] = useState(false);
   const [changeDescription, setChangeDescription] = useState("");
   const [activeTab, setActiveTab] = useState("edit");
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [reviewMessage, setReviewMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: article, isLoading: articleLoading } = trpc.articles.getBySlug.useQuery(
@@ -53,8 +63,13 @@ export default function WikiEditor() {
   );
 
   const { data: categories } = trpc.categories.list.useQuery();
+  const { data: latestReview } = trpc.reviews.getLatest.useQuery(
+    { articleId: article?.id || 0 },
+    { enabled: !!article?.id }
+  );
 
   const uploadMedia = trpc.media.upload.useMutation();
+  const utils = trpc.useUtils();
 
   const createArticle = trpc.articles.create.useMutation({
     onSuccess: (data) => {
@@ -76,13 +91,25 @@ export default function WikiEditor() {
     },
   });
 
+  const requestReview = trpc.reviews.requestReview.useMutation({
+    onSuccess: () => {
+      toast.success("Review-Anfrage gesendet");
+      utils.reviews.getLatest.invalidate();
+      setReviewDialogOpen(false);
+      setReviewMessage("");
+    },
+    onError: (error) => {
+      toast.error(`Fehler: ${error.message}`);
+    },
+  });
+
   useEffect(() => {
     if (article) {
       setTitle(article.title);
       setContent(article.content || "");
       setExcerpt(article.excerpt || "");
       setCategoryId(article.categoryId?.toString() || "");
-      setStatus(article.status === "archived" ? "draft" : article.status);
+      setStatus(article.status as ArticleStatus);
       setIsPinned(article.isPinned);
     }
   }, [article]);
@@ -111,128 +138,41 @@ export default function WikiEditor() {
     return response.json();
   };
 
-  // Handle image upload
+  // Handle image upload for TipTap
   const handleImageUpload = useCallback(
-    async (file: File) => {
+    async (file: File): Promise<string> => {
       if (!ALLOWED_TYPES.includes(file.type)) {
-        toast.error("Ungültiger Dateityp. Erlaubt sind: JPG, PNG, GIF, WebP");
-        return;
+        throw new Error("Ungültiger Dateityp");
       }
 
       if (file.size > MAX_FILE_SIZE) {
-        toast.error("Datei zu groß. Maximale Größe: 5MB");
-        return;
+        throw new Error("Datei zu groß");
       }
 
-      setIsUploading(true);
+      const { url, fileKey } = await uploadToS3(file);
 
-      try {
-        const { url, fileKey } = await uploadToS3(file);
+      // Get image dimensions
+      const img = new window.Image();
+      img.src = URL.createObjectURL(file);
+      await new Promise((resolve) => {
+        img.onload = resolve;
+      });
 
-        // Get image dimensions
-        const img = new window.Image();
-        img.src = URL.createObjectURL(file);
-        await new Promise((resolve) => {
-          img.onload = resolve;
-        });
+      // Save media metadata
+      await uploadMedia.mutateAsync({
+        filename: fileKey.split("/").pop() || file.name,
+        originalFilename: file.name,
+        mimeType: file.type,
+        size: file.size,
+        url,
+        fileKey,
+        width: img.width,
+        height: img.height,
+      });
 
-        // Save media metadata
-        await uploadMedia.mutateAsync({
-          filename: fileKey.split("/").pop() || file.name,
-          originalFilename: file.name,
-          mimeType: file.type,
-          size: file.size,
-          url,
-          fileKey,
-          width: img.width,
-          height: img.height,
-        });
-
-        // Insert markdown at cursor position
-        const markdown = `\n![${file.name}](${url})\n`;
-        const textarea = textareaRef.current;
-        if (textarea) {
-          const start = textarea.selectionStart;
-          const end = textarea.selectionEnd;
-          const newContent = content.substring(0, start) + markdown + content.substring(end);
-          setContent(newContent);
-          // Set cursor after inserted markdown
-          setTimeout(() => {
-            textarea.selectionStart = textarea.selectionEnd = start + markdown.length;
-            textarea.focus();
-          }, 0);
-        } else {
-          setContent((prev) => prev + markdown);
-        }
-
-        toast.success("Bild eingefügt");
-      } catch (error) {
-        console.error("Upload error:", error);
-        toast.error("Fehler beim Hochladen des Bildes");
-      } finally {
-        setIsUploading(false);
-      }
+      return url;
     },
-    [content, uploadMedia]
-  );
-
-  // Drag and drop handlers
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    if (e.dataTransfer.types.includes("Files")) {
-      setIsDragging(true);
-    }
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-
-      const files = Array.from(e.dataTransfer.files);
-      const imageFile = files.find((f) => ALLOWED_TYPES.includes(f.type));
-
-      if (imageFile) {
-        handleImageUpload(imageFile);
-      } else if (files.length > 0) {
-        toast.error("Bitte nur Bilder hochladen (JPG, PNG, GIF, WebP)");
-      }
-    },
-    [handleImageUpload]
-  );
-
-  // Paste handler for images
-  const handlePaste = useCallback(
-    (e: React.ClipboardEvent) => {
-      const items = Array.from(e.clipboardData.items);
-      const imageItem = items.find((item) => item.type.startsWith("image/"));
-
-      if (imageItem) {
-        const file = imageItem.getAsFile();
-        if (file) {
-          e.preventDefault();
-          handleImageUpload(file);
-        }
-      }
-    },
-    [handleImageUpload]
-  );
-
-  // File input handler
-  const handleFileSelect = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        handleImageUpload(file);
-      }
-      e.target.value = "";
-    },
-    [handleImageUpload]
+    [uploadMedia]
   );
 
   // Template selection handler
@@ -268,11 +208,13 @@ export default function WikiEditor() {
     );
   }
 
-  const handleSave = () => {
+  const handleSave = (saveStatus?: ArticleStatus) => {
     if (!title.trim()) {
       toast.error("Bitte geben Sie einen Titel ein");
       return;
     }
+
+    const finalStatus = saveStatus || status;
 
     if (isEditing && article) {
       updateArticle.mutate({
@@ -281,7 +223,7 @@ export default function WikiEditor() {
         content,
         excerpt,
         categoryId: categoryId ? parseInt(categoryId) : null,
-        status,
+        status: finalStatus === "pending_review" ? "draft" : finalStatus,
         isPinned,
         changeDescription: changeDescription || "Aktualisiert",
       });
@@ -291,31 +233,100 @@ export default function WikiEditor() {
         content,
         excerpt,
         categoryId: categoryId ? parseInt(categoryId) : undefined,
-        status,
+        status: finalStatus === "pending_review" ? "draft" : finalStatus,
         isPinned,
       });
     }
   };
 
+  const handleRequestReview = () => {
+    if (!article?.id) return;
+    
+    // First save the article
+    updateArticle.mutate(
+      {
+        id: article.id,
+        title,
+        content,
+        excerpt,
+        categoryId: categoryId ? parseInt(categoryId) : null,
+        status: "draft",
+        isPinned,
+        changeDescription: changeDescription || "Zur Review eingereicht",
+      },
+      {
+        onSuccess: () => {
+          // Then request review
+          requestReview.mutate({
+            articleId: article.id,
+            message: reviewMessage,
+          });
+        },
+      }
+    );
+  };
+
   const isSaving = createArticle.isPending || updateArticle.isPending;
+
+  const getStatusBadge = () => {
+    switch (status) {
+      case "draft":
+        return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" />Entwurf</Badge>;
+      case "pending_review":
+        return <Badge variant="outline" className="border-yellow-500 text-yellow-600"><AlertCircle className="h-3 w-3 mr-1" />Wartet auf Review</Badge>;
+      case "published":
+        return <Badge variant="default" className="bg-green-500"><CheckCircle className="h-3 w-3 mr-1" />Veröffentlicht</Badge>;
+      case "archived":
+        return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Archiviert</Badge>;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept={ALLOWED_TYPES.join(",")}
-        onChange={handleFileSelect}
-        className="hidden"
-      />
-
       {/* Template Selector */}
       <TemplateSelector
         open={showTemplateSelector}
         onOpenChange={setShowTemplateSelector}
         onSelect={handleTemplateSelect}
       />
+
+      {/* Review Request Dialog */}
+      <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Review anfordern</DialogTitle>
+            <DialogDescription>
+              Ihr Artikel wird zur Überprüfung an einen Editor gesendet. Nach der Genehmigung wird er veröffentlicht.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="review-message">Nachricht an den Reviewer (optional)</Label>
+              <Textarea
+                id="review-message"
+                value={reviewMessage}
+                onChange={(e) => setReviewMessage(e.target.value)}
+                placeholder="Gibt es etwas, das der Reviewer beachten sollte?"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReviewDialogOpen(false)}>
+              Abbrechen
+            </Button>
+            <Button 
+              onClick={handleRequestReview}
+              disabled={requestReview.isPending || updateArticle.isPending}
+            >
+              <Send className="h-4 w-4 mr-2" />
+              {requestReview.isPending ? "Wird gesendet..." : "Review anfordern"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -329,9 +340,12 @@ export default function WikiEditor() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Zurück
           </Button>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {isEditing ? "Artikel bearbeiten" : "Neuer Artikel"}
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {isEditing ? "Artikel bearbeiten" : "Neuer Artikel"}
+            </h1>
+            {isEditing && getStatusBadge()}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {!isEditing && (
@@ -344,12 +358,63 @@ export default function WikiEditor() {
             <Eye className="h-4 w-4 mr-2" />
             Vorschau
           </Button>
-          <Button onClick={handleSave} disabled={isSaving} className="card-shadow">
-            <Save className="h-4 w-4 mr-2" />
-            {isSaving ? "Speichern..." : "Speichern"}
+          <Button 
+            variant="outline"
+            onClick={() => handleSave("draft")} 
+            disabled={isSaving}
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            Als Entwurf
           </Button>
+          {isEditing && status !== "published" && user?.role !== "admin" && (
+            <Button 
+              onClick={() => setReviewDialogOpen(true)} 
+              disabled={isSaving}
+              className="card-shadow"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Zur Review
+            </Button>
+          )}
+          {(user?.role === "admin" || user?.role === "editor") && (
+            <Button 
+              onClick={() => handleSave("published")} 
+              disabled={isSaving} 
+              className="card-shadow bg-green-600 hover:bg-green-700"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Veröffentlichen
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Review Status Banner */}
+      {latestReview && latestReview.status !== "approved" && (
+        <Card className={`border-l-4 ${
+          latestReview.status === "pending" ? "border-l-yellow-500 bg-yellow-50" :
+          latestReview.status === "changes_requested" ? "border-l-orange-500 bg-orange-50" :
+          latestReview.status === "rejected" ? "border-l-red-500 bg-red-50" : ""
+        }`}>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              {latestReview.status === "pending" && <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />}
+              {latestReview.status === "changes_requested" && <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />}
+              {latestReview.status === "rejected" && <XCircle className="h-5 w-5 text-red-600 mt-0.5" />}
+              <div>
+                <p className="font-medium">
+                  {latestReview.status === "pending" && "Review ausstehend"}
+                  {latestReview.status === "changes_requested" && "Änderungen angefordert"}
+                  {latestReview.status === "rejected" && "Review abgelehnt"}
+                </p>
+                {latestReview.reviewMessage && (
+                  <p className="text-sm text-muted-foreground mt-1">{latestReview.reviewMessage}</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Editor */}
       <div className="grid lg:grid-cols-3 gap-6">
@@ -385,63 +450,13 @@ export default function WikiEditor() {
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <Label htmlFor="content">Inhalt (Markdown)</Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Bild hochladen
-                  </Button>
-                </div>
-                <div
-                  className={cn(
-                    "relative rounded-lg transition-all",
-                    isDragging && "ring-2 ring-primary ring-offset-2"
-                  )}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                >
-                  <Textarea
-                    ref={textareaRef}
-                    id="content"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    onPaste={handlePaste}
-                    placeholder="Artikelinhalt in Markdown... (Bilder per Drag & Drop oder Strg+V einfügen)"
-                    rows={20}
-                    className="font-mono text-sm"
-                    disabled={isUploading}
-                  />
-
-                  {/* Drag overlay */}
-                  {isDragging && (
-                    <div className="absolute inset-0 bg-primary/10 border-2 border-dashed border-primary rounded-lg flex items-center justify-center pointer-events-none">
-                      <div className="bg-background/95 backdrop-blur-sm rounded-xl p-6 shadow-lg text-center">
-                        <Image className="h-10 w-10 text-primary mx-auto mb-2" />
-                        <p className="font-medium">Bild hier ablegen</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Upload indicator */}
-                  {isUploading && (
-                    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-lg flex items-center justify-center">
-                      <div className="flex items-center gap-3">
-                        <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                        <span className="font-medium">Bild wird hochgeladen...</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  Tipp: Bilder per Drag & Drop oder aus der Zwischenablage (Strg+V) einfügen
-                </p>
+                <Label className="mb-1.5 block">Inhalt</Label>
+                <TipTapEditor
+                  content={content}
+                  onChange={setContent}
+                  placeholder="Beginnen Sie mit dem Schreiben..."
+                  onImageUpload={handleImageUpload}
+                />
               </div>
 
               {isEditing && (
@@ -465,9 +480,7 @@ export default function WikiEditor() {
                   {excerpt && (
                     <p className="text-muted-foreground mb-6">{excerpt}</p>
                   )}
-                  <div className="prose-wiki">
-                    <Streamdown>{content || "Kein Inhalt"}</Streamdown>
-                  </div>
+                  <div className="prose-wiki" dangerouslySetInnerHTML={{ __html: content || "<p>Kein Inhalt</p>" }} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -495,21 +508,25 @@ export default function WikiEditor() {
                 </Select>
               </div>
 
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={status}
-                  onValueChange={(v) => setStatus(v as "draft" | "published")}
-                >
-                  <SelectTrigger className="mt-1.5">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Entwurf</SelectItem>
-                    <SelectItem value="published">Veröffentlicht</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {(user?.role === "admin" || user?.role === "editor") && (
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={status}
+                    onValueChange={(v) => setStatus(v as ArticleStatus)}
+                  >
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Entwurf</SelectItem>
+                      <SelectItem value="pending_review">Wartet auf Review</SelectItem>
+                      <SelectItem value="published">Veröffentlicht</SelectItem>
+                      <SelectItem value="archived">Archiviert</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="flex items-center justify-between">
                 <Label htmlFor="pinned">Angepinnt</Label>
@@ -522,33 +539,16 @@ export default function WikiEditor() {
             </CardContent>
           </Card>
 
-          <Card className="card-shadow">
-            <CardContent className="p-4">
-              <h3 className="font-medium mb-2">Markdown-Hilfe</h3>
-              <div className="text-sm text-muted-foreground space-y-1">
-                <p><code># Überschrift 1</code></p>
-                <p><code>## Überschrift 2</code></p>
-                <p><code>**fett**</code></p>
-                <p><code>*kursiv*</code></p>
-                <p><code>[Link](url)</code></p>
-                <p><code>![Bild](url)</code></p>
-                <p><code>- Liste</code></p>
-                <p><code>```code```</code></p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="card-shadow bg-primary/5 border-primary/20">
+          <Card className="card-shadow bg-blue-50 border-blue-200">
             <CardContent className="p-4">
               <h3 className="font-medium mb-2 flex items-center gap-2">
-                <Image className="h-4 w-4" />
-                Bilder einfügen
+                <Send className="h-4 w-4" />
+                Veröffentlichungs-Workflow
               </h3>
               <div className="text-sm text-muted-foreground space-y-2">
-                <p>• Bilder per Drag & Drop in den Editor ziehen</p>
-                <p>• Aus Zwischenablage einfügen (Strg+V)</p>
-                <p>• Über den "Bild hochladen" Button</p>
-                <p className="text-xs mt-2">Max. 5MB • JPG, PNG, GIF, WebP</p>
+                <p><strong>1. Entwurf:</strong> Artikel wird gespeichert, aber nicht sichtbar.</p>
+                <p><strong>2. Review:</strong> Artikel wird zur Überprüfung eingereicht.</p>
+                <p><strong>3. Veröffentlicht:</strong> Artikel ist für alle sichtbar.</p>
               </div>
             </CardContent>
           </Card>

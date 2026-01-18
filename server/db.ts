@@ -29,6 +29,10 @@ import {
   InsertArticleTemplate,
   media,
   InsertMedia,
+  auditLog,
+  InsertAuditLogEntry,
+  articleReviews,
+  InsertArticleReview,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -777,4 +781,174 @@ export async function deleteMedia(id: number) {
   const db = await getDb();
   if (!db) return;
   await db.delete(media).where(eq(media.id, id));
+}
+
+
+// ==================== AUDIT LOG FUNCTIONS ====================
+
+export async function createAuditLogEntry(data: InsertAuditLogEntry) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.insert(auditLog).values(data);
+  } catch (error) {
+    console.error("[AuditLog] Failed to create entry:", error);
+  }
+}
+
+export async function getAuditLog(options: {
+  userId?: number;
+  action?: string;
+  resourceType?: string;
+  resourceId?: number;
+  limit?: number;
+  offset?: number;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  if (options.userId) conditions.push(eq(auditLog.userId, options.userId));
+  if (options.action) conditions.push(eq(auditLog.action, options.action));
+  if (options.resourceType) conditions.push(eq(auditLog.resourceType, options.resourceType));
+  if (options.resourceId) conditions.push(eq(auditLog.resourceId, options.resourceId));
+  
+  const query = db.select().from(auditLog);
+  
+  if (conditions.length > 0) {
+    return query
+      .where(and(...conditions))
+      .orderBy(desc(auditLog.createdAt))
+      .limit(options.limit || 100)
+      .offset(options.offset || 0);
+  }
+  
+  return query
+    .orderBy(desc(auditLog.createdAt))
+    .limit(options.limit || 100)
+    .offset(options.offset || 0);
+}
+
+export async function getAuditLogCount(options: {
+  userId?: number;
+  action?: string;
+  resourceType?: string;
+}): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  
+  const conditions = [];
+  if (options.userId) conditions.push(eq(auditLog.userId, options.userId));
+  if (options.action) conditions.push(eq(auditLog.action, options.action));
+  if (options.resourceType) conditions.push(eq(auditLog.resourceType, options.resourceType));
+  
+  const query = db.select({ count: sql<number>`COUNT(*)` }).from(auditLog);
+  
+  if (conditions.length > 0) {
+    const result = await query.where(and(...conditions));
+    return result[0]?.count || 0;
+  }
+  
+  const result = await query;
+  return result[0]?.count || 0;
+}
+
+export async function getDistinctAuditActions(): Promise<string[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const result = await db.selectDistinct({ action: auditLog.action }).from(auditLog);
+  return result.map(r => r.action);
+}
+
+export async function getDistinctAuditResourceTypes(): Promise<string[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const result = await db.selectDistinct({ resourceType: auditLog.resourceType }).from(auditLog);
+  return result.map(r => r.resourceType);
+}
+
+// ==================== ARTICLE REVIEW FUNCTIONS ====================
+
+export async function createArticleReview(data: InsertArticleReview) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(articleReviews).values(data);
+  return result[0].insertId;
+}
+
+export async function updateArticleReview(id: number, data: Partial<InsertArticleReview>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(articleReviews).set(data).where(eq(articleReviews.id, id));
+}
+
+export async function getArticleReviewById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(articleReviews).where(eq(articleReviews.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getArticleReviewsByArticle(articleId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(articleReviews)
+    .where(eq(articleReviews.articleId, articleId))
+    .orderBy(desc(articleReviews.requestedAt));
+}
+
+export async function getLatestArticleReview(articleId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db
+    .select()
+    .from(articleReviews)
+    .where(eq(articleReviews.articleId, articleId))
+    .orderBy(desc(articleReviews.requestedAt))
+    .limit(1);
+  return result[0];
+}
+
+export async function getPendingReviews(reviewerId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  if (reviewerId) {
+    return db
+      .select()
+      .from(articleReviews)
+      .where(and(
+        eq(articleReviews.status, "pending"),
+        or(eq(articleReviews.reviewerId, reviewerId), sql`${articleReviews.reviewerId} IS NULL`)
+      ))
+      .orderBy(articleReviews.requestedAt);
+  }
+  
+  return db
+    .select()
+    .from(articleReviews)
+    .where(eq(articleReviews.status, "pending"))
+    .orderBy(articleReviews.requestedAt);
+}
+
+export async function getPendingReviewCount(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(articleReviews)
+    .where(eq(articleReviews.status, "pending"));
+  return result[0]?.count || 0;
+}
+
+export async function getUserReviewRequests(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(articleReviews)
+    .where(eq(articleReviews.requestedById, userId))
+    .orderBy(desc(articleReviews.requestedAt));
 }

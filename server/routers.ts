@@ -903,6 +903,279 @@ ${context || "Keine relevanten Inhalte gefunden."}`,
       }),
   }),
 
+  // ==================== AUDIT LOG ====================
+  auditLog: router({
+    list: adminProcedure
+      .input(
+        z.object({
+          userId: z.number().optional(),
+          action: z.string().optional(),
+          resourceType: z.string().optional(),
+          resourceId: z.number().optional(),
+          limit: z.number().optional(),
+          offset: z.number().optional(),
+        }).optional()
+      )
+      .query(async ({ input }) => {
+        return db.getAuditLog(input || {});
+      }),
+
+    count: adminProcedure
+      .input(
+        z.object({
+          userId: z.number().optional(),
+          action: z.string().optional(),
+          resourceType: z.string().optional(),
+        }).optional()
+      )
+      .query(async ({ input }) => {
+        return db.getAuditLogCount(input || {});
+      }),
+
+    getActions: adminProcedure.query(async () => {
+      return db.getDistinctAuditActions();
+    }),
+
+    getResourceTypes: adminProcedure.query(async () => {
+      return db.getDistinctAuditResourceTypes();
+    }),
+  }),
+
+  // ==================== ARTICLE REVIEWS (WORKFLOW) ====================
+  reviews: router({
+    // Get pending reviews for editors/admins
+    getPending: editorProcedure.query(async ({ ctx }) => {
+      return db.getPendingReviews(ctx.user.id);
+    }),
+
+    // Get pending review count
+    pendingCount: editorProcedure.query(async () => {
+      return db.getPendingReviewCount();
+    }),
+
+    // Get reviews for an article
+    getByArticle: protectedProcedure
+      .input(z.object({ articleId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getArticleReviewsByArticle(input.articleId);
+      }),
+
+    // Get latest review for an article
+    getLatest: protectedProcedure
+      .input(z.object({ articleId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getLatestArticleReview(input.articleId);
+      }),
+
+    // Get user's review requests
+    getUserRequests: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserReviewRequests(ctx.user.id);
+    }),
+
+    // Request review for an article
+    requestReview: protectedProcedure
+      .input(
+        z.object({
+          articleId: z.number(),
+          message: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        // Update article status to pending_review
+        await db.updateArticle(input.articleId, { status: "pending_review" });
+
+        // Create review request
+        const id = await db.createArticleReview({
+          articleId: input.articleId,
+          requestedById: ctx.user.id,
+          requestMessage: input.message,
+        });
+
+        // Log audit
+        const article = await db.getArticleById(input.articleId);
+        await db.createAuditLogEntry({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          userName: ctx.user.name,
+          action: "review_requested",
+          resourceType: "article",
+          resourceId: input.articleId,
+          resourceTitle: article?.title,
+        });
+
+        // Notify editors
+        const editors = await db.getAllUsers();
+        const editorUsers = editors.filter(u => u.role === "editor" || u.role === "admin");
+        for (const editor of editorUsers) {
+          if (editor.id !== ctx.user.id) {
+            await db.createNotification({
+              userId: editor.id,
+              type: "review_request",
+              title: "Neue Review-Anfrage",
+              message: `${ctx.user.name || "Ein Benutzer"} hat eine Review für "${article?.title}" angefragt.`,
+              resourceType: "article",
+              resourceId: input.articleId,
+            });
+          }
+        }
+
+        return { id };
+      }),
+
+    // Approve article
+    approve: editorProcedure
+      .input(
+        z.object({
+          reviewId: z.number(),
+          message: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const review = await db.getArticleReviewById(input.reviewId);
+        if (!review) {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+
+        // Update review
+        await db.updateArticleReview(input.reviewId, {
+          status: "approved",
+          reviewerId: ctx.user.id,
+          reviewMessage: input.message,
+          reviewedAt: new Date(),
+        });
+
+        // Publish article
+        await db.updateArticle(review.articleId, {
+          status: "published",
+          publishedAt: new Date(),
+        });
+
+        // Log audit
+        const article = await db.getArticleById(review.articleId);
+        await db.createAuditLogEntry({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          userName: ctx.user.name,
+          action: "review_approved",
+          resourceType: "article",
+          resourceId: review.articleId,
+          resourceTitle: article?.title,
+        });
+
+        // Notify author
+        await db.createNotification({
+          userId: review.requestedById,
+          type: "review_approved",
+          title: "Artikel genehmigt",
+          message: `Ihr Artikel "${article?.title}" wurde genehmigt und veröffentlicht.`,
+          resourceType: "article",
+          resourceId: review.articleId,
+        });
+
+        return { success: true };
+      }),
+
+    // Reject article
+    reject: editorProcedure
+      .input(
+        z.object({
+          reviewId: z.number(),
+          message: z.string().min(1, "Bitte geben Sie einen Grund an"),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const review = await db.getArticleReviewById(input.reviewId);
+        if (!review) {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+
+        // Update review
+        await db.updateArticleReview(input.reviewId, {
+          status: "rejected",
+          reviewerId: ctx.user.id,
+          reviewMessage: input.message,
+          reviewedAt: new Date(),
+        });
+
+        // Set article back to draft
+        await db.updateArticle(review.articleId, { status: "draft" });
+
+        // Log audit
+        const article = await db.getArticleById(review.articleId);
+        await db.createAuditLogEntry({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          userName: ctx.user.name,
+          action: "review_rejected",
+          resourceType: "article",
+          resourceId: review.articleId,
+          resourceTitle: article?.title,
+        });
+
+        // Notify author
+        await db.createNotification({
+          userId: review.requestedById,
+          type: "review_rejected",
+          title: "Artikel abgelehnt",
+          message: `Ihr Artikel "${article?.title}" wurde abgelehnt. Grund: ${input.message}`,
+          resourceType: "article",
+          resourceId: review.articleId,
+        });
+
+        return { success: true };
+      }),
+
+    // Request changes
+    requestChanges: editorProcedure
+      .input(
+        z.object({
+          reviewId: z.number(),
+          message: z.string().min(1, "Bitte geben Sie die gewünschten Änderungen an"),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const review = await db.getArticleReviewById(input.reviewId);
+        if (!review) {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+
+        // Update review
+        await db.updateArticleReview(input.reviewId, {
+          status: "changes_requested",
+          reviewerId: ctx.user.id,
+          reviewMessage: input.message,
+          reviewedAt: new Date(),
+        });
+
+        // Set article back to draft
+        await db.updateArticle(review.articleId, { status: "draft" });
+
+        // Log audit
+        const article = await db.getArticleById(review.articleId);
+        await db.createAuditLogEntry({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          userName: ctx.user.name,
+          action: "review_changes_requested",
+          resourceType: "article",
+          resourceId: review.articleId,
+          resourceTitle: article?.title,
+        });
+
+        // Notify author
+        await db.createNotification({
+          userId: review.requestedById,
+          type: "review_changes_requested",
+          title: "Änderungen angefordert",
+          message: `Für Ihren Artikel "${article?.title}" wurden Änderungen angefordert.`,
+          resourceType: "article",
+          resourceId: review.articleId,
+        });
+
+        return { success: true };
+      }),
+  }),
+
   // ==================== ARTICLE FEEDBACK ====================
   feedback: router({
     // Get feedback for an article

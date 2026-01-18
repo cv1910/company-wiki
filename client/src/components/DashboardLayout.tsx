@@ -36,6 +36,8 @@ import {
   Users,
   ClipboardList,
   Bell,
+  Shield,
+  CheckSquare,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -55,7 +57,9 @@ const menuItems = [
 const adminMenuItems = [
   { icon: FolderOpen, label: "Kategorien", path: "/admin/categories" },
   { icon: Users, label: "Benutzer", path: "/admin/users" },
+  { icon: CheckSquare, label: "Reviews", path: "/admin/reviews" },
   { icon: MessageSquare, label: "Feedback", path: "/admin/feedback" },
+  { icon: Shield, label: "Audit-Log", path: "/admin/audit-log" },
   { icon: Settings, label: "Einstellungen", path: "/admin/settings" },
 ];
 
