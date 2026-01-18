@@ -81,3 +81,11 @@
 ## Tests
 - [x] Backend-Tests für tRPC-Router
 - [x] Authentifizierungs-Tests
+
+## Feedback-System
+- [x] Datenbank-Tabelle für Artikel-Feedback
+- [x] Backend-API für Feedback (erstellen, lesen, aktualisieren)
+- [x] Feedback-Widget in der Artikelansicht
+- [x] Feedback-Übersicht für Editoren/Admins
+- [x] Benachrichtigungen bei neuem Feedback
+- [x] Tests für Feedback-Funktionen

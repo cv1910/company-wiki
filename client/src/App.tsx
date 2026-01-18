@@ -23,6 +23,7 @@ import Notifications from "./pages/Notifications";
 import AdminCategories from "./pages/admin/Categories";
 import AdminUsers from "./pages/admin/Users";
 import AdminSettings from "./pages/admin/Settings";
+import AdminFeedback from "./pages/admin/Feedback";
 
 function Router() {
   return (
@@ -51,6 +52,7 @@ function Router() {
         <Route path="/admin/categories" component={AdminCategories} />
         <Route path="/admin/users" component={AdminUsers} />
         <Route path="/admin/settings" component={AdminSettings} />
+        <Route path="/admin/feedback" component={AdminFeedback} />
         
         {/* Fallback */}
         <Route path="/404" component={NotFound} />

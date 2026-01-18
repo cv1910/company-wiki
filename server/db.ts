@@ -23,6 +23,8 @@ import {
   InsertActivityLogEntry,
   InsertComment,
   InsertNotification,
+  articleFeedback,
+  InsertArticleFeedback,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -566,4 +568,100 @@ export async function markAllNotificationsAsRead(userId: number) {
   const db = await getDb();
   if (!db) return;
   await db.update(notifications).set({ isRead: true }).where(eq(notifications.userId, userId));
+}
+
+// ==================== ARTICLE FEEDBACK FUNCTIONS ====================
+
+export async function createArticleFeedback(data: InsertArticleFeedback) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(articleFeedback).values(data);
+  return result[0].insertId;
+}
+
+export async function updateArticleFeedback(id: number, data: Partial<InsertArticleFeedback>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(articleFeedback).set(data).where(eq(articleFeedback.id, id));
+}
+
+export async function deleteArticleFeedback(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(articleFeedback).where(eq(articleFeedback.id, id));
+}
+
+export async function getArticleFeedbackById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(articleFeedback).where(eq(articleFeedback.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getArticleFeedback(articleId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(articleFeedback)
+    .where(eq(articleFeedback.articleId, articleId))
+    .orderBy(desc(articleFeedback.createdAt));
+}
+
+export async function getUserFeedbackForArticle(articleId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db
+    .select()
+    .from(articleFeedback)
+    .where(and(eq(articleFeedback.articleId, articleId), eq(articleFeedback.userId, userId)))
+    .limit(1);
+  return result[0];
+}
+
+export async function getAllFeedback(status?: "pending" | "reviewed" | "resolved" | "dismissed", limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  if (status) {
+    return db
+      .select()
+      .from(articleFeedback)
+      .where(eq(articleFeedback.status, status))
+      .orderBy(desc(articleFeedback.createdAt))
+      .limit(limit);
+  }
+  return db.select().from(articleFeedback).orderBy(desc(articleFeedback.createdAt)).limit(limit);
+}
+
+export async function getFeedbackStats(articleId: number) {
+  const db = await getDb();
+  if (!db) return { helpful: 0, notHelpful: 0, needsImprovement: 0, total: 0 };
+  
+  const result = await db
+    .select({
+      rating: articleFeedback.rating,
+      count: sql<number>`COUNT(*)`
+    })
+    .from(articleFeedback)
+    .where(eq(articleFeedback.articleId, articleId))
+    .groupBy(articleFeedback.rating);
+  
+  const stats = { helpful: 0, notHelpful: 0, needsImprovement: 0, total: 0 };
+  result.forEach(r => {
+    if (r.rating === "helpful") stats.helpful = r.count;
+    else if (r.rating === "not_helpful") stats.notHelpful = r.count;
+    else if (r.rating === "needs_improvement") stats.needsImprovement = r.count;
+    stats.total += r.count;
+  });
+  return stats;
+}
+
+export async function getPendingFeedbackCount(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(articleFeedback)
+    .where(eq(articleFeedback.status, "pending"));
+  return result[0]?.count || 0;
 }

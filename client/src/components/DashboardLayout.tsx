@@ -29,6 +29,7 @@ import {
   Home,
   LogOut,
   MessageCircle,
+  MessageSquare,
   PanelLeft,
   Search,
   Settings,
@@ -54,6 +55,7 @@ const menuItems = [
 const adminMenuItems = [
   { icon: FolderOpen, label: "Kategorien", path: "/admin/categories" },
   { icon: Users, label: "Benutzer", path: "/admin/users" },
+  { icon: MessageSquare, label: "Feedback", path: "/admin/feedback" },
   { icon: Settings, label: "Einstellungen", path: "/admin/settings" },
 ];
 

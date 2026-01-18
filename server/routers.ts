@@ -768,6 +768,146 @@ ${context || "Keine relevanten Inhalte gefunden."}`,
       return db.getRecentActivity(10);
     }),
   }),
+
+  // ==================== ARTICLE FEEDBACK ====================
+  feedback: router({
+    // Get feedback for an article
+    getByArticle: protectedProcedure
+      .input(z.object({ articleId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getArticleFeedback(input.articleId);
+      }),
+
+    // Get user's feedback for an article
+    getUserFeedback: protectedProcedure
+      .input(z.object({ articleId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        return db.getUserFeedbackForArticle(input.articleId, ctx.user.id);
+      }),
+
+    // Get feedback stats for an article
+    getStats: protectedProcedure
+      .input(z.object({ articleId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getFeedbackStats(input.articleId);
+      }),
+
+    // Get all feedback (for admins/editors)
+    list: editorProcedure
+      .input(
+        z.object({
+          status: z.enum(["pending", "reviewed", "resolved", "dismissed"]).optional(),
+          limit: z.number().optional(),
+        }).optional()
+      )
+      .query(async ({ input }) => {
+        return db.getAllFeedback(input?.status, input?.limit);
+      }),
+
+    // Get pending feedback count
+    pendingCount: editorProcedure.query(async () => {
+      return db.getPendingFeedbackCount();
+    }),
+
+    // Submit feedback
+    submit: protectedProcedure
+      .input(
+        z.object({
+          articleId: z.number(),
+          rating: z.enum(["helpful", "not_helpful", "needs_improvement"]),
+          feedbackType: z.enum(["content", "accuracy", "clarity", "completeness", "other"]),
+          comment: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        // Check if user already submitted feedback for this article
+        const existing = await db.getUserFeedbackForArticle(input.articleId, ctx.user.id);
+        if (existing) {
+          // Update existing feedback
+          await db.updateArticleFeedback(existing.id, {
+            rating: input.rating,
+            feedbackType: input.feedbackType,
+            comment: input.comment,
+            status: "pending",
+          });
+          return { id: existing.id, updated: true };
+        }
+
+        // Create new feedback
+        const id = await db.createArticleFeedback({
+          articleId: input.articleId,
+          userId: ctx.user.id,
+          rating: input.rating,
+          feedbackType: input.feedbackType,
+          comment: input.comment,
+        });
+
+        // Notify article author
+        const article = await db.getArticleById(input.articleId);
+        if (article && article.createdById !== ctx.user.id) {
+          await db.createNotification({
+            userId: article.createdById,
+            type: "feedback",
+            title: "Neues Feedback",
+            message: `${ctx.user.name || "Ein Benutzer"} hat Feedback zu "${article.title}" gegeben.`,
+            resourceType: "article",
+            resourceId: input.articleId,
+          });
+        }
+
+        await db.logActivity({
+          userId: ctx.user.id,
+          action: "feedback",
+          resourceType: "article",
+          resourceId: input.articleId,
+          resourceTitle: article?.title,
+        });
+
+        return { id, updated: false };
+      }),
+
+    // Update feedback status (for editors/admins)
+    updateStatus: editorProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          status: z.enum(["pending", "reviewed", "resolved", "dismissed"]),
+          adminResponse: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        await db.updateArticleFeedback(input.id, {
+          status: input.status,
+          adminResponse: input.adminResponse,
+          respondedById: ctx.user.id,
+          respondedAt: new Date(),
+        });
+
+        // Notify the feedback author
+        const feedback = await db.getArticleFeedbackById(input.id);
+        if (feedback && feedback.userId !== ctx.user.id) {
+          const article = await db.getArticleById(feedback.articleId);
+          await db.createNotification({
+            userId: feedback.userId,
+            type: "feedback_response",
+            title: "Feedback beantwortet",
+            message: `Ihr Feedback zu "${article?.title || "einem Artikel"}" wurde bearbeitet.`,
+            resourceType: "article",
+            resourceId: feedback.articleId,
+          });
+        }
+
+        return { success: true };
+      }),
+
+    // Delete feedback
+    delete: editorProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteArticleFeedback(input.id);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

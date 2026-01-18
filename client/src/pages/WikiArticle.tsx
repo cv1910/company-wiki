@@ -29,6 +29,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import ArticleFeedback from "@/components/ArticleFeedback";
 
 export default function WikiArticle() {
   const { slug } = useParams<{ slug: string }>();
@@ -209,6 +210,9 @@ export default function WikiArticle() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Feedback Widget */}
+      <ArticleFeedback articleId={article.id} articleTitle={article.title} />
 
       {/* Comments */}
       <Card className="card-shadow">

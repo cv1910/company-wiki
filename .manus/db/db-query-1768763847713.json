@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `articleFeedback` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`articleId` int NOT NULL,\n\t`userId` int NOT NULL,\n\t`rating` enum('helpful','not_helpful','needs_improvement') NOT NULL,\n\t`feedbackType` enum('content','accuracy','clarity','completeness','other') NOT NULL,\n\t`comment` text,\n\t`status` enum('pending','reviewed','resolved','dismissed') NOT NULL DEFAULT 'pending',\n\t`adminResponse` text,\n\t`respondedById` int,\n\t`respondedAt` timestamp,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `articleFeedback_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute CREATE TABLE `articleFeedback` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`articleId` int NOT NULL,\n\t`userId` int NOT NULL,\n\t`rating` enum('helpful','not_helpful','needs_improvement') NOT NULL,\n\t`feedbackType` enum('content','accuracy','clarity','completeness','other') NOT NULL,\n\t`comment` text,\n\t`status` enum('pending','reviewed','resolved','dismissed') NOT NULL DEFAULT 'pending',\n\t`adminResponse` text,\n\t`respondedById` int,\n\t`respondedAt` timestamp,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `articleFeedback_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 279
+}

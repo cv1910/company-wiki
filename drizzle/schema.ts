@@ -203,3 +203,26 @@ export const notifications = mysqlTable("notifications", {
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
+
+
+/**
+ * Article feedback for improving content quality.
+ * Users can rate articles and provide suggestions.
+ */
+export const articleFeedback = mysqlTable("articleFeedback", {
+  id: int("id").autoincrement().primaryKey(),
+  articleId: int("articleId").notNull(),
+  userId: int("userId").notNull(),
+  rating: mysqlEnum("rating", ["helpful", "not_helpful", "needs_improvement"]).notNull(),
+  feedbackType: mysqlEnum("feedbackType", ["content", "accuracy", "clarity", "completeness", "other"]).notNull(),
+  comment: text("comment"),
+  status: mysqlEnum("status", ["pending", "reviewed", "resolved", "dismissed"]).default("pending").notNull(),
+  adminResponse: text("adminResponse"),
+  respondedById: int("respondedById"),
+  respondedAt: timestamp("respondedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ArticleFeedback = typeof articleFeedback.$inferSelect;
+export type InsertArticleFeedback = typeof articleFeedback.$inferInsert;
