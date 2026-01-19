@@ -41,6 +41,8 @@ import {
   Calendar,
   Star,
   Keyboard,
+  AtSign,
+  Mail,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -60,6 +62,7 @@ const menuItems = [
   { icon: Search, label: "Suche", path: "/search" },
   { icon: MessageCircle, label: "AI-Assistent", path: "/chat" },
   { icon: Calendar, label: "Urlaub", path: "/leave" },
+  { icon: AtSign, label: "Erwähnungen", path: "/mentions" },
 ];
 
 const adminMenuItems = [

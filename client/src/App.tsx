@@ -31,6 +31,10 @@ import AdminAuditLog from "./pages/admin/AuditLog";
 import Leave from "./pages/Leave";
 import AdminLeave from "./pages/admin/Leave";
 
+// Settings & Mentions
+import EmailSettings from "./pages/EmailSettings";
+import Mentions from "./pages/Mentions";
+
 function Router() {
   return (
     <DashboardLayout>
@@ -56,6 +60,10 @@ function Router() {
         
         {/* Leave/Vacation Routes */}
         <Route path="/leave" component={Leave} />
+        
+        {/* Settings & Mentions */}
+        <Route path="/settings/email" component={EmailSettings} />
+        <Route path="/mentions" component={Mentions} />
         
         {/* Admin Routes */}
         <Route path="/admin/categories" component={AdminCategories} />

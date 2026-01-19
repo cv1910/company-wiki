@@ -1690,7 +1690,7 @@ ${context || "Keine relevanten Inhalte gefunden."}`,
           reason: input.reason,
         });
 
-        // Notify admins
+        // Notify admins (in-app)
         const admins = await db.getAllUsers();
         for (const admin of admins.filter(u => u.role === "admin")) {
           await db.createNotification({
@@ -1702,6 +1702,17 @@ ${context || "Keine relevanten Inhalte gefunden."}`,
             resourceId: request?.id,
           });
         }
+
+        // Send email notifications to admins (async)
+        const { notifyAdminsOfLeaveRequest } = await import("./email");
+        notifyAdminsOfLeaveRequest(
+          ctx.user.name || "Ein Mitarbeiter",
+          input.leaveType,
+          startDate,
+          endDate,
+          totalDays,
+          input.reason
+        ).catch(console.error);
 
         return request;
       }),
@@ -1750,6 +1761,20 @@ ${context || "Keine relevanten Inhalte gefunden."}`,
             resourceType: "leave",
             resourceId: request.id,
           });
+
+          // Send email notification (async)
+          const { notifyLeaveRequestDecision } = await import("./email");
+          const user = await db.getUserById(request.userId);
+          if (user?.email) {
+            notifyLeaveRequestDecision(
+              user.email,
+              user.name || "Mitarbeiter",
+              "approved",
+              new Date(request.startDate),
+              new Date(request.endDate),
+              input.comment
+            ).catch(console.error);
+          }
         }
 
         return request;
@@ -1775,6 +1800,20 @@ ${context || "Keine relevanten Inhalte gefunden."}`,
             resourceType: "leave",
             resourceId: request.id,
           });
+
+          // Send email notification (async)
+          const { notifyLeaveRequestDecision } = await import("./email");
+          const user = await db.getUserById(request.userId);
+          if (user?.email) {
+            notifyLeaveRequestDecision(
+              user.email,
+              user.name || "Mitarbeiter",
+              "rejected",
+              new Date(request.startDate),
+              new Date(request.endDate),
+              input.comment
+            ).catch(console.error);
+          }
         }
 
         return request;
@@ -1800,6 +1839,139 @@ ${context || "Keine relevanten Inhalte gefunden."}`,
       const pending = await db.getPendingLeaveRequests();
       return pending.length;
     }),
+  }),
+
+  // ==================== EMAIL SETTINGS ====================
+  emailSettings: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      const settings = await db.getEmailSettings(ctx.user.id);
+      // Return defaults if no settings exist
+      return settings || {
+        leaveRequestSubmitted: true,
+        leaveRequestApproved: true,
+        leaveRequestRejected: true,
+        articleReviewRequested: true,
+        articleApproved: true,
+        articleRejected: true,
+        articleFeedback: true,
+        mentioned: true,
+        dailyDigest: false,
+        weeklyDigest: true,
+      };
+    }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          leaveRequestSubmitted: z.boolean().optional(),
+          leaveRequestApproved: z.boolean().optional(),
+          leaveRequestRejected: z.boolean().optional(),
+          articleReviewRequested: z.boolean().optional(),
+          articleApproved: z.boolean().optional(),
+          articleRejected: z.boolean().optional(),
+          articleFeedback: z.boolean().optional(),
+          mentioned: z.boolean().optional(),
+          dailyDigest: z.boolean().optional(),
+          weeklyDigest: z.boolean().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        await db.upsertEmailSettings(ctx.user.id, input);
+        return { success: true };
+      }),
+  }),
+
+  // ==================== MENTIONS ====================
+  mentions: router({
+    // Get user mentions
+    list: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        return db.getUserMentions(ctx.user.id, input?.limit || 50);
+      }),
+
+    // Get unread mentions
+    unread: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUnreadMentions(ctx.user.id);
+    }),
+
+    // Get unread count
+    unreadCount: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUnreadMentionCount(ctx.user.id);
+    }),
+
+    // Mark mention as read
+    markRead: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.markMentionAsRead(input.id);
+        return { success: true };
+      }),
+
+    // Mark all as read
+    markAllRead: protectedProcedure.mutation(async ({ ctx }) => {
+      await db.markAllMentionsAsRead(ctx.user.id);
+      return { success: true };
+    }),
+
+    // Search users for @mention autocomplete
+    searchUsers: protectedProcedure
+      .input(z.object({ query: z.string().min(1), limit: z.number().optional() }))
+      .query(async ({ input }) => {
+        return db.searchUsers(input.query, input.limit || 10);
+      }),
+
+    // Create mention (called when saving content with @mentions)
+    create: protectedProcedure
+      .input(
+        z.object({
+          mentionedUserId: z.number(),
+          contextType: z.enum(["article", "comment", "sop"]),
+          contextId: z.number(),
+          contextTitle: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        // Don't create mention for self
+        if (input.mentionedUserId === ctx.user.id) {
+          return { success: true, id: null };
+        }
+
+        const id = await db.createMention({
+          mentionedUserId: input.mentionedUserId,
+          mentionedByUserId: ctx.user.id,
+          contextType: input.contextType,
+          contextId: input.contextId,
+          contextTitle: input.contextTitle,
+        });
+
+        // Create in-app notification
+        await db.createNotification({
+          userId: input.mentionedUserId,
+          type: "mention",
+          title: `${ctx.user.name || "Jemand"} hat Sie erwähnt`,
+          message: input.contextTitle ? `In: ${input.contextTitle}` : "In einem Inhalt",
+          resourceType: input.contextType,
+          resourceId: input.contextId,
+        });
+
+        // Send email notification (async, don't wait)
+        const mentionedUser = await db.getUserById(input.mentionedUserId);
+        if (mentionedUser?.email) {
+          const { notifyMention } = await import("./email");
+          notifyMention(
+            input.mentionedUserId,
+            mentionedUser.email,
+            ctx.user.name || "Jemand",
+            input.contextType,
+            input.contextTitle || "Unbenannt",
+            input.contextType === "article" ? `/wiki/article/${input.contextId}` :
+            input.contextType === "sop" ? `/sops/${input.contextId}` : "/"
+          ).catch(console.error);
+        }
+
+        return { success: true, id };
+      }),
   }),
 });
 

@@ -28,6 +28,10 @@ import {
   articleTemplates,
   InsertArticleTemplate,
   media,
+  emailSettings,
+  InsertEmailSetting,
+  mentions,
+  InsertMention,
   InsertMedia,
   auditLog,
   InsertAuditLogEntry,
@@ -1352,4 +1356,93 @@ export async function getTeamLeaveCalendar(startDate: Date, endDate: Date) {
       )
     )
     .orderBy(leaveRequests.startDate);
+}
+
+
+// ==================== EMAIL SETTINGS FUNCTIONS ====================
+
+export async function getEmailSettings(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(emailSettings).where(eq(emailSettings.userId, userId)).limit(1);
+  return result[0];
+}
+
+export async function upsertEmailSettings(userId: number, settings: Partial<InsertEmailSetting>) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const existing = await getEmailSettings(userId);
+  if (existing) {
+    await db.update(emailSettings).set(settings).where(eq(emailSettings.userId, userId));
+  } else {
+    await db.insert(emailSettings).values({ userId, ...settings });
+  }
+}
+
+// ==================== MENTIONS FUNCTIONS ====================
+
+export async function createMention(data: InsertMention) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(mentions).values(data);
+  return result[0].insertId;
+}
+
+export async function getUserMentions(userId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(mentions)
+    .where(eq(mentions.mentionedUserId, userId))
+    .orderBy(desc(mentions.createdAt))
+    .limit(limit);
+}
+
+export async function getUnreadMentions(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(mentions)
+    .where(and(eq(mentions.mentionedUserId, userId), eq(mentions.isRead, false)))
+    .orderBy(desc(mentions.createdAt));
+}
+
+export async function markMentionAsRead(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(mentions).set({ isRead: true }).where(eq(mentions.id, id));
+}
+
+export async function markAllMentionsAsRead(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(mentions).set({ isRead: true }).where(eq(mentions.mentionedUserId, userId));
+}
+
+export async function getUnreadMentionCount(userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(mentions)
+    .where(and(eq(mentions.mentionedUserId, userId), eq(mentions.isRead, false)));
+  return result[0]?.count || 0;
+}
+
+// ==================== USER SEARCH FOR MENTIONS ====================
+
+export async function searchUsers(query: string, limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({ id: users.id, name: users.name, email: users.email, avatarUrl: users.avatarUrl })
+    .from(users)
+    .where(or(
+      like(users.name, `%${query}%`),
+      like(users.email, `%${query}%`)
+    ))
+    .limit(limit);
 }

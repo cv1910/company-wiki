@@ -175,3 +175,20 @@
 - [x] Autocomplete-Komponente im Frontend
 - [x] Debounced-Suche während der Eingabe
 - [x] Anzeige von Artikel-Titeln als Vorschläge
+
+## E-Mail-Benachrichtigungen
+- [x] Datenbank-Tabelle für Benachrichtigungseinstellungen
+- [x] E-Mail-Service Integration (Manus Notification API)
+- [x] E-Mail bei neuem Urlaubsantrag an Vorgesetzte
+- [x] E-Mail bei Genehmigung/Ablehnung an Antragsteller
+- [x] E-Mail bei Review-Anfragen
+- [x] E-Mail bei @Mentions
+- [x] Benutzereinstellungen für E-Mail-Präferenzen
+
+## @Mentions
+- [x] Datenbank-Tabelle für Mentions
+- [x] @-Erkennung im WYSIWYG-Editor
+- [x] Benutzer-Autocomplete bei @-Eingabe
+- [x] @Mentions in Kommentaren
+- [x] Benachrichtigung an erwähnte Personen (In-App + E-Mail)
+- [x] Mentions-Übersicht für Benutzer

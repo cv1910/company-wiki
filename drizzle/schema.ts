@@ -429,3 +429,70 @@ export const sopEmbeddings = mysqlTable("sopEmbeddings", {
 
 export type SOPEmbedding = typeof sopEmbeddings.$inferSelect;
 export type InsertSOPEmbedding = typeof sopEmbeddings.$inferInsert;
+
+
+/**
+ * Email notification settings per user.
+ * Controls which events trigger email notifications.
+ */
+export const emailSettings = mysqlTable("emailSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  // Leave request notifications
+  leaveRequestSubmitted: boolean("leaveRequestSubmitted").default(true).notNull(),
+  leaveRequestApproved: boolean("leaveRequestApproved").default(true).notNull(),
+  leaveRequestRejected: boolean("leaveRequestRejected").default(true).notNull(),
+  // Article notifications
+  articleReviewRequested: boolean("articleReviewRequested").default(true).notNull(),
+  articleApproved: boolean("articleApproved").default(true).notNull(),
+  articleRejected: boolean("articleRejected").default(true).notNull(),
+  articleFeedback: boolean("articleFeedback").default(true).notNull(),
+  // Mention notifications
+  mentioned: boolean("mentioned").default(true).notNull(),
+  // Digest settings
+  dailyDigest: boolean("dailyDigest").default(false).notNull(),
+  weeklyDigest: boolean("weeklyDigest").default(true).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EmailSetting = typeof emailSettings.$inferSelect;
+export type InsertEmailSetting = typeof emailSettings.$inferInsert;
+
+/**
+ * Mentions tracking for @user references in articles and comments.
+ */
+export const mentions = mysqlTable("mentions", {
+  id: int("id").autoincrement().primaryKey(),
+  mentionedUserId: int("mentionedUserId").notNull(),
+  mentionedByUserId: int("mentionedByUserId").notNull(),
+  contextType: mysqlEnum("contextType", ["article", "comment", "sop"]).notNull(),
+  contextId: int("contextId").notNull(),
+  contextTitle: varchar("contextTitle", { length: 500 }),
+  isRead: boolean("isRead").default(false).notNull(),
+  emailSent: boolean("emailSent").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Mention = typeof mentions.$inferSelect;
+export type InsertMention = typeof mentions.$inferInsert;
+
+/**
+ * Email queue for tracking sent emails and preventing duplicates.
+ */
+export const emailQueue = mysqlTable("emailQueue", {
+  id: int("id").autoincrement().primaryKey(),
+  recipientId: int("recipientId").notNull(),
+  recipientEmail: varchar("recipientEmail", { length: 320 }).notNull(),
+  emailType: varchar("emailType", { length: 64 }).notNull(),
+  subject: varchar("subject", { length: 500 }).notNull(),
+  content: text("content").notNull(),
+  relatedType: varchar("relatedType", { length: 64 }),
+  relatedId: int("relatedId"),
+  status: mysqlEnum("status", ["pending", "sent", "failed"]).default("pending").notNull(),
+  sentAt: timestamp("sentAt"),
+  errorMessage: text("errorMessage"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type EmailQueueEntry = typeof emailQueue.$inferSelect;
+export type InsertEmailQueueEntry = typeof emailQueue.$inferInsert;
