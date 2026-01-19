@@ -195,3 +195,11 @@
 
 ## Bugfixes
 - [x] HTML-Nesting-Fehler: p-Tag enthält div auf Dashboard-Seite
+
+## Dashboard-Verbesserungen
+- [x] Dashboard visuell attraktiver gestalten (Hero-Bereich, Navigation-Grid, Stats-Karten)
+- [x] Company-wide Announcements Bereich hinzufügen (Datenbank-Tabelle + API + UI)
+- [x] Schnellzugriff umbenennen zu "Navigation" und besser darstellen
+- [x] Alle Elemente klickbar machen (Stats-Karten, Artikel, Aktivitäten)
+- [x] Test-Templates aus der Datenbank entfernen (keine Test-Daten vorhanden)
+- [x] Benutzer-Statistik zur Dashboard-Übersicht hinzugefügt

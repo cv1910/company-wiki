@@ -996,11 +996,12 @@ ${context || "Keine relevanten Inhalte gefunden."}`,
   // ==================== DASHBOARD STATS ====================
   dashboard: router({
     stats: protectedProcedure.query(async () => {
-      const [articles, sops, categories, sopCats] = await Promise.all([
+      const [articles, sops, categories, sopCats, users] = await Promise.all([
         db.getAllArticles("published"),
         db.getAllSOPs("published"),
         db.getAllCategories(),
         db.getAllSOPCategories(),
+        db.getAllUsers(),
       ]);
 
       return {
@@ -1008,6 +1009,7 @@ ${context || "Keine relevanten Inhalte gefunden."}`,
         sopCount: sops.length,
         categoryCount: categories.length,
         sopCategoryCount: sopCats.length,
+        userCount: users.length,
       };
     }),
 
@@ -1971,6 +1973,62 @@ ${context || "Keine relevanten Inhalte gefunden."}`,
         }
 
         return { success: true, id };
+      }),
+  }),
+
+  // ==================== ANNOUNCEMENTS ====================
+  announcements: router({
+    getActive: publicProcedure.query(async () => {
+      return db.getActiveAnnouncements();
+    }),
+
+    getAll: adminProcedure.query(async () => {
+      return db.getAllAnnouncements();
+    }),
+
+    create: adminProcedure
+      .input(
+        z.object({
+          title: z.string().min(1).max(255),
+          content: z.string().min(1),
+          type: z.enum(["info", "warning", "success", "urgent"]).default("info"),
+          isPinned: z.boolean().default(false),
+          startsAt: z.date().optional(),
+          expiresAt: z.date().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createAnnouncement({
+          ...input,
+          createdById: ctx.user.id,
+        });
+        return { success: true, id };
+      }),
+
+    update: adminProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          title: z.string().min(1).max(255).optional(),
+          content: z.string().min(1).optional(),
+          type: z.enum(["info", "warning", "success", "urgent"]).optional(),
+          isPinned: z.boolean().optional(),
+          isActive: z.boolean().optional(),
+          startsAt: z.date().optional().nullable(),
+          expiresAt: z.date().optional().nullable(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateAnnouncement(id, data);
+        return { success: true };
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteAnnouncement(input.id);
+        return { success: true };
       }),
   }),
 });

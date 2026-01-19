@@ -496,3 +496,23 @@ export const emailQueue = mysqlTable("emailQueue", {
 
 export type EmailQueueEntry = typeof emailQueue.$inferSelect;
 export type InsertEmailQueueEntry = typeof emailQueue.$inferInsert;
+
+/**
+ * Company-wide announcements for the dashboard.
+ */
+export const announcements = mysqlTable("announcements", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  type: mysqlEnum("type", ["info", "warning", "success", "urgent"]).default("info").notNull(),
+  isPinned: boolean("isPinned").default(false).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  startsAt: timestamp("startsAt"),
+  expiresAt: timestamp("expiresAt"),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Announcement = typeof announcements.$inferSelect;
+export type InsertAnnouncement = typeof announcements.$inferInsert;

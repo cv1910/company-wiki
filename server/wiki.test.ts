@@ -401,6 +401,7 @@ describe("dashboard router", () => {
     vi.mocked(db.getAllSOPs).mockResolvedValue([{ id: 1 }] as any);
     vi.mocked(db.getAllCategories).mockResolvedValue([{ id: 1 }, { id: 2 }, { id: 3 }] as any);
     vi.mocked(db.getAllSOPCategories).mockResolvedValue([{ id: 1 }] as any);
+    vi.mocked(db.getAllUsers).mockResolvedValue([{ id: 1 }, { id: 2 }] as any);
 
     const ctx = createUserContext();
     const caller = appRouter.createCaller(ctx);
@@ -411,6 +412,7 @@ describe("dashboard router", () => {
       sopCount: 1,
       categoryCount: 3,
       sopCategoryCount: 1,
+      userCount: 2,
     });
   });
 });

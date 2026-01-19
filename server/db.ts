@@ -28,6 +28,8 @@ import {
   articleTemplates,
   InsertArticleTemplate,
   media,
+  announcements,
+  InsertAnnouncement,
   emailSettings,
   InsertEmailSetting,
   mentions,
@@ -1445,4 +1447,58 @@ export async function searchUsers(query: string, limit: number = 10) {
       like(users.email, `%${query}%`)
     ))
     .limit(limit);
+}
+
+// ==================== ANNOUNCEMENTS ====================
+
+export async function createAnnouncement(data: InsertAnnouncement) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(announcements).values(data);
+  return result[0]?.insertId;
+}
+
+export async function getActiveAnnouncements() {
+  const db = await getDb();
+  if (!db) return [];
+  const now = new Date();
+  return db
+    .select()
+    .from(announcements)
+    .where(
+      and(
+        eq(announcements.isActive, true),
+        or(
+          sql`${announcements.startsAt} IS NULL`,
+          sql`${announcements.startsAt} <= ${now}`
+        ),
+        or(
+          sql`${announcements.expiresAt} IS NULL`,
+          sql`${announcements.expiresAt} > ${now}`
+        )
+      )
+    )
+    .orderBy(desc(announcements.isPinned), desc(announcements.createdAt))
+    .limit(5);
+}
+
+export async function getAllAnnouncements() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(announcements)
+    .orderBy(desc(announcements.createdAt));
+}
+
+export async function updateAnnouncement(id: number, data: Partial<InsertAnnouncement>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(announcements).set(data).where(eq(announcements.id, id));
+}
+
+export async function deleteAnnouncement(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(announcements).where(eq(announcements.id, id));
 }
