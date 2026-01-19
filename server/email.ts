@@ -366,3 +366,36 @@ Sehen Sie sich das Feedback im Company Wiki an.
     relatedType: "article",
   });
 }
+
+/**
+ * Send new comment notification to article author
+ */
+export async function notifyNewComment(
+  authorId: number,
+  authorEmail: string,
+  commenterName: string,
+  articleTitle: string,
+  commentPreview: string,
+  articleUrl: string
+): Promise<void> {
+  const subject = `Neuer Kommentar zu "${articleTitle}"`;
+  const content = `
+${commenterName} hat einen Kommentar zu Ihrem Artikel hinzugefügt:
+
+Artikel: "${articleTitle}"
+
+Kommentar-Vorschau:
+"${commentPreview}${commentPreview.length >= 200 ? "..." : ""}"
+
+Klicken Sie hier, um den Artikel anzusehen: ${articleUrl}
+  `.trim();
+
+  await sendEmailNotification({
+    recipientId: authorId,
+    recipientEmail: authorEmail,
+    emailType: "article_feedback",
+    subject,
+    content,
+    relatedType: "article",
+  });
+}

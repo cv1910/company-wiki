@@ -231,3 +231,13 @@
 - [x] Antworten auf Kommentare ermöglichen (Thread-Ansicht)
 - [x] Kommentare bearbeiten und löschen ermöglichen
 - [x] Kommentare als gelöst markieren (für Editoren)
+
+## E-Mail-Benachrichtigungen
+- [x] E-Mail-Benachrichtigungen für neue Kommentare aktivieren
+- [x] E-Mail-Einstellungen in Benutzereinstellungen konfigurierbar machen (bereits vorhanden)
+
+## @Erwähnungen in Kommentaren
+- [x] Prüfen ob @Erwähnungen in Kommentaren funktionieren (Backend bereits implementiert)
+- [x] Autocomplete für @Erwähnungen in Kommentar-Textarea hinzufügen
+- [x] Erwähnungen visuell hervorheben (in MentionTextarea)
+- [x] @Erwähnungen werden automatisch verarbeitet und Benachrichtigungen gesendet

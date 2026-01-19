@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import { MentionTextarea } from "@/components/MentionTextarea";
 import { toast } from "sonner";
 import ArticleFeedback from "@/components/ArticleFeedback";
 import { SimilarArticles } from "@/components/SimilarArticles";
@@ -303,10 +304,10 @@ export default function WikiArticle() {
         <CardContent className="space-y-4">
           {/* Add Comment */}
           <div className="space-y-2">
-            <Textarea
-              placeholder="Kommentar hinzufügen..."
+            <MentionTextarea
+              placeholder="Kommentar hinzufügen... (@ für Erwähnungen)"
               value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
+              onChange={setNewComment}
               rows={3}
             />
             <Button
@@ -421,10 +422,10 @@ export default function WikiArticle() {
                   {/* Reply Form */}
                   {replyToId === comment.id && (
                     <div className="ml-12 space-y-2">
-                      <Textarea
-                        placeholder="Antwort schreiben..."
+                      <MentionTextarea
+                        placeholder="Antwort schreiben... (@ für Erwähnungen)"
                         value={replyContent}
-                        onChange={(e) => setReplyContent(e.target.value)}
+                        onChange={setReplyContent}
                         rows={2}
                       />
                       <div className="flex gap-2">

@@ -781,6 +781,66 @@ ${context || "Keine relevanten Inhalte gefunden."}`,
             resourceType: "article",
             resourceId: input.articleId,
           });
+
+          // Send email notification to article author
+          const author = await db.getUserById(article.createdById);
+          if (author?.email) {
+            const { notifyNewComment } = await import("./email");
+            notifyNewComment(
+              article.createdById,
+              author.email,
+              ctx.user.name || "Ein Benutzer",
+              article.title,
+              input.content.substring(0, 200),
+              `/wiki/article/${article.slug}`
+            ).catch(console.error);
+          }
+        }
+
+        // Process @mentions in comment content
+        const mentionRegex = /@(\w+(?:\s+\w+)?)/g;
+        const mentionMatches = input.content.match(mentionRegex);
+        if (mentionMatches && article) {
+          const allUsers = await db.getAllUsers();
+          for (const match of mentionMatches) {
+            const mentionName = match.substring(1).toLowerCase(); // Remove @ and lowercase
+            const mentionedUser = allUsers.find(
+              (u) => u.name?.toLowerCase().includes(mentionName) || u.email?.toLowerCase().startsWith(mentionName)
+            );
+            if (mentionedUser && mentionedUser.id !== ctx.user.id) {
+              // Create mention record
+              await db.createMention({
+                mentionedUserId: mentionedUser.id,
+                mentionedByUserId: ctx.user.id,
+                contextType: "comment",
+                contextId: id,
+                contextTitle: article.title,
+              });
+
+              // Create in-app notification
+              await db.createNotification({
+                userId: mentionedUser.id,
+                type: "mention",
+                title: `${ctx.user.name || "Jemand"} hat Sie erwähnt`,
+                message: `In einem Kommentar zu: ${article.title}`,
+                resourceType: "article",
+                resourceId: input.articleId,
+              });
+
+              // Send email notification
+              if (mentionedUser.email) {
+                const { notifyMention } = await import("./email");
+                notifyMention(
+                  mentionedUser.id,
+                  mentionedUser.email,
+                  ctx.user.name || "Jemand",
+                  "comment",
+                  article.title,
+                  `/wiki/article/${article.slug}`
+                ).catch(console.error);
+              }
+            }
+          }
         }
 
         return { id };
