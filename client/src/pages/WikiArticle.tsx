@@ -31,12 +31,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import ArticleFeedback from "@/components/ArticleFeedback";
 import { SimilarArticles } from "@/components/SimilarArticles";
+import { DiffViewer } from "@/components/DiffViewer";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function WikiArticle() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [showHistory, setShowHistory] = useState(false);
+  const [historyTab, setHistoryTab] = useState<"list" | "diff">("list");
   const [newComment, setNewComment] = useState("");
   const isEditor = user?.role === "editor" || user?.role === "admin";
 
@@ -47,7 +50,7 @@ export default function WikiArticle() {
 
   const { data: versions } = trpc.versions.list.useQuery(
     { articleId: article?.id || 0 },
-    { enabled: !!article?.id && showHistory }
+    { enabled: !!article?.id }
   );
 
   const { data: comments, refetch: refetchComments } = trpc.comments.getByArticle.useQuery(
@@ -277,58 +280,79 @@ export default function WikiArticle() {
 
       {/* Version History Dialog */}
       <Dialog open={showHistory} onOpenChange={setShowHistory}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Versionsverlauf</DialogTitle>
             <DialogDescription>
               Alle Versionen dieses Artikels
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
-            {versions && versions.length > 0 ? (
-              <div className="space-y-3">
-                {versions.map((version) => (
-                  <div
-                    key={version.id}
-                    className="p-4 rounded-lg border hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Version {version.versionNumber}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(version.createdAt), "dd.MM.yyyy HH:mm", {
-                            locale: de,
-                          })}
-                        </p>
-                        {version.changeDescription && (
-                          <p className="text-sm mt-1">{version.changeDescription}</p>
-                        )}
+          <Tabs value={historyTab} onValueChange={(v) => setHistoryTab(v as "list" | "diff")}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="list">Versionen</TabsTrigger>
+              <TabsTrigger value="diff">Vergleichen</TabsTrigger>
+            </TabsList>
+            <TabsContent value="list">
+              <ScrollArea className="max-h-[60vh]">
+                {versions && versions.length > 0 ? (
+                  <div className="space-y-3">
+                    {versions.map((version) => (
+                      <div
+                        key={version.id}
+                        className="p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">Version {version.versionNumber}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {format(new Date(version.createdAt), "dd.MM.yyyy HH:mm", {
+                                locale: de,
+                              })}
+                            </p>
+                            {version.changeDescription && (
+                              <p className="text-sm mt-1">{version.changeDescription}</p>
+                            )}
+                          </div>
+                          {isEditor && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                restoreVersion.mutate({
+                                  articleId: article.id,
+                                  versionNumber: version.versionNumber,
+                                })
+                              }
+                              disabled={restoreVersion.isPending}
+                            >
+                              Wiederherstellen
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                      {isEditor && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            restoreVersion.mutate({
-                              articleId: article.id,
-                              versionNumber: version.versionNumber,
-                            })
-                          }
-                          disabled={restoreVersion.isPending}
-                        >
-                          Wiederherstellen
-                        </Button>
-                      )}
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-center py-8">
-                Keine Versionen gefunden
-              </p>
-            )}
-          </ScrollArea>
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">
+                    Keine Versionen gefunden
+                  </p>
+                )}
+              </ScrollArea>
+            </TabsContent>
+            <TabsContent value="diff">
+              {versions && versions.length > 0 && (
+                <DiffViewer
+                  articleId={article.id}
+                  versions={versions.map(v => ({
+                    versionNumber: v.versionNumber,
+                    title: v.title,
+                    createdAt: v.createdAt,
+                    changeDescription: v.changeDescription,
+                  }))}
+                />
+              )}
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </div>

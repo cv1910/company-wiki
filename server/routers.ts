@@ -8,6 +8,10 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 import { nanoid } from "nanoid";
 import * as embeddings from "./embeddings";
+import DiffMatchPatch from "diff-match-patch";
+
+// Initialize diff-match-patch
+const dmp = new DiffMatchPatch();
 
 // Helper to generate slug from title
 function generateSlug(title: string): string {
@@ -336,6 +340,57 @@ export const appRouter = router({
 
         return { success: true };
       }),
+
+    // Compare two versions and return diff
+    diff: protectedProcedure
+      .input(
+        z.object({
+          articleId: z.number(),
+          fromVersion: z.number(),
+          toVersion: z.number(),
+        })
+      )
+      .query(async ({ input }) => {
+        const [fromVer, toVer] = await Promise.all([
+          db.getArticleVersion(input.articleId, input.fromVersion),
+          db.getArticleVersion(input.articleId, input.toVersion),
+        ]);
+
+        if (!fromVer || !toVer) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Version not found" });
+        }
+
+        // Generate diff for title
+        const titleDiffs = dmp.diff_main(fromVer.title || "", toVer.title || "");
+        dmp.diff_cleanupSemantic(titleDiffs);
+
+        // Generate diff for content
+        const contentDiffs = dmp.diff_main(fromVer.content || "", toVer.content || "");
+        dmp.diff_cleanupSemantic(contentDiffs);
+
+        // Convert diffs to a more usable format
+        // -1 = deletion, 0 = equal, 1 = insertion
+        const formatDiffs = (diffs: [number, string][]) =>
+          diffs.map(([type, text]) => ({
+            type: type === -1 ? "removed" : type === 1 ? "added" : "unchanged",
+            text,
+          }));
+
+        return {
+          fromVersion: {
+            versionNumber: fromVer.versionNumber,
+            title: fromVer.title,
+            createdAt: fromVer.createdAt,
+          },
+          toVersion: {
+            versionNumber: toVer.versionNumber,
+            title: toVer.title,
+            createdAt: toVer.createdAt,
+          },
+          titleDiff: formatDiffs(titleDiffs),
+          contentDiff: formatDiffs(contentDiffs),
+        };
+      }),
   }),
 
   // ==================== PERMISSIONS ====================
@@ -422,6 +477,12 @@ export const appRouter = router({
           resourceTitle: input.title,
         });
 
+        // Generate embeddings for semantic search (async, don't block)
+        if (input.status === "published") {
+          embeddings.updateSOPEmbedding(id)
+            .catch((err: Error) => console.error("Failed to generate SOP embedding:", err));
+        }
+
         return { id, slug };
       }),
 
@@ -457,6 +518,13 @@ export const appRouter = router({
           resourceId: id,
           resourceTitle: input.title || sop.title,
         });
+
+        // Generate embeddings for semantic search when published (async, don't block)
+        const updatedStatus = input.status || sop.status;
+        if (updatedStatus === "published") {
+          embeddings.updateSOPEmbedding(id)
+            .catch((err: Error) => console.error("Failed to generate SOP embedding:", err));
+        }
 
         return { success: true };
       }),
@@ -529,11 +597,9 @@ export const appRouter = router({
       return { success: true };
     }),
   }),
-
   // ==================== AI CHAT ====================
   chat: router({
-    send: protectedProcedure
-      .input(
+    send: protectedProcedure     .input(
         z.object({
           sessionId: z.string(),
           message: z.string().min(1),
@@ -746,6 +812,38 @@ ${context || "Keine relevanten Inhalte gefunden."}`,
 
   // ==================== GLOBAL SEARCH ====================
   search: router({
+    // Autocomplete suggestions
+    suggestions: protectedProcedure
+      .input(z.object({ query: z.string().min(1), limit: z.number().optional() }))
+      .query(async ({ input }) => {
+        const limit = input.limit || 5;
+        const query = input.query.toLowerCase();
+        
+        // Get matching articles
+        const articlesResult = await db.searchArticles(query, limit);
+        const articles = articlesResult.map(a => ({
+          id: a.id,
+          title: a.title,
+          slug: a.slug,
+          type: "article" as const,
+        }));
+        
+        // Get matching SOPs
+        const sopsResult = await db.searchSOPs(query, limit);
+        const sopsList = sopsResult.map(s => ({
+          id: s.id,
+          title: s.title,
+          slug: s.slug,
+          type: "sop" as const,
+        }));
+        
+        // Combine and limit
+        const combined = [...articles, ...sopsList]
+          .slice(0, limit);
+        
+        return combined;
+      }),
+
     // Traditional full-text search
     global: protectedProcedure
       .input(
@@ -1224,6 +1322,12 @@ ${context || "Keine relevanten Inhalte gefunden."}`,
           resourceType: "article",
           resourceId: review.articleId,
         });
+
+        // Generate embeddings for semantic search (async, don't block)
+        if (article) {
+          embeddings.updateArticleEmbedding(article.id)
+            .catch((err: Error) => console.error("Failed to generate embedding:", err));
+        }
 
         return { success: true };
       }),

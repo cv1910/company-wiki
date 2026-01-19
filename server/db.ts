@@ -487,11 +487,17 @@ export async function getChatHistory(userId: number, sessionId: string, limit: n
 export async function getUserChatSessions(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db
-    .selectDistinct({ sessionId: chatHistory.sessionId })
+  // Use subquery to get distinct sessions with their latest timestamp
+  const sessions = await db
+    .select({
+      sessionId: chatHistory.sessionId,
+      latestAt: sql<Date>`MAX(${chatHistory.createdAt})`.as('latestAt'),
+    })
     .from(chatHistory)
     .where(eq(chatHistory.userId, userId))
-    .orderBy(desc(chatHistory.createdAt));
+    .groupBy(chatHistory.sessionId)
+    .orderBy(sql`latestAt DESC`);
+  return sessions;
 }
 
 // ==================== ACTIVITY LOG FUNCTIONS ====================

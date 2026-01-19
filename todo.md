@@ -25,7 +25,7 @@
 - [x] Automatische Versionserstellung bei Änderungen
 - [x] Änderungshistorie anzeigen
 - [x] Wiederherstellungsfunktion für alte Versionen
-- [ ] Diff-Ansicht zwischen Versionen
+- [x] Diff-Ansicht zwischen Versionen
 
 ## SOP-Bereich
 - [x] SOP-Einträge mit Scribe-Link-Integration
@@ -43,7 +43,7 @@
 - [x] Globale Volltextsuche über Artikel und SOPs
 - [x] Filteroptionen (Kategorie, Typ)
 - [x] Berechtigungsprüfung bei Suchergebnissen
-- [ ] Suchvorschläge
+- [x] Suchvorschläge
 
 ## Dashboard
 - [x] Übersicht mit Schnellzugriff
@@ -158,3 +158,20 @@
 - [x] AI-Assistent mit Kontext aus semantischer Suche
 - [x] Ähnliche Artikel basierend auf Embeddings
 - [x] Tests für semantische Suche
+
+## Diff-Ansicht für Versionen
+- [x] Diff-Bibliothek integrieren (diff-match-patch)
+- [x] Backend-Endpoint für Versionsvergleich
+- [x] Visuelle Diff-Ansicht mit farblicher Hervorhebung
+- [x] Nebeneinander- und Inline-Ansicht
+
+## Automatische Embedding-Generierung
+- [x] Trigger bei Artikel-Veröffentlichung
+- [x] Trigger bei SOP-Veröffentlichung
+- [x] Hintergrund-Job für Embedding-Updates
+
+## Suchvorschläge
+- [x] Backend-Endpoint für Vorschläge
+- [x] Autocomplete-Komponente im Frontend
+- [x] Debounced-Suche während der Eingabe
+- [x] Anzeige von Artikel-Titeln als Vorschläge

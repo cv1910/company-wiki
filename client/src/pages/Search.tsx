@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { SearchAutocomplete } from "@/components/SearchAutocomplete";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -55,22 +55,17 @@ export default function Search() {
       </div>
 
       {/* Search Form */}
-      <form onSubmit={handleSearch} className="space-y-4">
+      <div className="space-y-4">
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+            <SearchAutocomplete
               placeholder={useSemanticSearch 
                 ? "Stellen Sie eine Frage in natürlicher Sprache..." 
                 : "Suchbegriff eingeben (mind. 2 Zeichen)..."}
-              className="pl-10"
+              onSearch={(q) => setQuery(q)}
+              autoFocus
             />
           </div>
-          <Button type="submit" disabled={query.length < 2}>
-            Suchen
-          </Button>
         </div>
 
         {/* Semantic Search Toggle */}
@@ -94,7 +89,7 @@ export default function Search() {
             onCheckedChange={setUseSemanticSearch}
           />
         </div>
-      </form>
+      </div>
 
       {/* Results */}
       {query.length >= 2 && (
