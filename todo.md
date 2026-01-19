@@ -192,3 +192,6 @@
 - [x] @Mentions in Kommentaren
 - [x] Benachrichtigung an erwähnte Personen (In-App + E-Mail)
 - [x] Mentions-Übersicht für Benutzer
+
+## Bugfixes
+- [x] HTML-Nesting-Fehler: p-Tag enthält div auf Dashboard-Seite

@@ -52,10 +52,10 @@ export default function Home() {
                 <FileText className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-semibold">
+                <div className="text-2xl font-semibold">
                   {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.articleCount || 0}
-                </p>
-                <p className="text-sm text-muted-foreground">Artikel</p>
+                </div>
+                <div className="text-sm text-muted-foreground">Artikel</div>
               </div>
             </div>
           </CardContent>
@@ -68,10 +68,10 @@ export default function Home() {
                 <ClipboardList className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-semibold">
+                <div className="text-2xl font-semibold">
                   {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.sopCount || 0}
-                </p>
-                <p className="text-sm text-muted-foreground">SOPs</p>
+                </div>
+                <div className="text-sm text-muted-foreground">SOPs</div>
               </div>
             </div>
           </CardContent>
@@ -84,10 +84,10 @@ export default function Home() {
                 <Book className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-semibold">
+                <div className="text-2xl font-semibold">
                   {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.categoryCount || 0}
-                </p>
-                <p className="text-sm text-muted-foreground">Kategorien</p>
+                </div>
+                <div className="text-sm text-muted-foreground">Kategorien</div>
               </div>
             </div>
           </CardContent>
@@ -100,10 +100,10 @@ export default function Home() {
                 <TrendingUp className="h-5 w-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-2xl font-semibold">
+                <div className="text-2xl font-semibold">
                   {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.sopCategoryCount || 0}
-                </p>
-                <p className="text-sm text-muted-foreground">SOP-Kategorien</p>
+                </div>
+                <div className="text-sm text-muted-foreground">SOP-Kategorien</div>
               </div>
             </div>
           </CardContent>
