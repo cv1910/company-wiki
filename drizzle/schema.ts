@@ -540,3 +540,19 @@ export const assignments = mysqlTable("assignments", {
 
 export type Assignment = typeof assignments.$inferSelect;
 export type InsertAssignment = typeof assignments.$inferInsert;
+
+
+/**
+ * System settings for global configuration.
+ * Key-value store for application-wide settings.
+ */
+export const systemSettings = mysqlTable("systemSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  key: varchar("key", { length: 100 }).notNull().unique(),
+  value: text("value"),
+  description: varchar("description", { length: 500 }),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SystemSetting = typeof systemSettings.$inferSelect;
+export type InsertSystemSetting = typeof systemSettings.$inferInsert;

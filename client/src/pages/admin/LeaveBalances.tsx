@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Loader2, Users, Edit, Sun, Umbrella, ArrowRight, RefreshCw } from "lucide-react";
+import { Calendar, Loader2, Users, Edit, Sun, Umbrella, ArrowRight, RefreshCw, Settings } from "lucide-react";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import DashboardLayout from "@/components/DashboardLayout";
 
 export default function AdminLeaveBalances() {
@@ -18,9 +20,32 @@ export default function AdminLeaveBalances() {
   const [newTotalDays, setNewTotalDays] = useState<number>(30);
   const [carryOverDialogOpen, setCarryOverDialogOpen] = useState(false);
   const [maxCarryOverDays, setMaxCarryOverDays] = useState(10);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [autoCarryOver, setAutoCarryOver] = useState(false);
+  const [settingsMaxDays, setSettingsMaxDays] = useState(10);
 
   const utils = trpc.useUtils();
   const { data: balances, isLoading } = trpc.leave.allBalances.useQuery({ year: selectedYear });
+  const { data: carryOverSettings } = trpc.leave.carryOverSettings.useQuery();
+
+  // Update local state when settings are loaded
+  useEffect(() => {
+    if (carryOverSettings) {
+      setAutoCarryOver(carryOverSettings.autoCarryOver);
+      setSettingsMaxDays(carryOverSettings.maxCarryOverDays);
+    }
+  }, [carryOverSettings]);
+
+  const updateSettings = trpc.leave.updateCarryOverSettings.useMutation({
+    onSuccess: () => {
+      toast.success("Übertrag-Einstellungen gespeichert");
+      setSettingsDialogOpen(false);
+      utils.leave.carryOverSettings.invalidate();
+    },
+    onError: (error) => {
+      toast.error("Fehler: " + error.message);
+    },
+  });
 
   const updateBalance = trpc.leave.updateBalance.useMutation({
     onSuccess: () => {
@@ -104,6 +129,14 @@ export default function AdminLeaveBalances() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setSettingsDialogOpen(true)}
+              className="gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              Einstellungen
+            </Button>
             <Button
               variant="outline"
               onClick={() => setCarryOverDialogOpen(true)}
@@ -381,6 +414,67 @@ export default function AdminLeaveBalances() {
               <Button onClick={handleCarryOver} disabled={carryOver.isPending}>
                 {carryOver.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Übertrag durchführen
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Settings Dialog */}
+        <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Übertrag-Einstellungen</DialogTitle>
+              <DialogDescription>
+                Konfigurieren Sie den automatischen Urlaubsübertrag am Jahresende.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="auto-carry-over" className="text-base">Automatischer Übertrag</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Resturlaub wird am 1. Januar automatisch ins neue Jahr übertragen
+                  </p>
+                </div>
+                <Switch
+                  id="auto-carry-over"
+                  checked={autoCarryOver}
+                  onCheckedChange={setAutoCarryOver}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="max-days">Maximale Übertragstage</Label>
+                <Input
+                  id="max-days"
+                  type="number"
+                  min={0}
+                  max={30}
+                  value={settingsMaxDays}
+                  onChange={(e) => setSettingsMaxDays(parseInt(e.target.value) || 0)}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Resturlaub über diesem Limit verfällt am Jahresende.
+                </p>
+              </div>
+              {autoCarryOver && (
+                <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                  <p className="text-sm text-green-800 dark:text-green-200">
+                    <strong>Aktiviert:</strong> Am 1. Januar wird der Resturlaub automatisch übertragen.
+                    Sie erhalten eine Benachrichtigung nach erfolgreichem Übertrag.
+                  </p>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSettingsDialogOpen(false)}>
+                Abbrechen
+              </Button>
+              <Button
+                onClick={() => updateSettings.mutate({ maxCarryOverDays: settingsMaxDays, autoCarryOver })}
+                disabled={updateSettings.isPending}
+              >
+                {updateSettings.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Speichern
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -51,6 +51,7 @@ import {
   InsertLeaveBalance,
   assignments,
   InsertAssignment,
+  systemSettings,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1803,9 +1804,58 @@ export async function getLeaveCarryOverSettings(): Promise<{
   maxCarryOverDays: number;
   autoCarryOver: boolean;
 }> {
-  // For now, return defaults. Could be extended to read from a settings table
-  return {
-    maxCarryOverDays: 10,
-    autoCarryOver: false,
-  };
+  const db = await getDb();
+  if (!db) {
+    return { maxCarryOverDays: 10, autoCarryOver: false };
+  }
+  
+  const result = await db
+    .select()
+    .from(systemSettings)
+    .where(eq(systemSettings.key, "leave_carry_over"))
+    .limit(1);
+  
+  if (result.length > 0 && result[0].value) {
+    try {
+      const settings = JSON.parse(result[0].value);
+      return {
+        maxCarryOverDays: settings.maxCarryOverDays ?? 10,
+        autoCarryOver: settings.autoCarryOver ?? false,
+      };
+    } catch {
+      return { maxCarryOverDays: 10, autoCarryOver: false };
+    }
+  }
+  
+  return { maxCarryOverDays: 10, autoCarryOver: false };
+}
+
+// Update system settings for leave carry over
+export async function updateLeaveCarryOverSettings(settings: {
+  maxCarryOverDays: number;
+  autoCarryOver: boolean;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  
+  const value = JSON.stringify(settings);
+  
+  // Check if setting exists
+  const existing = await db
+    .select()
+    .from(systemSettings)
+    .where(eq(systemSettings.key, "leave_carry_over"))
+    .limit(1);
+  
+  if (existing.length > 0) {
+    await db
+      .update(systemSettings)
+      .set({ value })
+      .where(eq(systemSettings.key, "leave_carry_over"));
+  } else {
+    await db.insert(systemSettings).values({
+      key: "leave_carry_over",
+      value,
+    });
+  }
 }

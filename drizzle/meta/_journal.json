@@ -71,6 +71,13 @@
       "when": 1768851139058,
       "tag": "0009_sloppy_doctor_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1768855333845,
+      "tag": "0010_hot_lady_ursula",
+      "breakpoints": true
     }
   ]
 }

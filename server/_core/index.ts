@@ -10,6 +10,7 @@ import { serveStatic, setupVite } from "./vite";
 import multer from "multer";
 import { storagePut } from "../storage";
 import { nanoid } from "nanoid";
+import { initializeScheduler } from "../scheduler";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -94,6 +95,9 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
+    
+    // Initialize scheduler for automated tasks
+    initializeScheduler();
   });
 }
 

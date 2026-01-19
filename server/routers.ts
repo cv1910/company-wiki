@@ -2002,6 +2002,28 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
     carryOverSettings: adminProcedure.query(async () => {
       return db.getLeaveCarryOverSettings();
     }),
+
+    // Update carry over settings
+    updateCarryOverSettings: adminProcedure
+      .input(
+        z.object({
+          maxCarryOverDays: z.number().min(0).max(30),
+          autoCarryOver: z.boolean(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        await db.updateLeaveCarryOverSettings(input);
+
+        // Log the action
+        await db.createAuditLogEntry({
+          userId: ctx.user.id,
+          action: "leave_settings_update",
+          resourceType: "system_settings",
+          newValue: `Auto-Übertrag: ${input.autoCarryOver ? "aktiviert" : "deaktiviert"}, Max. Tage: ${input.maxCarryOverDays}`,
+        });
+
+        return { success: true };
+      }),
   }),
 
   // ==================== EMAIL SETTINGS ====================

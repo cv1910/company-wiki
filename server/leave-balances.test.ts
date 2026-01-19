@@ -11,6 +11,7 @@ vi.mock("./db", () => ({
   getLeaveBalance: vi.fn(),
   carryOverLeaveBalances: vi.fn(),
   getLeaveCarryOverSettings: vi.fn().mockResolvedValue({ maxCarryOverDays: 10, autoCarryOver: false }),
+  updateLeaveCarryOverSettings: vi.fn(),
 }));
 
 function createAdminContext(): TrpcContext {
@@ -270,5 +271,87 @@ describe("leave.carryOver", () => {
         resourceType: "leave_balance",
       })
     );
+  });
+});
+
+describe("leave.carryOverSettings", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns carry over settings", async () => {
+    vi.mocked(db.getLeaveCarryOverSettings).mockResolvedValue({
+      maxCarryOverDays: 10,
+      autoCarryOver: false,
+    });
+
+    const ctx = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.leave.carryOverSettings();
+
+    expect(result.maxCarryOverDays).toBe(10);
+    expect(result.autoCarryOver).toBe(false);
+  });
+
+  it("rejects non-admin users", async () => {
+    const ctx = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(caller.leave.carryOverSettings()).rejects.toThrow();
+  });
+});
+
+describe("leave.updateCarryOverSettings", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("updates carry over settings", async () => {
+    vi.mocked(db.updateLeaveCarryOverSettings).mockResolvedValue();
+    vi.mocked(db.createAuditLogEntry).mockResolvedValue({ id: 1 } as any);
+
+    const ctx = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.leave.updateCarryOverSettings({
+      maxCarryOverDays: 15,
+      autoCarryOver: true,
+    });
+
+    expect(result.success).toBe(true);
+    expect(db.updateLeaveCarryOverSettings).toHaveBeenCalledWith({
+      maxCarryOverDays: 15,
+      autoCarryOver: true,
+    });
+  });
+
+  it("creates an audit log entry", async () => {
+    vi.mocked(db.updateLeaveCarryOverSettings).mockResolvedValue();
+    vi.mocked(db.createAuditLogEntry).mockResolvedValue({ id: 1 } as any);
+
+    const ctx = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    await caller.leave.updateCarryOverSettings({
+      maxCarryOverDays: 12,
+      autoCarryOver: true,
+    });
+
+    expect(db.createAuditLogEntry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "leave_settings_update",
+        resourceType: "system_settings",
+      })
+    );
+  });
+
+  it("rejects non-admin users", async () => {
+    const ctx = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.leave.updateCarryOverSettings({
+        maxCarryOverDays: 10,
+        autoCarryOver: true,
+      })
+    ).rejects.toThrow();
   });
 });

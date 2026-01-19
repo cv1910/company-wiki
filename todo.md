@@ -260,3 +260,8 @@
 - [x] Konfiguration für maximale Übertragstage
 - [x] Admin-UI mit Button zum Auslösen des Übertrags
 - [x] Anzeige der Übertragstage in der Urlaubsanspruch-Übersicht
+
+## Automatischer Jahresübertrag
+- [x] Cron-Job für automatischen Urlaubsübertrag am 1. Januar
+- [x] Admin-Einstellungen für automatischen Übertrag (aktivieren/deaktivieren, max. Tage)
+- [x] Benachrichtigung an Admin nach erfolgreichem Übertrag
