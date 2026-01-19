@@ -222,3 +222,12 @@
 - [x] API-Endpunkte für Zuweisungen implementieren
 - [x] UI für Zuweisung von SOPs und Onboarding-Artikeln an Benutzer (Admin-Seite)
 - [x] Fortschrittsverfolgung für zugewiesene Inhalte (auf Onboarding-Seite)
+
+## Kommentarfunktion
+- [x] Bestehende Kommentar-Infrastruktur prüfen (Datenbank, API) - bereits vorhanden!
+- [x] Kommentar-UI-Komponente erstellen - bereits vorhanden!
+- [x] Kommentare in Wiki-Artikel-Seite integrieren - bereits vorhanden!
+- [x] Benutzernamen und Avatar in Kommentaren anzeigen
+- [x] Antworten auf Kommentare ermöglichen (Thread-Ansicht)
+- [x] Kommentare bearbeiten und löschen ermöglichen
+- [x] Kommentare als gelöst markieren (für Editoren)

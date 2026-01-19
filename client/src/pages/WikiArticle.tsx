@@ -13,6 +13,10 @@ import {
   History,
   MessageSquare,
   Share2,
+  Trash2,
+  CheckCircle,
+  Reply,
+  MoreVertical,
 } from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import { formatDistanceToNow, format } from "date-fns";
@@ -41,6 +45,10 @@ export default function WikiArticle() {
   const [showHistory, setShowHistory] = useState(false);
   const [historyTab, setHistoryTab] = useState<"list" | "diff">("list");
   const [newComment, setNewComment] = useState("");
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [replyToId, setReplyToId] = useState<number | null>(null);
+  const [replyContent, setReplyContent] = useState("");
   const isEditor = user?.role === "editor" || user?.role === "admin";
 
   const { data: article, isLoading } = trpc.articles.getBySlug.useQuery(
@@ -71,11 +79,45 @@ export default function WikiArticle() {
   const createComment = trpc.comments.create.useMutation({
     onSuccess: () => {
       setNewComment("");
+      setReplyContent("");
+      setReplyToId(null);
       refetchComments();
       toast.success("Kommentar hinzugefügt");
     },
     onError: () => {
       toast.error("Fehler beim Hinzufügen des Kommentars");
+    },
+  });
+
+  const updateComment = trpc.comments.update.useMutation({
+    onSuccess: () => {
+      setEditingCommentId(null);
+      setEditContent("");
+      refetchComments();
+      toast.success("Kommentar aktualisiert");
+    },
+    onError: () => {
+      toast.error("Fehler beim Aktualisieren des Kommentars");
+    },
+  });
+
+  const deleteComment = trpc.comments.delete.useMutation({
+    onSuccess: () => {
+      refetchComments();
+      toast.success("Kommentar gelöscht");
+    },
+    onError: () => {
+      toast.error("Fehler beim Löschen des Kommentars");
+    },
+  });
+
+  const resolveComment = trpc.comments.resolve.useMutation({
+    onSuccess: () => {
+      refetchComments();
+      toast.success("Kommentar als gelöst markiert");
+    },
+    onError: () => {
+      toast.error("Fehler beim Markieren des Kommentars");
     },
   });
 
@@ -102,6 +144,35 @@ export default function WikiArticle() {
       content: newComment.trim(),
     });
   };
+
+  const handleReply = (parentId: number) => {
+    if (!replyContent.trim() || !article?.id) return;
+    createComment.mutate({
+      articleId: article.id,
+      content: replyContent.trim(),
+      parentId,
+    });
+  };
+
+  const handleEditComment = (id: number) => {
+    if (!editContent.trim()) return;
+    updateComment.mutate({ id, content: editContent.trim() });
+  };
+
+  const handleDeleteComment = (id: number) => {
+    if (confirm("Kommentar wirklich löschen?")) {
+      deleteComment.mutate({ id });
+    }
+  };
+
+  const getInitials = (name: string | null) => {
+    if (!name) return "?";
+    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+  };
+
+  // Organize comments into threads
+  const topLevelComments = comments?.filter(c => !c.parentId) || [];
+  const getReplies = (parentId: number) => comments?.filter(c => c.parentId === parentId) || [];
 
   if (isLoading) {
     return (
@@ -243,36 +314,176 @@ export default function WikiArticle() {
               onClick={handleAddComment}
               disabled={!newComment.trim() || createComment.isPending}
             >
-              Kommentar hinzufügen
+              {createComment.isPending ? "Wird hinzugefügt..." : "Kommentar hinzufügen"}
             </Button>
           </div>
 
           {/* Comments List */}
-          {comments && comments.length > 0 ? (
+          {topLevelComments.length > 0 ? (
             <div className="space-y-4 pt-4 border-t">
-              {comments.map((comment) => (
-                <div key={comment.id} className="flex gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="text-xs">U</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">Benutzer</span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(comment.createdAt), {
-                          addSuffix: true,
-                          locale: de,
-                        })}
-                      </span>
+              {topLevelComments.map((comment) => (
+                <div key={comment.id} className="space-y-3">
+                  {/* Main Comment */}
+                  <div className={`flex gap-3 p-3 rounded-lg ${comment.isResolved ? "bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800" : "bg-muted/30"}`}>
+                    <Avatar className="h-9 w-9">
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                        {getInitials(comment.user?.name || null)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium">{comment.user?.name || "Unbekannt"}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(comment.createdAt), {
+                              addSuffix: true,
+                              locale: de,
+                            })}
+                          </span>
+                          {comment.isResolved && (
+                            <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" /> Gelöst
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {/* Reply Button */}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => setReplyToId(replyToId === comment.id ? null : comment.id)}
+                          >
+                            <Reply className="h-3.5 w-3.5" />
+                          </Button>
+                          {/* Edit/Delete for own comments */}
+                          {comment.userId === user?.id && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => {
+                                  setEditingCommentId(comment.id);
+                                  setEditContent(comment.content);
+                                }}
+                              >
+                                <Edit className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-destructive hover:text-destructive"
+                                onClick={() => handleDeleteComment(comment.id)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </>
+                          )}
+                          {/* Resolve for editors */}
+                          {isEditor && !comment.isResolved && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-green-600 hover:text-green-700"
+                              onClick={() => resolveComment.mutate({ id: comment.id })}
+                              title="Als gelöst markieren"
+                            >
+                              <CheckCircle className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Edit Mode */}
+                      {editingCommentId === comment.id ? (
+                        <div className="mt-2 space-y-2">
+                          <Textarea
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            rows={2}
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => handleEditComment(comment.id)} disabled={updateComment.isPending}>
+                              Speichern
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditingCommentId(null)}>
+                              Abbrechen
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm mt-1 whitespace-pre-wrap">{comment.content}</p>
+                      )}
                     </div>
-                    <p className="text-sm mt-1">{comment.content}</p>
                   </div>
+
+                  {/* Reply Form */}
+                  {replyToId === comment.id && (
+                    <div className="ml-12 space-y-2">
+                      <Textarea
+                        placeholder="Antwort schreiben..."
+                        value={replyContent}
+                        onChange={(e) => setReplyContent(e.target.value)}
+                        rows={2}
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => handleReply(comment.id)} disabled={createComment.isPending}>
+                          Antworten
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setReplyToId(null)}>
+                          Abbrechen
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Replies */}
+                  {getReplies(comment.id).length > 0 && (
+                    <div className="ml-12 space-y-3 border-l-2 border-muted pl-4">
+                      {getReplies(comment.id).map((reply) => (
+                        <div key={reply.id} className={`flex gap-3 p-2 rounded-lg ${reply.isResolved ? "bg-green-50 dark:bg-green-950/20" : "bg-muted/20"}`}>
+                          <Avatar className="h-7 w-7">
+                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                              {getInitials(reply.user?.name || null)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">{reply.user?.name || "Unbekannt"}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {formatDistanceToNow(new Date(reply.createdAt), {
+                                    addSuffix: true,
+                                    locale: de,
+                                  })}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {reply.userId === user?.id && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 text-destructive hover:text-destructive"
+                                    onClick={() => handleDeleteComment(reply.id)}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                            <p className="text-sm mt-1 whitespace-pre-wrap">{reply.content}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           ) : (
             <p className="text-muted-foreground text-center py-4">
-              Noch keine Kommentare
+              Noch keine Kommentare. Sei der Erste!
             </p>
           )}
         </CardContent>

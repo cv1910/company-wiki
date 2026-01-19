@@ -557,7 +557,27 @@ export async function deleteComment(id: number) {
 export async function getArticleComments(articleId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(comments).where(eq(comments.articleId, articleId)).orderBy(comments.createdAt);
+  return db
+    .select({
+      id: comments.id,
+      articleId: comments.articleId,
+      userId: comments.userId,
+      content: comments.content,
+      parentId: comments.parentId,
+      isResolved: comments.isResolved,
+      createdAt: comments.createdAt,
+      updatedAt: comments.updatedAt,
+      user: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(comments)
+    .leftJoin(users, eq(comments.userId, users.id))
+    .where(eq(comments.articleId, articleId))
+    .orderBy(comments.createdAt);
 }
 
 // ==================== NOTIFICATION FUNCTIONS ====================
