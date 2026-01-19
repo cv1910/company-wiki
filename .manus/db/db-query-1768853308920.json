@@ -1,0 +1,42 @@
+{
+  "query": "SELECT id, title, slug, status, content FROM articles LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute SELECT id, title, slug, status, content FROM articles LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "title": "Willkommensleitfaden",
+      "slug": "willkommensleitfaden",
+      "status": "published",
+      "content": "# Willkommen bei uns!"
+    }
+  ],
+  "messages": [
+    "Herzlich willkommen in unserem Team! Dieser Leitfaden hilft dir, dich schnell zurechtzufinden und einen erfolgreichen Start zu haben.",
+    "## Dein erster Tag",
+    "An deinem ersten Tag wirst du:",
+    "- Deinen Arbeitsplatz einrichten",
+    "- Deine Zugangsdaten erhalten",
+    "- Dein Team kennenlernen",
+    "- Eine Einführung in unsere Systeme bekommen",
+    "## Wichtige Kontakte",
+    "| Bereich | Ansprechpartner | Erreichbarkeit |",
+    "|---------|-----------------|----------------|",
+    "| IT-Support | IT-Team | support@firma.de |",
+    "| HR | Personalabteilung | hr@firma.de |",
+    "| Vorgesetzter | Dein Teamleiter | Wird dir vorgestellt |",
+    "## Nächste Schritte",
+    "1. **Profil vervollständigen**: Aktualisiere dein Profil mit einem Foto",
+    "2. **Wiki erkunden**: Schau dir die wichtigsten Artikel an",
+    "3. **Team kennenlernen**: Stelle dich deinen Kollegen vor",
+    "4. **Fragen stellen**: Nutze den AI-Assistenten für schnelle Antworten",
+    "## Hilfreiche Links",
+    "- [SOPs](/sops) - Standard Operating Procedures",
+    "- [Urlaub beantragen](/leave) - Urlaubsverwaltung",
+    "- [AI-Assistent](/chat) - Fragen zum Wiki stellen",
+    "---",
+    "Bei Fragen wende dich jederzeit an dein Team oder die HR-Abteilung. Wir freuen uns, dich bei uns zu haben!"
+  ],
+  "stdout": "id\ttitle\tslug\tstatus\tcontent\n1\tWillkommensleitfaden\twillkommensleitfaden\tpublished\t# Willkommen bei uns!\n\nHerzlich willkommen in unserem Team! Dieser Leitfaden hilft dir, dich schnell zurechtzufinden und einen erfolgreichen Start zu haben.\n\n## Dein erster Tag\n\nAn deinem ersten Tag wirst du:\n- Deinen Arbeitsplatz einrichten\n- Deine Zugangsdaten erhalten\n- Dein Team kennenlernen\n- Eine Einführung in unsere Systeme bekommen\n\n## Wichtige Kontakte\n\n| Bereich | Ansprechpartner | Erreichbarkeit |\n|---------|-----------------|----------------|\n| IT-Support | IT-Team | support@firma.de |\n| HR | Personalabteilung | hr@firma.de |\n| Vorgesetzter | Dein Teamleiter | Wird dir vorgestellt |\n\n## Nächste Schritte\n\n1. **Profil vervollständigen**: Aktualisiere dein Profil mit einem Foto\n2. **Wiki erkunden**: Schau dir die wichtigsten Artikel an\n3. **Team kennenlernen**: Stelle dich deinen Kollegen vor\n4. **Fragen stellen**: Nutze den AI-Assistenten für schnelle Antworten\n\n## Hilfreiche Links\n\n- [SOPs](/sops) - Standard Operating Procedures\n- [Urlaub beantragen](/leave) - Urlaubsverwaltung\n- [AI-Assistent](/chat) - Fragen zum Wiki stellen\n\n---\n\nBei Fragen wende dich jederzeit an dein Team oder die HR-Abteilung. Wir freuen uns, dich bei uns zu haben!\n",
+  "stderr": "",
+  "execution_time_ms": 62
+}

@@ -1671,3 +1671,28 @@ export async function getAssignmentByUserAndResource(userId: number, resourceTyp
     .limit(1);
   return result[0] || null;
 }
+
+
+// Get recent published articles for AI context
+export async function getPublishedArticles(limit: number = 5) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(articles)
+    .where(eq(articles.status, "published"))
+    .orderBy(desc(articles.updatedAt))
+    .limit(limit);
+}
+
+// Get recent published SOPs for AI context
+export async function getPublishedSOPs(limit: number = 3) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(sops)
+    .where(eq(sops.status, "published"))
+    .orderBy(desc(sops.updatedAt))
+    .limit(limit);
+}

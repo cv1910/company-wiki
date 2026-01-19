@@ -666,6 +666,12 @@ export const appRouter = router({
           relevantSOPs = await db.searchSOPs(input.message, 3);
         }
 
+        // If still no results, get some recent published articles as context
+        if (relevantArticles.length === 0 && relevantSOPs.length === 0) {
+          relevantArticles = await db.getPublishedArticles(5);
+          relevantSOPs = await db.getPublishedSOPs(3);
+        }
+
         // Build context from wiki content
         const context = [
           ...relevantArticles.map((a) => `Artikel: ${a.title}\n${a.content?.substring(0, 1500) || ""}`),
@@ -675,18 +681,30 @@ export const appRouter = router({
         // Get chat history for context
         const history = await db.getChatHistory(ctx.user.id, input.sessionId, 10);
 
-        // Build messages for LLM
+        // Build conversation summary if history is long
+        let conversationContext = "";
+        if (history.length > 4) {
+          // Summarize older messages for context
+          const olderMessages = history.slice(0, -4);
+          conversationContext = `\n\nBisheriger Gesprächsverlauf (Zusammenfassung):\n${olderMessages.map(m => `${m.role === 'user' ? 'Benutzer' : 'Assistent'}: ${m.content.substring(0, 150)}${m.content.length > 150 ? '...' : ''}`).join('\n')}`;
+        }
+
+        // Build messages for LLM with improved system prompt
         const messages = [
           {
             role: "system" as const,
-            content: `Du bist ein hilfreicher Assistent für das Company Wiki. Beantworte Fragen basierend auf den Wiki-Inhalten. 
-Wenn du Informationen aus dem Wiki verwendest, gib die Quelle an.
-Antworte auf Deutsch, es sei denn, der Benutzer fragt auf Englisch.
+            content: `Du bist ein hilfreicher Assistent für das Company Wiki. Deine Aufgaben:
+
+1. **Beantworte Fragen** basierend auf den Wiki-Inhalten unten.
+2. **Zitiere Quellen** explizit mit dem Format: "Laut dem Artikel '[Titel]'..." oder "In der SOP '[Titel]' steht..."
+3. **Beziehe dich auf frühere Fragen** wenn der Benutzer Folgefragen stellt (z.B. "Erkläre das genauer", "Was meinst du damit?").
+4. **Schlage verwandte Themen vor** am Ende deiner Antwort, wenn passend.
+5. Antworte auf Deutsch, es sei denn, der Benutzer fragt auf Englisch.
 
 Relevante Wiki-Inhalte:
-${context || "Keine relevanten Inhalte gefunden."}`,
+${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           },
-          ...history.slice(-6).map((msg) => ({
+          ...history.slice(-8).map((msg) => ({
             role: msg.role as "user" | "assistant",
             content: msg.content,
           })),

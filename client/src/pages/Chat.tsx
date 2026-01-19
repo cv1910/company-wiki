@@ -211,11 +211,14 @@ export default function Chat() {
                       <p className="text-sm">{message.content}</p>
                     )}
                     
-                    {/* Sources */}
+                    {/* Enhanced Sources with direct links */}
                     {message.sources && message.sources.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-border/50">
-                        <p className="text-xs text-muted-foreground mb-2">Quellen:</p>
-                        <div className="flex flex-wrap gap-2">
+                      <div className="mt-4 pt-3 border-t border-border/30">
+                        <div className="flex items-center gap-2 mb-3">
+                          <FileText className="h-4 w-4 text-primary" />
+                          <span className="text-xs font-medium text-primary">Verwendete Quellen ({message.sources.length})</span>
+                        </div>
+                        <div className="space-y-2">
                           {message.sources.map((source, idx) => (
                             <button
                               key={idx}
@@ -226,10 +229,22 @@ export default function Chat() {
                                     : `/sops/view/${source.slug}`
                                 )
                               }
-                              className="inline-flex items-center gap-1 text-xs bg-background/50 hover:bg-background px-2 py-1 rounded-full transition-colors"
+                              className="w-full flex items-center gap-3 p-2 rounded-lg bg-background/60 hover:bg-background border border-border/30 hover:border-primary/30 transition-all text-left group"
                             >
-                              <FileText className="h-3 w-3" />
-                              {source.title}
+                              <div className={`p-1.5 rounded-md ${source.type === 'article' ? 'bg-blue-500/10' : 'bg-green-500/10'}`}>
+                                <FileText className={`h-3.5 w-3.5 ${source.type === 'article' ? 'text-blue-600' : 'text-green-600'}`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                                  {source.title}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {source.type === 'article' ? 'Wiki-Artikel' : 'Standard Operating Procedure'}
+                                </p>
+                              </div>
+                              <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                                Öffnen →
+                              </span>
                             </button>
                           ))}
                         </div>

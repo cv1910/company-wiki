@@ -241,3 +241,9 @@
 - [x] Autocomplete für @Erwähnungen in Kommentar-Textarea hinzufügen
 - [x] Erwähnungen visuell hervorheben (in MentionTextarea)
 - [x] @Erwähnungen werden automatisch verarbeitet und Benachrichtigungen gesendet
+
+## AI-Assistenten-Erweiterungen
+- [x] Konversationsgedächtnis implementieren (Chat-History mit Zusammenfassung)
+- [x] Verbesserte Quellenangaben mit direkten Links zu Artikeln
+- [x] Zitate aus Originalquellen in Antworten hervorheben (System-Prompt)
+- [x] Verwandte Artikel am Ende der Antwort vorschlagen (System-Prompt)
