@@ -43,6 +43,13 @@
       "when": 1768772344131,
       "tag": "0005_tearful_mandroid",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1768840905230,
+      "tag": "0006_next_karma",
+      "breakpoints": true
     }
   ]
 }

@@ -7,6 +7,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 import { nanoid } from "nanoid";
+import * as embeddings from "./embeddings";
 
 // Helper to generate slug from title
 function generateSlug(title: string): string {
@@ -547,13 +548,46 @@ export const appRouter = router({
           content: input.message,
         });
 
-        // Get relevant articles for context
-        const relevantArticles = await db.searchArticles(input.message, 5);
-        const relevantSOPs = await db.searchSOPs(input.message, 3);
+        // Use semantic search for better context retrieval
+        let relevantArticles: Awaited<ReturnType<typeof db.searchArticles>> = [];
+        let relevantSOPs: Awaited<ReturnType<typeof db.searchSOPs>> = [];
+        let usedSemanticSearch = false;
+
+        try {
+          // Try semantic search first
+          const semanticResults = await embeddings.semanticSearch(input.message, 8);
+          
+          // Fetch full content for semantic results
+          for (const result of semanticResults) {
+            if (result.type === "article" && relevantArticles.length < 5) {
+              const article = await db.getArticleById(result.id);
+              if (article && article.status === "published") {
+                relevantArticles.push(article);
+              }
+            } else if (result.type === "sop" && relevantSOPs.length < 3) {
+              const sop = await db.getSOPById(result.id);
+              if (sop && sop.status === "published") {
+                relevantSOPs.push(sop);
+              }
+            }
+          }
+          usedSemanticSearch = true;
+        } catch (error) {
+          console.error("Semantic search failed, falling back to text search:", error);
+          // Fallback to traditional search
+          relevantArticles = await db.searchArticles(input.message, 5);
+          relevantSOPs = await db.searchSOPs(input.message, 3);
+        }
+
+        // If semantic search returned no results, try text search as backup
+        if (usedSemanticSearch && relevantArticles.length === 0 && relevantSOPs.length === 0) {
+          relevantArticles = await db.searchArticles(input.message, 5);
+          relevantSOPs = await db.searchSOPs(input.message, 3);
+        }
 
         // Build context from wiki content
         const context = [
-          ...relevantArticles.map((a) => `Artikel: ${a.title}\n${a.content?.substring(0, 1000) || ""}`),
+          ...relevantArticles.map((a) => `Artikel: ${a.title}\n${a.content?.substring(0, 1500) || ""}`),
           ...relevantSOPs.map((s) => `SOP: ${s.title}\n${s.description || ""}`),
         ].join("\n\n---\n\n");
 
@@ -712,6 +746,7 @@ ${context || "Keine relevanten Inhalte gefunden."}`,
 
   // ==================== GLOBAL SEARCH ====================
   search: router({
+    // Traditional full-text search
     global: protectedProcedure
       .input(
         z.object({
@@ -740,6 +775,124 @@ ${context || "Keine relevanten Inhalte gefunden."}`,
 
         return results;
       }),
+
+    // Semantic AI-powered search
+    semantic: protectedProcedure
+      .input(
+        z.object({
+          query: z.string().min(1),
+          type: z.enum(["all", "articles", "sops"]).optional(),
+          limit: z.number().optional(),
+        })
+      )
+      .query(async ({ input }) => {
+        const limit = input.limit || 10;
+        
+        try {
+          // Get semantic search results
+          const semanticResults = await embeddings.semanticSearch(input.query, limit * 2);
+          
+          // Filter by type if specified
+          const filteredResults = semanticResults.filter((r) => {
+            if (!input.type || input.type === "all") return true;
+            if (input.type === "articles") return r.type === "article";
+            if (input.type === "sops") return r.type === "sop";
+            return true;
+          }).slice(0, limit);
+
+          // Fetch full article/SOP data for results
+          const articlesData: Array<{ id: number; title: string; excerpt: string | null; slug: string; similarity: number }> = [];
+          const sopsData: Array<{ id: number; title: string; description: string | null; slug: string; similarity: number }> = [];
+
+          for (const result of filteredResults) {
+            if (result.type === "article") {
+              const article = await db.getArticleById(result.id);
+              if (article && article.status === "published") {
+                articlesData.push({
+                  id: article.id,
+                  title: article.title,
+                  excerpt: article.excerpt,
+                  slug: article.slug,
+                  similarity: result.similarity,
+                });
+              }
+            } else if (result.type === "sop") {
+              const sop = await db.getSOPById(result.id);
+              if (sop && sop.status === "published") {
+                sopsData.push({
+                  id: sop.id,
+                  title: sop.title,
+                  description: sop.description,
+                  slug: sop.slug,
+                  similarity: result.similarity,
+                });
+              }
+            }
+          }
+
+          return {
+            articles: articlesData,
+            sops: sopsData,
+            isSemanticSearch: true,
+          };
+        } catch (error) {
+          console.error("Semantic search failed, falling back to text search:", error);
+          // Fallback to traditional search if semantic search fails
+          const articles = input.type !== "sops" ? await db.searchArticles(input.query, limit) : [];
+          const sops = input.type !== "articles" ? await db.searchSOPs(input.query, limit) : [];
+          return {
+            articles: articles.map((a) => ({ ...a, similarity: 0 })),
+            sops: sops.map((s) => ({ ...s, similarity: 0 })),
+            isSemanticSearch: false,
+          };
+        }
+      }),
+
+    // Find similar articles
+    similar: protectedProcedure
+      .input(z.object({ articleId: z.number(), limit: z.number().optional() }))
+      .query(async ({ input }) => {
+        try {
+          const similarResults = await embeddings.findSimilarArticles(input.articleId, input.limit || 5);
+          
+          const articles = await Promise.all(
+            similarResults.map(async (r) => {
+              const article = await db.getArticleById(r.articleId);
+              return article ? { ...article, similarity: r.similarity } : null;
+            })
+          );
+
+          return articles.filter((a) => a !== null && a.status === "published");
+        } catch (error) {
+          console.error("Similar articles search failed:", error);
+          return [];
+        }
+      }),
+  }),
+
+  // ==================== EMBEDDINGS MANAGEMENT ====================
+  embeddings: router({
+    // Update embedding for a specific article
+    updateArticle: editorProcedure
+      .input(z.object({ articleId: z.number() }))
+      .mutation(async ({ input }) => {
+        await embeddings.updateArticleEmbedding(input.articleId);
+        return { success: true };
+      }),
+
+    // Update embedding for a specific SOP
+    updateSOP: editorProcedure
+      .input(z.object({ sopId: z.number() }))
+      .mutation(async ({ input }) => {
+        await embeddings.updateSOPEmbedding(input.sopId);
+        return { success: true };
+      }),
+
+    // Regenerate all embeddings (admin only)
+    regenerateAll: adminProcedure.mutation(async () => {
+      const result = await embeddings.regenerateAllEmbeddings();
+      return result;
+    }),
   }),
 
   // ==================== DASHBOARD STATS ====================

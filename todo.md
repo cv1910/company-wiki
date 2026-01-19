@@ -150,3 +150,11 @@
 - [x] Hover-Effekte und Loading-States
 - [x] Sanfte Farbverläufe
 - [x] Leere-Zustände mit Illustrationen
+
+## Semantische AI-Suche
+- [x] Datenbank-Tabelle für Vektor-Embeddings
+- [x] Embedding-Generierung bei Artikel-Erstellung/Update
+- [x] Semantische Suche über Embeddings
+- [x] AI-Assistent mit Kontext aus semantischer Suche
+- [x] Ähnliche Artikel basierend auf Embeddings
+- [x] Tests für semantische Suche

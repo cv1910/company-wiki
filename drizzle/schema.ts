@@ -394,3 +394,38 @@ export const leaveBalances = mysqlTable("leaveBalances", {
 
 export type LeaveBalance = typeof leaveBalances.$inferSelect;
 export type InsertLeaveBalance = typeof leaveBalances.$inferInsert;
+
+
+/**
+ * Article embeddings for semantic search.
+ * Stores vector representations of article content for similarity matching.
+ */
+export const articleEmbeddings = mysqlTable("articleEmbeddings", {
+  id: int("id").autoincrement().primaryKey(),
+  articleId: int("articleId").notNull().unique(),
+  embedding: json("embedding").notNull(), // Vector as JSON array
+  embeddingModel: varchar("embeddingModel", { length: 64 }).default("text-embedding-3-small").notNull(),
+  contentHash: varchar("contentHash", { length: 64 }).notNull(), // To detect content changes
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ArticleEmbedding = typeof articleEmbeddings.$inferSelect;
+export type InsertArticleEmbedding = typeof articleEmbeddings.$inferInsert;
+
+/**
+ * SOP embeddings for semantic search.
+ * Stores vector representations of SOP content for similarity matching.
+ */
+export const sopEmbeddings = mysqlTable("sopEmbeddings", {
+  id: int("id").autoincrement().primaryKey(),
+  sopId: int("sopId").notNull().unique(),
+  embedding: json("embedding").notNull(), // Vector as JSON array
+  embeddingModel: varchar("embeddingModel", { length: 64 }).default("text-embedding-3-small").notNull(),
+  contentHash: varchar("contentHash", { length: 64 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SOPEmbedding = typeof sopEmbeddings.$inferSelect;
+export type InsertSOPEmbedding = typeof sopEmbeddings.$inferInsert;
