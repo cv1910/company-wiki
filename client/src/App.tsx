@@ -32,6 +32,7 @@ import AdminAssignments from "./pages/admin/Assignments";
 // Leave/Vacation Pages
 import Leave from "./pages/Leave";
 import AdminLeave from "./pages/admin/Leave";
+import AdminLeaveBalances from "./pages/admin/LeaveBalances";
 
 // Settings & Mentions
 import EmailSettings from "./pages/EmailSettings";
@@ -79,6 +80,7 @@ function Router() {
         <Route path="/admin/reviews" component={AdminReviews} />
         <Route path="/admin/audit-log" component={AdminAuditLog} />
         <Route path="/admin/leave" component={AdminLeave} />
+        <Route path="/admin/leave-balances" component={AdminLeaveBalances} />
         <Route path="/admin/announcements" component={AdminAnnouncements} />
         <Route path="/admin/assignments" component={AdminAssignments} />
         

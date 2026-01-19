@@ -247,3 +247,9 @@
 - [x] Verbesserte Quellenangaben mit direkten Links zu Artikeln
 - [x] Zitate aus Originalquellen in Antworten hervorheben (System-Prompt)
 - [x] Verwandte Artikel am Ende der Antwort vorschlagen (System-Prompt)
+
+## Urlaubsanspruch-Verwaltung
+- [x] API-Endpunkt zum Abrufen aller Mitarbeiter mit Urlaubsanspruch
+- [x] API-Endpunkt zum Aktualisieren des individuellen Urlaubsanspruchs
+- [x] Admin-UI mit Übersicht aller Mitarbeiter und deren Urlaubsanspruch
+- [x] Bearbeitungsdialog für individuellen Urlaubsanspruch

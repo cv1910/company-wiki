@@ -1696,3 +1696,37 @@ export async function getPublishedSOPs(limit: number = 3) {
     .orderBy(desc(sops.updatedAt))
     .limit(limit);
 }
+
+
+// Get all users with their leave balances for a given year
+export async function getAllLeaveBalances(year: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get all users
+  const allUsers = await db.select().from(users);
+  
+  // Get or create balances for each user
+  const balances = await Promise.all(
+    allUsers.map(async (user) => {
+      const balance = await getLeaveBalance(user.id, year);
+      return {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          avatarUrl: user.avatarUrl,
+          role: user.role,
+        },
+        balance: balance || {
+          totalDays: 30,
+          usedDays: 0,
+          remainingDays: 30,
+          year,
+        },
+      };
+    })
+  );
+  
+  return balances;
+}

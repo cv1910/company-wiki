@@ -1934,6 +1934,40 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
       const pending = await db.getPendingLeaveRequests();
       return pending.length;
     }),
+
+    // Get all users with their leave balances (for admins)
+    allBalances: adminProcedure
+      .input(z.object({ year: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        const year = input?.year || new Date().getFullYear();
+        return db.getAllLeaveBalances(year);
+      }),
+
+    // Update a user's leave balance (for admins)
+    updateBalance: adminProcedure
+      .input(
+        z.object({
+          userId: z.number(),
+          year: z.number(),
+          totalDays: z.number().min(0).max(365),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.updateLeaveBalance(input.userId, input.year, {
+          totalDays: input.totalDays,
+        });
+
+        // Log the action
+        await db.createAuditLogEntry({
+          userId: ctx.user.id,
+          action: "leave_balance_updated",
+          resourceType: "leave_balance",
+          resourceId: input.userId,
+          newValue: `${input.totalDays} Tage für ${input.year}`,
+        });
+
+        return result;
+      }),
   }),
 
   // ==================== EMAIL SETTINGS ====================

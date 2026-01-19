@@ -45,6 +45,7 @@ import {
   Mail,
   Megaphone,
   GraduationCap,
+  Sun,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -72,6 +73,7 @@ const adminMenuItems = [
   { icon: FolderOpen, label: "Kategorien", path: "/admin/categories" },
   { icon: Users, label: "Benutzer", path: "/admin/users" },
   { icon: Calendar, label: "Urlaubsanträge", path: "/admin/leave" },
+  { icon: Sun, label: "Urlaubsansprüche", path: "/admin/leave-balances" },
   { icon: Megaphone, label: "Ankündigungen", path: "/admin/announcements" },
   { icon: GraduationCap, label: "Zuweisungen", path: "/admin/assignments" },
   { icon: CheckSquare, label: "Reviews", path: "/admin/reviews" },
