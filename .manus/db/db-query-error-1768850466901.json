@@ -1,0 +1,8 @@
+{
+  "query": "INSERT INTO categories (name, slug, description, createdAt, updatedAt) \nVALUES ('Onboarding', 'onboarding', 'Alle wichtigen Informationen für neue Mitarbeiter', NOW(), NOW());",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute INSERT INTO categories (name, slug, description, createdAt, updatedAt) \nVALUES ('Onboarding', 'onboarding', 'Alle wichtigen Informationen für neue Mitarbeiter', NOW(), NOW());",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1364 (HY000) at line 1: Field 'createdById' doesn't have a default value"
+  ]
+}

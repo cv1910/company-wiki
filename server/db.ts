@@ -640,13 +640,13 @@ export async function getArticleFeedback(articleId: number) {
 
 export async function getUserFeedbackForArticle(articleId: number, userId: number) {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) return null;
   const result = await db
     .select()
     .from(articleFeedback)
     .where(and(eq(articleFeedback.articleId, articleId), eq(articleFeedback.userId, userId)))
     .limit(1);
-  return result[0];
+  return result[0] ?? null;
 }
 
 export async function getAllFeedback(status?: "pending" | "reviewed" | "resolved" | "dismissed", limit: number = 50) {

@@ -208,3 +208,6 @@
 ## Ankündigungsverwaltung
 - [x] Admin-Seite für Ankündigungen erstellen (CRUD)
 - [x] Navigation zur Ankündigungsverwaltung hinzufügen
+
+## Bugfixes
+- [x] getUserFeedback-Query gibt undefined zurück statt null/leeres Objekt
