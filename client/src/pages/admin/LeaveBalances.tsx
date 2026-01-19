@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Loader2, Users, Edit, Sun, Umbrella } from "lucide-react";
+import { Calendar, Loader2, Users, Edit, Sun, Umbrella, ArrowRight, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
 
@@ -16,6 +16,8 @@ export default function AdminLeaveBalances() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [editingUser, setEditingUser] = useState<any>(null);
   const [newTotalDays, setNewTotalDays] = useState<number>(30);
+  const [carryOverDialogOpen, setCarryOverDialogOpen] = useState(false);
+  const [maxCarryOverDays, setMaxCarryOverDays] = useState(10);
 
   const utils = trpc.useUtils();
   const { data: balances, isLoading } = trpc.leave.allBalances.useQuery({ year: selectedYear });
@@ -30,6 +32,26 @@ export default function AdminLeaveBalances() {
       toast.error("Fehler: " + error.message);
     },
   });
+
+  const carryOver = trpc.leave.carryOver.useMutation({
+    onSuccess: (result) => {
+      toast.success(
+        `Resturlaub für ${result.affectedUsers} Mitarbeiter von ${result.fromYear} nach ${result.toYear} übertragen`
+      );
+      setCarryOverDialogOpen(false);
+      utils.leave.allBalances.invalidate();
+    },
+    onError: (error) => {
+      toast.error("Fehler: " + error.message);
+    },
+  });
+
+  const handleCarryOver = () => {
+    carryOver.mutate({
+      fromYear: selectedYear,
+      maxCarryOverDays,
+    });
+  };
 
   const handleEdit = (userBalance: any) => {
     setEditingUser(userBalance);
@@ -74,14 +96,23 @@ export default function AdminLeaveBalances() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-semibold">Urlaubsansprüche</h1>
             <p className="text-muted-foreground mt-1">
               Verwalten Sie die individuellen Urlaubsansprüche der Mitarbeiter
             </p>
           </div>
-          <Select
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setCarryOverDialogOpen(true)}
+              className="gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Resturlaub übertragen
+            </Button>
+            <Select
             value={selectedYear.toString()}
             onValueChange={(value) => setSelectedYear(parseInt(value))}
           >
@@ -96,6 +127,7 @@ export default function AdminLeaveBalances() {
               ))}
             </SelectContent>
           </Select>
+          </div>
         </div>
 
         {/* Summary Cards */}
@@ -172,6 +204,9 @@ export default function AdminLeaveBalances() {
                         Anspruch
                       </th>
                       <th className="text-center py-3 px-4 font-medium text-muted-foreground">
+                        Übertrag
+                      </th>
+                      <th className="text-center py-3 px-4 font-medium text-muted-foreground">
                         Genommen
                       </th>
                       <th className="text-center py-3 px-4 font-medium text-muted-foreground">
@@ -202,6 +237,15 @@ export default function AdminLeaveBalances() {
                         <td className="text-center py-3 px-4">
                           <span className="font-semibold">{item.balance.totalDays}</span>
                           <span className="text-muted-foreground"> Tage</span>
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          {('carryOverDays' in item.balance && item.balance.carryOverDays > 0) ? (
+                            <span className="font-semibold text-blue-600 dark:text-blue-400">
+                              +{item.balance.carryOverDays}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
                         </td>
                         <td className="text-center py-3 px-4">
                           <span className="font-semibold text-orange-600 dark:text-orange-400">
@@ -284,6 +328,59 @@ export default function AdminLeaveBalances() {
               <Button onClick={handleSave} disabled={updateBalance.isPending}>
                 {updateBalance.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Speichern
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Carry Over Dialog */}
+        <Dialog open={carryOverDialogOpen} onOpenChange={setCarryOverDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Resturlaub übertragen</DialogTitle>
+              <DialogDescription>
+                Übertragen Sie den Resturlaub aller Mitarbeiter von {selectedYear} nach {selectedYear + 1}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-center gap-4 py-4">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-primary">{selectedYear}</div>
+                  <div className="text-sm text-muted-foreground">Quelljahr</div>
+                </div>
+                <ArrowRight className="w-8 h-8 text-muted-foreground" />
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-primary">{selectedYear + 1}</div>
+                  <div className="text-sm text-muted-foreground">Zieljahr</div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Maximale Übertragstage pro Mitarbeiter</label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={30}
+                  value={maxCarryOverDays}
+                  onChange={(e) => setMaxCarryOverDays(parseInt(e.target.value) || 0)}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Resturlaub über diesem Limit verfällt.
+                </p>
+              </div>
+              <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                  <strong>Hinweis:</strong> Der Übertrag wird für alle Mitarbeiter mit Resturlaub durchgeführt.
+                  Bereits existierende Ansprüche für {selectedYear + 1} werden aktualisiert.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCarryOverDialogOpen(false)}>
+                Abbrechen
+              </Button>
+              <Button onClick={handleCarryOver} disabled={carryOver.isPending}>
+                {carryOver.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Übertrag durchführen
               </Button>
             </DialogFooter>
           </DialogContent>

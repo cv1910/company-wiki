@@ -9,6 +9,8 @@ vi.mock("./db", () => ({
   updateLeaveBalance: vi.fn(),
   createAuditLogEntry: vi.fn(),
   getLeaveBalance: vi.fn(),
+  carryOverLeaveBalances: vi.fn(),
+  getLeaveCarryOverSettings: vi.fn().mockResolvedValue({ maxCarryOverDays: 10, autoCarryOver: false }),
 }));
 
 function createAdminContext(): TrpcContext {
@@ -204,5 +206,69 @@ describe("leave.updateBalance", () => {
         totalDays: 400,
       })
     ).rejects.toThrow();
+  });
+});
+
+describe("leave.carryOver", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("carries over remaining leave days to next year", async () => {
+    vi.mocked(db.carryOverLeaveBalances).mockResolvedValue([
+      { userId: 1, carriedOver: 8 },
+      { userId: 2, carriedOver: 5 },
+    ]);
+    vi.mocked(db.createAuditLogEntry).mockResolvedValue({ id: 1 } as any);
+
+    const ctx = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.leave.carryOver({
+      fromYear: 2025,
+      maxCarryOverDays: 10,
+    });
+
+    expect(result.fromYear).toBe(2025);
+    expect(result.toYear).toBe(2026);
+    expect(result.affectedUsers).toBe(2);
+    expect(result.details).toHaveLength(2);
+  });
+
+  it("uses default max carry over days if not specified", async () => {
+    vi.mocked(db.carryOverLeaveBalances).mockResolvedValue([]);
+    vi.mocked(db.createAuditLogEntry).mockResolvedValue({ id: 1 } as any);
+
+    const ctx = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    await caller.leave.carryOver({ fromYear: 2025 });
+
+    expect(db.carryOverLeaveBalances).toHaveBeenCalledWith(2025, 10);
+  });
+
+  it("rejects non-admin users", async () => {
+    const ctx = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.leave.carryOver({ fromYear: 2025 })
+    ).rejects.toThrow();
+  });
+
+  it("creates an audit log entry", async () => {
+    vi.mocked(db.carryOverLeaveBalances).mockResolvedValue([
+      { userId: 1, carriedOver: 5 },
+    ]);
+    vi.mocked(db.createAuditLogEntry).mockResolvedValue({ id: 1 } as any);
+
+    const ctx = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    await caller.leave.carryOver({ fromYear: 2025, maxCarryOverDays: 8 });
+
+    expect(db.createAuditLogEntry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "leave_carry_over",
+        resourceType: "leave_balance",
+      })
+    );
   });
 });

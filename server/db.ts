@@ -1730,3 +1730,82 @@ export async function getAllLeaveBalances(year: number) {
   
   return balances;
 }
+
+
+// Carry over remaining leave days to the next year
+export async function carryOverLeaveBalances(
+  fromYear: number,
+  maxCarryOverDays: number = 10
+): Promise<{ userId: number; carriedOver: number }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get all balances for the source year
+  const balances = await db
+    .select()
+    .from(leaveBalances)
+    .where(eq(leaveBalances.year, fromYear));
+  
+  const results: { userId: number; carriedOver: number }[] = [];
+  const toYear = fromYear + 1;
+  
+  for (const balance of balances) {
+    const remainingDays = balance.totalDays - balance.usedDays;
+    const daysToCarryOver = Math.min(Math.max(0, remainingDays), maxCarryOverDays);
+    
+    if (daysToCarryOver > 0) {
+      // Check if next year balance exists
+      const existingNextYear = await db
+        .select()
+        .from(leaveBalances)
+        .where(and(
+          eq(leaveBalances.userId, balance.userId),
+          eq(leaveBalances.year, toYear)
+        ))
+        .limit(1);
+      
+      if (existingNextYear.length > 0) {
+        // Update existing balance with carry over
+        await db
+          .update(leaveBalances)
+          .set({
+            carryOverDays: daysToCarryOver,
+            totalDays: existingNextYear[0].totalDays + daysToCarryOver,
+          })
+          .where(and(
+            eq(leaveBalances.userId, balance.userId),
+            eq(leaveBalances.year, toYear)
+          ));
+      } else {
+        // Create new balance for next year with carry over
+        await db.insert(leaveBalances).values({
+          userId: balance.userId,
+          year: toYear,
+          totalDays: 30 + daysToCarryOver, // Default 30 + carry over
+          usedDays: 0,
+          pendingDays: 0,
+          carryOverDays: daysToCarryOver,
+        });
+      }
+      
+      results.push({
+        userId: balance.userId,
+        carriedOver: daysToCarryOver,
+      });
+    }
+  }
+  
+  return results;
+}
+
+// Get system settings for leave carry over
+export async function getLeaveCarryOverSettings(): Promise<{
+  maxCarryOverDays: number;
+  autoCarryOver: boolean;
+}> {
+  // For now, return defaults. Could be extended to read from a settings table
+  return {
+    maxCarryOverDays: 10,
+    autoCarryOver: false,
+  };
+}

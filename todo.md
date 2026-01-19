@@ -253,3 +253,10 @@
 - [x] API-Endpunkt zum Aktualisieren des individuellen Urlaubsanspruchs
 - [x] Admin-UI mit Übersicht aller Mitarbeiter und deren Urlaubsanspruch
 - [x] Bearbeitungsdialog für individuellen Urlaubsanspruch
+
+## Urlaubsübertrag ins nächste Jahr
+- [x] Backend-Funktion zum Übertragen von Resturlaub ins nächste Jahr
+- [x] API-Endpunkt zum manuellen Auslösen des Übertrags (Admin)
+- [x] Konfiguration für maximale Übertragstage
+- [x] Admin-UI mit Button zum Auslösen des Übertrags
+- [x] Anzeige der Übertragstage in der Urlaubsanspruch-Übersicht

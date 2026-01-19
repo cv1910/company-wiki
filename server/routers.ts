@@ -1968,6 +1968,40 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
 
         return result;
       }),
+
+    // Carry over remaining leave days to next year (for admins)
+    carryOver: adminProcedure
+      .input(
+        z.object({
+          fromYear: z.number(),
+          maxCarryOverDays: z.number().min(0).max(30).optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const maxDays = input.maxCarryOverDays ?? 10;
+        const results = await db.carryOverLeaveBalances(input.fromYear, maxDays);
+
+        // Log the action
+        await db.createAuditLogEntry({
+          userId: ctx.user.id,
+          action: "leave_carry_over",
+          resourceType: "leave_balance",
+          newValue: `Übertrag von ${input.fromYear} nach ${input.fromYear + 1} (max ${maxDays} Tage) für ${results.length} Mitarbeiter`,
+        });
+
+        return {
+          fromYear: input.fromYear,
+          toYear: input.fromYear + 1,
+          maxCarryOverDays: maxDays,
+          affectedUsers: results.length,
+          details: results,
+        };
+      }),
+
+    // Get carry over settings
+    carryOverSettings: adminProcedure.query(async () => {
+      return db.getLeaveCarryOverSettings();
+    }),
   }),
 
   // ==================== EMAIL SETTINGS ====================
