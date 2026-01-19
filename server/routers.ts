@@ -151,8 +151,23 @@ export const appRouter = router({
   // ==================== ARTICLES ====================
   articles: router({
     list: protectedProcedure
-      .input(z.object({ status: z.enum(["draft", "published", "archived"]).optional() }).optional())
+      .input(z.object({ 
+        status: z.enum(["draft", "published", "archived"]).optional(),
+        categorySlug: z.string().optional(),
+        limit: z.number().optional(),
+      }).optional())
       .query(async ({ input }) => {
+        if (input?.categorySlug) {
+          const category = await db.getCategoryBySlug(input.categorySlug);
+          if (category) {
+            const articles = await db.getArticlesByCategory(category.id);
+            if (input.status) {
+              return articles.filter(a => a.status === input.status).slice(0, input.limit || 100);
+            }
+            return articles.slice(0, input.limit || 100);
+          }
+          return [];
+        }
         return db.getAllArticles(input?.status);
       }),
 
@@ -1973,6 +1988,113 @@ ${context || "Keine relevanten Inhalte gefunden."}`,
         }
 
         return { success: true, id };
+      }),
+  }),
+
+  // ==================== ASSIGNMENTS ====================
+  assignments: router({
+    // Get my assignments
+    getMyAssignments: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserAssignments(ctx.user.id);
+    }),
+
+    // Get assignment by ID
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getAssignment(input.id);
+      }),
+
+    // Get assignments for a resource
+    getByResource: protectedProcedure
+      .input(z.object({
+        resourceType: z.enum(["article", "sop"]),
+        resourceId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return db.getAssignmentsByResource(input.resourceType, input.resourceId);
+      }),
+
+    // Check if current user has an assignment for a resource
+    checkMyAssignment: protectedProcedure
+      .input(z.object({
+        resourceType: z.enum(["article", "sop"]),
+        resourceId: z.number(),
+      }))
+      .query(async ({ ctx, input }) => {
+        return db.getAssignmentByUserAndResource(ctx.user.id, input.resourceType, input.resourceId);
+      }),
+
+    // Create assignment (admin/editor only)
+    create: editorProcedure
+      .input(z.object({
+        userId: z.number(),
+        resourceType: z.enum(["article", "sop"]),
+        resourceId: z.number(),
+        resourceSlug: z.string(),
+        resourceTitle: z.string(),
+        dueDate: z.date().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const assignment = await db.createAssignment({
+          ...input,
+          assignedById: ctx.user.id,
+        });
+
+        // Create notification for the assigned user
+        if (assignment) {
+          await db.createNotification({
+            userId: input.userId,
+            type: "assignment",
+            title: "Neue Zuweisung",
+            message: `Dir wurde "${input.resourceTitle}" zugewiesen.`,
+            resourceType: input.resourceType,
+            resourceId: input.resourceId,
+          });
+        }
+
+        return assignment;
+      }),
+
+    // Mark assignment as started
+    start: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const assignment = await db.getAssignment(input.id);
+        if (!assignment || assignment.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not your assignment" });
+        }
+        return db.markAssignmentStarted(input.id);
+      }),
+
+    // Mark assignment as completed
+    complete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const assignment = await db.getAssignment(input.id);
+        if (!assignment || assignment.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not your assignment" });
+        }
+        return db.markAssignmentCompleted(input.id);
+      }),
+
+    // Delete assignment (admin/editor only)
+    delete: editorProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteAssignment(input.id);
+        return { success: true };
+      }),
+
+    // Get all assignments (admin only)
+    list: adminProcedure
+      .input(z.object({
+        status: z.string().optional(),
+        userId: z.number().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return db.getAllAssignments(input);
       }),
   }),
 

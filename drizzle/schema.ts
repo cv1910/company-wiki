@@ -516,3 +516,27 @@ export const announcements = mysqlTable("announcements", {
 
 export type Announcement = typeof announcements.$inferSelect;
 export type InsertAnnouncement = typeof announcements.$inferInsert;
+
+
+/**
+ * Assignments for tracking assigned SOPs and articles to users.
+ * Used for onboarding and training purposes.
+ */
+export const assignments = mysqlTable("assignments", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  resourceType: mysqlEnum("resourceType", ["article", "sop"]).notNull(),
+  resourceId: int("resourceId").notNull(),
+  resourceSlug: varchar("resourceSlug", { length: 500 }).notNull(),
+  resourceTitle: varchar("resourceTitle", { length: 500 }).notNull(),
+  status: mysqlEnum("status", ["pending", "in_progress", "completed"]).default("pending").notNull(),
+  dueDate: timestamp("dueDate"),
+  assignedById: int("assignedById").notNull(),
+  assignedAt: timestamp("assignedAt").defaultNow().notNull(),
+  startedAt: timestamp("startedAt"),
+  completedAt: timestamp("completedAt"),
+  notes: text("notes"),
+});
+
+export type Assignment = typeof assignments.$inferSelect;
+export type InsertAssignment = typeof assignments.$inferInsert;

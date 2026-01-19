@@ -44,6 +44,7 @@ import {
   AtSign,
   Mail,
   Megaphone,
+  GraduationCap,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -60,6 +61,7 @@ const menuItems = [
   { icon: Home, label: "Dashboard", path: "/" },
   { icon: Book, label: "Wiki", path: "/wiki" },
   { icon: ClipboardList, label: "SOPs", path: "/sops" },
+  { icon: GraduationCap, label: "Onboarding", path: "/onboarding" },
   { icon: Search, label: "Suche", path: "/search" },
   { icon: MessageCircle, label: "AI-Assistent", path: "/chat" },
   { icon: Calendar, label: "Urlaub", path: "/leave" },
@@ -71,6 +73,7 @@ const adminMenuItems = [
   { icon: Users, label: "Benutzer", path: "/admin/users" },
   { icon: Calendar, label: "Urlaubsanträge", path: "/admin/leave" },
   { icon: Megaphone, label: "Ankündigungen", path: "/admin/announcements" },
+  { icon: GraduationCap, label: "Zuweisungen", path: "/admin/assignments" },
   { icon: CheckSquare, label: "Reviews", path: "/admin/reviews" },
   { icon: MessageSquare, label: "Feedback", path: "/admin/feedback" },
   { icon: Shield, label: "Audit-Log", path: "/admin/audit-log" },

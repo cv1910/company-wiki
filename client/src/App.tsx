@@ -27,6 +27,7 @@ import AdminFeedback from "./pages/admin/Feedback";
 import AdminReviews from "./pages/admin/Reviews";
 import AdminAuditLog from "./pages/admin/AuditLog";
 import AdminAnnouncements from "./pages/admin/Announcements";
+import AdminAssignments from "./pages/admin/Assignments";
 
 // Leave/Vacation Pages
 import Leave from "./pages/Leave";
@@ -35,6 +36,9 @@ import AdminLeave from "./pages/admin/Leave";
 // Settings & Mentions
 import EmailSettings from "./pages/EmailSettings";
 import Mentions from "./pages/Mentions";
+
+// Onboarding
+import Onboarding from "./pages/Onboarding";
 
 function Router() {
   return (
@@ -58,6 +62,7 @@ function Router() {
         <Route path="/search" component={Search} />
         <Route path="/chat" component={Chat} />
         <Route path="/notifications" component={Notifications} />
+        <Route path="/onboarding" component={Onboarding} />
         
         {/* Leave/Vacation Routes */}
         <Route path="/leave" component={Leave} />
@@ -75,6 +80,7 @@ function Router() {
         <Route path="/admin/audit-log" component={AdminAuditLog} />
         <Route path="/admin/leave" component={AdminLeave} />
         <Route path="/admin/announcements" component={AdminAnnouncements} />
+        <Route path="/admin/assignments" component={AdminAssignments} />
         
         {/* Fallback */}
         <Route path="/404" component={NotFound} />

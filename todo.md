@@ -211,3 +211,14 @@
 
 ## Bugfixes
 - [x] getUserFeedback-Query gibt undefined zurück statt null/leeres Objekt
+
+## Onboarding-Bereich
+- [x] Onboarding als eigenen Navigationspunkt in der Sidebar hinzufügen
+- [x] Onboarding-Kachel auf dem Dashboard hinzufügen
+- [x] Dedizierte Onboarding-Seite erstellen
+
+## Zuweisungssystem
+- [x] Datenbank-Schema für Zuweisungen (assignments) erstellen
+- [x] API-Endpunkte für Zuweisungen implementieren
+- [x] UI für Zuweisung von SOPs und Onboarding-Artikeln an Benutzer (Admin-Seite)
+- [x] Fortschrittsverfolgung für zugewiesene Inhalte (auf Onboarding-Seite)

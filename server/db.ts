@@ -49,6 +49,8 @@ import {
   InsertLeaveRequest,
   leaveBalances,
   InsertLeaveBalance,
+  assignments,
+  InsertAssignment,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1501,4 +1503,151 @@ export async function deleteAnnouncement(id: number) {
   const db = await getDb();
   if (!db) return;
   await db.delete(announcements).where(eq(announcements.id, id));
+}
+
+
+// ==================== ASSIGNMENTS ====================
+
+export async function createAssignment(data: InsertAssignment) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  // Check if assignment already exists
+  const existing = await db
+    .select()
+    .from(assignments)
+    .where(and(
+      eq(assignments.userId, data.userId),
+      eq(assignments.resourceType, data.resourceType),
+      eq(assignments.resourceId, data.resourceId)
+    ))
+    .limit(1);
+  
+  if (existing.length > 0) {
+    return existing[0];
+  }
+  
+  const result = await db.insert(assignments).values(data);
+  return { id: result[0].insertId, ...data };
+}
+
+export async function getAssignment(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(assignments).where(eq(assignments.id, id)).limit(1);
+  return result[0] || null;
+}
+
+export async function getUserAssignments(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(assignments)
+    .where(eq(assignments.userId, userId))
+    .orderBy(desc(assignments.assignedAt));
+}
+
+export async function updateAssignment(id: number, data: Partial<InsertAssignment>) {
+  const db = await getDb();
+  if (!db) return null;
+  await db.update(assignments).set(data).where(eq(assignments.id, id));
+  return getAssignment(id);
+}
+
+export async function deleteAssignment(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.delete(assignments).where(eq(assignments.id, id));
+  return true;
+}
+
+export async function getAssignmentsByResource(resourceType: "article" | "sop", resourceId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      assignment: assignments,
+      user: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(assignments)
+    .leftJoin(users, eq(assignments.userId, users.id))
+    .where(and(
+      eq(assignments.resourceType, resourceType),
+      eq(assignments.resourceId, resourceId)
+    ))
+    .orderBy(assignments.assignedAt);
+}
+
+export async function getAllAssignments(filters?: { status?: string; userId?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  if (filters?.status) {
+    conditions.push(eq(assignments.status, filters.status as any));
+  }
+  if (filters?.userId) {
+    conditions.push(eq(assignments.userId, filters.userId));
+  }
+  
+  return db
+    .select({
+      assignment: assignments,
+      user: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      },
+      assignedBy: {
+        id: sql<number>`assignedBy.id`,
+        name: sql<string>`assignedBy.name`,
+      },
+    })
+    .from(assignments)
+    .leftJoin(users, eq(assignments.userId, users.id))
+    .leftJoin(sql`users as assignedBy`, sql`${assignments.assignedById} = assignedBy.id`)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(assignments.assignedAt));
+}
+
+export async function markAssignmentStarted(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  await db.update(assignments).set({
+    status: "in_progress",
+    startedAt: new Date(),
+  }).where(eq(assignments.id, id));
+  return getAssignment(id);
+}
+
+export async function markAssignmentCompleted(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  await db.update(assignments).set({
+    status: "completed",
+    completedAt: new Date(),
+  }).where(eq(assignments.id, id));
+  return getAssignment(id);
+}
+
+export async function getAssignmentByUserAndResource(userId: number, resourceType: "article" | "sop", resourceId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(assignments)
+    .where(and(
+      eq(assignments.userId, userId),
+      eq(assignments.resourceType, resourceType),
+      eq(assignments.resourceId, resourceId)
+    ))
+    .limit(1);
+  return result[0] || null;
 }

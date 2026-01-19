@@ -19,7 +19,8 @@ import {
   ArrowRight,
   Sparkles,
   Users,
-  FolderOpen
+  FolderOpen,
+  GraduationCap
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
@@ -100,6 +101,15 @@ export default function Home() {
       color: "from-orange-500 to-orange-600",
       bgColor: "bg-orange-500/10",
       textColor: "text-orange-600 dark:text-orange-400"
+    },
+    { 
+      icon: GraduationCap, 
+      label: "Onboarding", 
+      description: "Einarbeitung & Training",
+      path: "/onboarding", 
+      color: "from-indigo-500 to-indigo-600",
+      bgColor: "bg-indigo-500/10",
+      textColor: "text-indigo-600 dark:text-indigo-400"
     },
     { 
       icon: Bell, 
