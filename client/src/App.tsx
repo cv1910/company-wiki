@@ -26,6 +26,7 @@ import AdminSettings from "./pages/admin/Settings";
 import AdminFeedback from "./pages/admin/Feedback";
 import AdminReviews from "./pages/admin/Reviews";
 import AdminAuditLog from "./pages/admin/AuditLog";
+import AdminAnnouncements from "./pages/admin/Announcements";
 
 // Leave/Vacation Pages
 import Leave from "./pages/Leave";
@@ -73,6 +74,7 @@ function Router() {
         <Route path="/admin/reviews" component={AdminReviews} />
         <Route path="/admin/audit-log" component={AdminAuditLog} />
         <Route path="/admin/leave" component={AdminLeave} />
+        <Route path="/admin/announcements" component={AdminAnnouncements} />
         
         {/* Fallback */}
         <Route path="/404" component={NotFound} />

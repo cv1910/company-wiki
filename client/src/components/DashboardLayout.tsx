@@ -43,6 +43,7 @@ import {
   Keyboard,
   AtSign,
   Mail,
+  Megaphone,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -69,6 +70,7 @@ const adminMenuItems = [
   { icon: FolderOpen, label: "Kategorien", path: "/admin/categories" },
   { icon: Users, label: "Benutzer", path: "/admin/users" },
   { icon: Calendar, label: "Urlaubsanträge", path: "/admin/leave" },
+  { icon: Megaphone, label: "Ankündigungen", path: "/admin/announcements" },
   { icon: CheckSquare, label: "Reviews", path: "/admin/reviews" },
   { icon: MessageSquare, label: "Feedback", path: "/admin/feedback" },
   { icon: Shield, label: "Audit-Log", path: "/admin/audit-log" },

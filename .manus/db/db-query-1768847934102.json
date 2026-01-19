@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO announcements (title, content, type, isPinned, isActive, createdById, createdAt, updatedAt) \nVALUES ('Willkommen im Company Wiki!', 'Das neue Company Wiki ist jetzt online. Hier findest du alle wichtigen Informationen, Prozesse und Anleitungen für deinen Arbeitsalltag. Bei Fragen wende dich an das Admin-Team.', 'success', true, true, 1, NOW(), NOW());",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute INSERT INTO announcements (title, content, type, isPinned, isActive, createdById, createdAt, updatedAt) \nVALUES ('Willkommen im Company Wiki!', 'Das neue Company Wiki ist jetzt online. Hier findest du alle wichtigen Informationen, Prozesse und Anleitungen für deinen Arbeitsalltag. Bei Fragen wende dich an das Admin-Team.', 'success', true, true, 1, NOW(), NOW());",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 117
+}
