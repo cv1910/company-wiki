@@ -265,3 +265,7 @@
 - [x] Cron-Job für automatischen Urlaubsübertrag am 1. Januar
 - [x] Admin-Einstellungen für automatischen Übertrag (aktivieren/deaktivieren, max. Tage)
 - [x] Benachrichtigung an Admin nach erfolgreichem Übertrag
+
+## SOP: Urlaubsantrag
+- [x] SOP-Kategorie "HR & Personal" erstellen
+- [x] SOP "Urlaubsantrag stellen" mit Schritt-für-Schritt-Anleitung erstellen

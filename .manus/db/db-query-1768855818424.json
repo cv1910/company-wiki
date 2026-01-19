@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO sopCategories (name, slug, description, icon, sortOrder, createdById, createdAt, updatedAt)\nVALUES ('HR & Personal', 'hr-personal', 'Standardarbeitsanweisungen für Personalangelegenheiten wie Urlaub, Krankmeldung und Onboarding', 'Users', 1, 1, NOW(), NOW());",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute INSERT INTO sopCategories (name, slug, description, icon, sortOrder, createdById, createdAt, updatedAt)\nVALUES ('HR & Personal', 'hr-personal', 'Standardarbeitsanweisungen für Personalangelegenheiten wie Urlaub, Krankmeldung und Onboarding', 'Users', 1, 1, NOW(), NOW());",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 68
+}
