@@ -15,6 +15,7 @@ import WikiEditor from "./pages/WikiEditor";
 import SOPs from "./pages/SOPs";
 import SOPView from "./pages/SOPView";
 import SOPEditor from "./pages/SOPEditor";
+import SOPCategory from "./pages/SOPCategory";
 import Search from "./pages/Search";
 import Chat from "./pages/Chat";
 import Notifications from "./pages/Notifications";
@@ -56,6 +57,7 @@ function Router() {
         {/* SOP Routes */}
         <Route path="/sops" component={SOPs} />
         <Route path="/sops/view/:slug" component={SOPView} />
+        <Route path="/sops/category/:slug" component={SOPCategory} />
         <Route path="/sops/new" component={SOPEditor} />
         <Route path="/sops/edit/:slug" component={SOPEditor} />
         

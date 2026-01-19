@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 import { ClipboardList, FolderOpen, Plus, Search } from "lucide-react";
+import { Streamdown } from "streamdown";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
@@ -71,10 +72,7 @@ export default function SOPs() {
                 <Card
                   key={category.id}
                   className="card-shadow hover:elevated-shadow transition-all cursor-pointer group"
-                  onClick={() => {
-                    // Filter SOPs by this category
-                    setSearchQuery(category.name);
-                  }}
+                  onClick={() => setLocation(`/sops/category/${category.slug}`)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
@@ -130,9 +128,9 @@ export default function SOPs() {
                     <div className="flex-1 min-w-0">
                       <h3 className="font-medium truncate">{sop.title}</h3>
                       {sop.description && (
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                          {sop.description}
-                        </p>
+                        <div className="text-sm text-muted-foreground mt-1 line-clamp-2 prose prose-sm dark:prose-invert max-w-none">
+                          <Streamdown>{sop.description.substring(0, 200)}</Streamdown>
+                        </div>
                       )}
                       <div className="flex items-center gap-2 mt-2">
                         {sop.scribeUrl && (

@@ -59,7 +59,7 @@ import { FavoritesList } from "./FavoriteButton";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 const menuItems = [
-  { icon: Home, label: "Dashboard", path: "/" },
+  { icon: Home, label: "Home", path: "/" },
   { icon: Book, label: "Wiki", path: "/wiki" },
   { icon: ClipboardList, label: "SOPs", path: "/sops" },
   { icon: GraduationCap, label: "Onboarding", path: "/onboarding" },
@@ -70,7 +70,7 @@ const menuItems = [
 ];
 
 const adminMenuItems = [
-  { icon: FolderOpen, label: "Kategorien", path: "/admin/categories" },
+  { icon: FolderOpen, label: "Bereiche", path: "/admin/categories" },
   { icon: Users, label: "Benutzer", path: "/admin/users" },
   { icon: Calendar, label: "Urlaubsanträge", path: "/admin/leave" },
   { icon: Sun, label: "Urlaubsansprüche", path: "/admin/leave-balances" },

@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, ClipboardList, Edit, ExternalLink, Share2 } from "lucide-react";
+import { Streamdown } from "streamdown";
 import { useLocation, useParams } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
@@ -123,7 +124,9 @@ export default function SOPView() {
             </div>
             <h1 className="text-2xl font-semibold tracking-tight">{sop.title}</h1>
             {sop.description && (
-              <p className="text-muted-foreground mt-2">{sop.description}</p>
+              <div className="prose prose-sm dark:prose-invert max-w-none mt-4">
+                <Streamdown>{sop.description}</Streamdown>
+              </div>
             )}
             <p className="text-sm text-muted-foreground mt-3">
               Aktualisiert{" "}

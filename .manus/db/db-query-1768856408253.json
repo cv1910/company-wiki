@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, name, isSystem FROM articleTemplates ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute SELECT id, name, isSystem FROM articleTemplates ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Leere Seite",
+      "isSystem": "1"
+    },
+    {
+      "id": "2",
+      "name": "Onboarding-Guide",
+      "isSystem": "1"
+    },
+    {
+      "id": "3",
+      "name": "Prozessbeschreibung",
+      "isSystem": "1"
+    },
+    {
+      "id": "4",
+      "name": "Meeting-Protokoll",
+      "isSystem": "1"
+    },
+    {
+      "id": "5",
+      "name": "FAQ-Dokument",
+      "isSystem": "1"
+    },
+    {
+      "id": "6",
+      "name": "Technische Dokumentation",
+      "isSystem": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tisSystem\n1\tLeere Seite\t1\n2\tOnboarding-Guide\t1\n3\tProzessbeschreibung\t1\n4\tMeeting-Protokoll\t1\n5\tFAQ-Dokument\t1\n6\tTechnische Dokumentation\t1\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

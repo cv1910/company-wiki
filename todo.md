@@ -269,3 +269,11 @@
 ## SOP: Urlaubsantrag
 - [x] SOP-Kategorie "HR & Personal" erstellen
 - [x] SOP "Urlaubsantrag stellen" mit Schritt-für-Schritt-Anleitung erstellen
+
+## UI-Korrekturen
+- [x] Test-Templates aus der Datenbank löschen (keine Test-Templates in DB gefunden)
+- [x] Dashboard → Home umbenennen
+- [x] Kategorien → Bereiche umbenennen
+- [x] SOP-Kategorie-Klick funktioniert nicht - Link hinzufügen (SOPCategory-Seite erstellt)
+- [x] SOP zeigt Markdown als Rohtext - Markdown-Rendering mit Streamdown implementieren
+- [x] Onboarding als eigenständige Kategorie (bereits als eigener Menüpunkt)
