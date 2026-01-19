@@ -215,10 +215,10 @@ export default function Home() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Artikel</p>
-                <p className="text-2xl font-bold mt-1">
+                <div className="text-sm text-muted-foreground">Artikel</div>
+                <div className="text-2xl font-bold mt-1">
                   {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.articleCount || 0}
-                </p>
+                </div>
               </div>
               <div className="p-3 rounded-xl bg-blue-500/10 group-hover:scale-110 transition-transform">
                 <FileText className="h-5 w-5 text-blue-600" />
@@ -234,10 +234,10 @@ export default function Home() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">SOPs</p>
-                <p className="text-2xl font-bold mt-1">
+                <div className="text-sm text-muted-foreground">SOPs</div>
+                <div className="text-2xl font-bold mt-1">
                   {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.sopCount || 0}
-                </p>
+                </div>
               </div>
               <div className="p-3 rounded-xl bg-green-500/10 group-hover:scale-110 transition-transform">
                 <ClipboardList className="h-5 w-5 text-green-600" />
@@ -253,10 +253,10 @@ export default function Home() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Kategorien</p>
-                <p className="text-2xl font-bold mt-1">
+                <div className="text-sm text-muted-foreground">Kategorien</div>
+                <div className="text-2xl font-bold mt-1">
                   {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.categoryCount || 0}
-                </p>
+                </div>
               </div>
               <div className="p-3 rounded-xl bg-purple-500/10 group-hover:scale-110 transition-transform">
                 <FolderOpen className="h-5 w-5 text-purple-600" />
@@ -272,10 +272,10 @@ export default function Home() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Benutzer</p>
-                <p className="text-2xl font-bold mt-1">
+                <div className="text-sm text-muted-foreground">Benutzer</div>
+                <div className="text-2xl font-bold mt-1">
                   {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.userCount || 1}
-                </p>
+                </div>
               </div>
               <div className="p-3 rounded-xl bg-orange-500/10 group-hover:scale-110 transition-transform">
                 <Users className="h-5 w-5 text-orange-600" />

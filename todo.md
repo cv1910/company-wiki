@@ -203,3 +203,4 @@
 - [x] Alle Elemente klickbar machen (Stats-Karten, Artikel, Aktivitäten)
 - [x] Test-Templates aus der Datenbank entfernen (keine Test-Daten vorhanden)
 - [x] Benutzer-Statistik zur Dashboard-Übersicht hinzugefügt
+- [x] HTML-Nesting-Fehler: p-Tag enthält div auf Dashboard-Seite (erneut aufgetreten)
