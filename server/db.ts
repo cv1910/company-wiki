@@ -52,6 +52,12 @@ import {
   assignments,
   InsertAssignment,
   systemSettings,
+  pageViews,
+  InsertPageView,
+  searchQueries,
+  InsertSearchQuery,
+  contentVerification,
+  InsertContentVerification,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1858,4 +1864,375 @@ export async function updateLeaveCarryOverSettings(settings: {
       value,
     });
   }
+}
+
+
+// ==================== ANALYTICS FUNCTIONS ====================
+
+export async function trackPageView(data: InsertPageView) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(pageViews).values(data);
+  return result[0].insertId;
+}
+
+export async function trackSearchQuery(data: InsertSearchQuery) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(searchQueries).values(data);
+  return result[0].insertId;
+}
+
+export async function getAnalyticsSummary(startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const conditions = [];
+  if (startDate) {
+    conditions.push(sql`${pageViews.viewedAt} >= ${startDate}`);
+  }
+  if (endDate) {
+    conditions.push(sql`${pageViews.viewedAt} <= ${endDate}`);
+  }
+  
+  // Total page views
+  const totalViewsResult = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(pageViews)
+    .where(conditions.length > 0 ? and(...conditions) : undefined);
+  
+  // Unique visitors
+  const uniqueVisitorsResult = await db
+    .select({ count: sql<number>`COUNT(DISTINCT ${pageViews.userId})` })
+    .from(pageViews)
+    .where(conditions.length > 0 ? and(...conditions) : undefined);
+  
+  // Total searches
+  const searchConditions = [];
+  if (startDate) {
+    searchConditions.push(sql`${searchQueries.searchedAt} >= ${startDate}`);
+  }
+  if (endDate) {
+    searchConditions.push(sql`${searchQueries.searchedAt} <= ${endDate}`);
+  }
+  
+  const totalSearchesResult = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(searchQueries)
+    .where(searchConditions.length > 0 ? and(...searchConditions) : undefined);
+  
+  return {
+    totalPageViews: totalViewsResult[0]?.count || 0,
+    uniqueVisitors: uniqueVisitorsResult[0]?.count || 0,
+    totalSearches: totalSearchesResult[0]?.count || 0,
+  };
+}
+
+export async function getPopularArticles(limit: number = 10, startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [eq(pageViews.resourceType, "article")];
+  if (startDate) {
+    conditions.push(sql`${pageViews.viewedAt} >= ${startDate}`);
+  }
+  if (endDate) {
+    conditions.push(sql`${pageViews.viewedAt} <= ${endDate}`);
+  }
+  
+  return db
+    .select({
+      resourceId: pageViews.resourceId,
+      resourceSlug: pageViews.resourceSlug,
+      resourceTitle: pageViews.resourceTitle,
+      viewCount: sql<number>`COUNT(*)`,
+      uniqueViewers: sql<number>`COUNT(DISTINCT ${pageViews.userId})`,
+    })
+    .from(pageViews)
+    .where(and(...conditions))
+    .groupBy(pageViews.resourceId, pageViews.resourceSlug, pageViews.resourceTitle)
+    .orderBy(sql`COUNT(*) DESC`)
+    .limit(limit);
+}
+
+export async function getPopularSOPs(limit: number = 10, startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [eq(pageViews.resourceType, "sop")];
+  if (startDate) {
+    conditions.push(sql`${pageViews.viewedAt} >= ${startDate}`);
+  }
+  if (endDate) {
+    conditions.push(sql`${pageViews.viewedAt} <= ${endDate}`);
+  }
+  
+  return db
+    .select({
+      resourceId: pageViews.resourceId,
+      resourceSlug: pageViews.resourceSlug,
+      resourceTitle: pageViews.resourceTitle,
+      viewCount: sql<number>`COUNT(*)`,
+      uniqueViewers: sql<number>`COUNT(DISTINCT ${pageViews.userId})`,
+    })
+    .from(pageViews)
+    .where(and(...conditions))
+    .groupBy(pageViews.resourceId, pageViews.resourceSlug, pageViews.resourceTitle)
+    .orderBy(sql`COUNT(*) DESC`)
+    .limit(limit);
+}
+
+export async function getTopSearchQueries(limit: number = 20, startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  if (startDate) {
+    conditions.push(sql`${searchQueries.searchedAt} >= ${startDate}`);
+  }
+  if (endDate) {
+    conditions.push(sql`${searchQueries.searchedAt} <= ${endDate}`);
+  }
+  
+  return db
+    .select({
+      query: searchQueries.query,
+      searchCount: sql<number>`COUNT(*)`,
+      avgResults: sql<number>`AVG(${searchQueries.resultsCount})`,
+      clickRate: sql<number>`SUM(CASE WHEN ${searchQueries.clickedResourceId} IS NOT NULL THEN 1 ELSE 0 END) / COUNT(*) * 100`,
+    })
+    .from(searchQueries)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .groupBy(searchQueries.query)
+    .orderBy(sql`COUNT(*) DESC`)
+    .limit(limit);
+}
+
+export async function getViewsOverTime(days: number = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  
+  return db
+    .select({
+      date: sql<string>`DATE(${pageViews.viewedAt})`,
+      views: sql<number>`COUNT(*)`,
+      uniqueUsers: sql<number>`COUNT(DISTINCT ${pageViews.userId})`,
+    })
+    .from(pageViews)
+    .where(sql`${pageViews.viewedAt} >= ${startDate}`)
+    .groupBy(sql`DATE(${pageViews.viewedAt})`)
+    .orderBy(sql`DATE(${pageViews.viewedAt})`);
+}
+
+export async function getAnalyticsUserActivity(limit: number = 20, startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  if (startDate) {
+    conditions.push(sql`${pageViews.viewedAt} >= ${startDate}`);
+  }
+  if (endDate) {
+    conditions.push(sql`${pageViews.viewedAt} <= ${endDate}`);
+  }
+  
+  return db
+    .select({
+      userId: pageViews.userId,
+      userName: users.name,
+      userEmail: users.email,
+      pageViews: sql<number>`COUNT(*)`,
+      lastActive: sql<Date>`MAX(${pageViews.viewedAt})`,
+    })
+    .from(pageViews)
+    .leftJoin(users, eq(pageViews.userId, users.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .groupBy(pageViews.userId, users.name, users.email)
+    .orderBy(sql`COUNT(*) DESC`)
+    .limit(limit);
+}
+
+// ==================== CONTENT VERIFICATION FUNCTIONS ====================
+
+export async function getContentVerification(articleId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(contentVerification)
+    .where(eq(contentVerification.articleId, articleId))
+    .limit(1);
+  return result[0] || null;
+}
+
+export async function upsertContentVerification(articleId: number, data: Partial<InsertContentVerification>) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const existing = await getContentVerification(articleId);
+  
+  if (existing) {
+    await db
+      .update(contentVerification)
+      .set(data)
+      .where(eq(contentVerification.articleId, articleId));
+    return { ...existing, ...data };
+  } else {
+    const result = await db.insert(contentVerification).values({
+      articleId,
+      ...data,
+    });
+    return { id: result[0].insertId, articleId, ...data };
+  }
+}
+
+export async function verifyArticle(articleId: number, userId: number, expiresAt?: Date, notes?: string) {
+  return upsertContentVerification(articleId, {
+    isVerified: true,
+    verifiedById: userId,
+    verifiedAt: new Date(),
+    expiresAt,
+    notes,
+  });
+}
+
+export async function unverifyArticle(articleId: number) {
+  return upsertContentVerification(articleId, {
+    isVerified: false,
+    verifiedById: null,
+    verifiedAt: null,
+    expiresAt: null,
+  });
+}
+
+export async function getExpiredVerifications() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const now = new Date();
+  
+  return db
+    .select({
+      verification: contentVerification,
+      article: {
+        id: articles.id,
+        title: articles.title,
+        slug: articles.slug,
+      },
+    })
+    .from(contentVerification)
+    .leftJoin(articles, eq(contentVerification.articleId, articles.id))
+    .where(and(
+      eq(contentVerification.isVerified, true),
+      sql`${contentVerification.expiresAt} IS NOT NULL`,
+      sql`${contentVerification.expiresAt} <= ${now}`
+    ))
+    .orderBy(contentVerification.expiresAt);
+}
+
+export async function getVerificationOverview() {
+  const db = await getDb();
+  if (!db) return { verified: 0, unverified: 0, expired: 0, expiringSoon: 0 };
+  
+  const now = new Date();
+  const sevenDaysFromNow = new Date();
+  sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+  
+  // Get all published articles
+  const allArticles = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(articles)
+    .where(eq(articles.status, "published"));
+  
+  // Get verified articles
+  const verifiedResult = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(contentVerification)
+    .where(eq(contentVerification.isVerified, true));
+  
+  // Get expired verifications
+  const expiredResult = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(contentVerification)
+    .where(and(
+      eq(contentVerification.isVerified, true),
+      sql`${contentVerification.expiresAt} IS NOT NULL`,
+      sql`${contentVerification.expiresAt} <= ${now}`
+    ));
+  
+  // Get expiring soon (within 7 days)
+  const expiringSoonResult = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(contentVerification)
+    .where(and(
+      eq(contentVerification.isVerified, true),
+      sql`${contentVerification.expiresAt} IS NOT NULL`,
+      sql`${contentVerification.expiresAt} > ${now}`,
+      sql`${contentVerification.expiresAt} <= ${sevenDaysFromNow}`
+    ));
+  
+  const totalArticles = allArticles[0]?.count || 0;
+  const verified = verifiedResult[0]?.count || 0;
+  
+  return {
+    verified,
+    unverified: totalArticles - verified,
+    expired: expiredResult[0]?.count || 0,
+    expiringSoon: expiringSoonResult[0]?.count || 0,
+  };
+}
+
+export async function getArticlesWithVerificationStatus(filters?: { 
+  isVerified?: boolean; 
+  isExpired?: boolean;
+  expiringSoon?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const now = new Date();
+  const sevenDaysFromNow = new Date();
+  sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+  
+  const result = await db
+    .select({
+      article: {
+        id: articles.id,
+        title: articles.title,
+        slug: articles.slug,
+        status: articles.status,
+        updatedAt: articles.updatedAt,
+      },
+      verification: contentVerification,
+      verifiedBy: {
+        id: users.id,
+        name: users.name,
+      },
+    })
+    .from(articles)
+    .leftJoin(contentVerification, eq(articles.id, contentVerification.articleId))
+    .leftJoin(users, eq(contentVerification.verifiedById, users.id))
+    .where(eq(articles.status, "published"))
+    .orderBy(articles.title);
+  
+  // Apply filters in memory for complex conditions
+  return result.filter(row => {
+    if (filters?.isVerified !== undefined) {
+      if (filters.isVerified && !row.verification?.isVerified) return false;
+      if (!filters.isVerified && row.verification?.isVerified) return false;
+    }
+    if (filters?.isExpired) {
+      if (!row.verification?.expiresAt) return false;
+      if (new Date(row.verification.expiresAt) > now) return false;
+    }
+    if (filters?.expiringSoon) {
+      if (!row.verification?.expiresAt) return false;
+      const expiresAt = new Date(row.verification.expiresAt);
+      if (expiresAt <= now || expiresAt > sevenDaysFromNow) return false;
+    }
+    return true;
+  });
 }

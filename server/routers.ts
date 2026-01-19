@@ -2321,6 +2321,209 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         return { success: true };
       }),
   }),
+
+  // ==================== ANALYTICS ====================
+  analytics: router({
+    // Track page view
+    trackView: protectedProcedure
+      .input(
+        z.object({
+          resourceType: z.enum(["article", "sop", "category"]),
+          resourceId: z.number(),
+          resourceSlug: z.string().optional(),
+          resourceTitle: z.string().optional(),
+          referrer: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        await db.trackPageView({
+          userId: ctx.user.id,
+          ...input,
+        });
+        return { success: true };
+      }),
+
+    // Track search query
+    trackSearch: protectedProcedure
+      .input(
+        z.object({
+          query: z.string(),
+          resultsCount: z.number(),
+          clickedResourceType: z.enum(["article", "sop"]).optional(),
+          clickedResourceId: z.number().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        await db.trackSearchQuery({
+          userId: ctx.user.id,
+          ...input,
+        });
+        return { success: true };
+      }),
+
+    // Get analytics summary (admin only)
+    summary: adminProcedure
+      .input(
+        z.object({
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+        }).optional()
+      )
+      .query(async ({ input }) => {
+        const startDate = input?.startDate ? new Date(input.startDate) : undefined;
+        const endDate = input?.endDate ? new Date(input.endDate) : undefined;
+        return db.getAnalyticsSummary(startDate, endDate);
+      }),
+
+    // Get popular articles
+    popularArticles: adminProcedure
+      .input(
+        z.object({
+          limit: z.number().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+        }).optional()
+      )
+      .query(async ({ input }) => {
+        const startDate = input?.startDate ? new Date(input.startDate) : undefined;
+        const endDate = input?.endDate ? new Date(input.endDate) : undefined;
+        return db.getPopularArticles(input?.limit || 10, startDate, endDate);
+      }),
+
+    // Get popular SOPs
+    popularSOPs: adminProcedure
+      .input(
+        z.object({
+          limit: z.number().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+        }).optional()
+      )
+      .query(async ({ input }) => {
+        const startDate = input?.startDate ? new Date(input.startDate) : undefined;
+        const endDate = input?.endDate ? new Date(input.endDate) : undefined;
+        return db.getPopularSOPs(input?.limit || 10, startDate, endDate);
+      }),
+
+    // Get top search queries
+    topSearches: adminProcedure
+      .input(
+        z.object({
+          limit: z.number().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+        }).optional()
+      )
+      .query(async ({ input }) => {
+        const startDate = input?.startDate ? new Date(input.startDate) : undefined;
+        const endDate = input?.endDate ? new Date(input.endDate) : undefined;
+        return db.getTopSearchQueries(input?.limit || 20, startDate, endDate);
+      }),
+
+    // Get views over time
+    viewsOverTime: adminProcedure
+      .input(z.object({ days: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return db.getViewsOverTime(input?.days || 30);
+      }),
+
+    // Get user activity
+    userActivity: adminProcedure
+      .input(
+        z.object({
+          limit: z.number().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+        }).optional()
+      )
+      .query(async ({ input }) => {
+        const startDate = input?.startDate ? new Date(input.startDate) : undefined;
+        const endDate = input?.endDate ? new Date(input.endDate) : undefined;
+        return db.getAnalyticsUserActivity(input?.limit || 20, startDate, endDate);
+      }),
+  }),
+
+  // ==================== CONTENT VERIFICATION ====================
+  verification: router({
+    // Get verification status for an article
+    get: protectedProcedure
+      .input(z.object({ articleId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getContentVerification(input.articleId);
+      }),
+
+    // Verify an article (editor/admin only)
+    verify: editorProcedure
+      .input(
+        z.object({
+          articleId: z.number(),
+          expiresAt: z.string().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const expiresAt = input.expiresAt ? new Date(input.expiresAt) : undefined;
+        await db.verifyArticle(input.articleId, ctx.user.id, expiresAt, input.notes);
+        
+        // Log audit
+        const article = await db.getArticleById(input.articleId);
+        await db.createAuditLogEntry({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          userName: ctx.user.name,
+          action: "verify",
+          resourceType: "article",
+          resourceId: input.articleId,
+          resourceTitle: article?.title,
+        });
+        
+        return { success: true };
+      }),
+
+    // Remove verification (editor/admin only)
+    unverify: editorProcedure
+      .input(z.object({ articleId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.unverifyArticle(input.articleId);
+        
+        // Log audit
+        const article = await db.getArticleById(input.articleId);
+        await db.createAuditLogEntry({
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          userName: ctx.user.name,
+          action: "unverify",
+          resourceType: "article",
+          resourceId: input.articleId,
+          resourceTitle: article?.title,
+        });
+        
+        return { success: true };
+      }),
+
+    // Get verification overview (admin only)
+    overview: adminProcedure.query(async () => {
+      return db.getVerificationOverview();
+    }),
+
+    // Get expired verifications
+    expired: adminProcedure.query(async () => {
+      return db.getExpiredVerifications();
+    }),
+
+    // Get all articles with verification status
+    list: adminProcedure
+      .input(
+        z.object({
+          isVerified: z.boolean().optional(),
+          isExpired: z.boolean().optional(),
+          expiringSoon: z.boolean().optional(),
+        }).optional()
+      )
+      .query(async ({ input }) => {
+        return db.getArticlesWithVerificationStatus(input);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

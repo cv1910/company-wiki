@@ -277,3 +277,27 @@
 - [x] SOP-Kategorie-Klick funktioniert nicht - Link hinzufügen (SOPCategory-Seite erstellt)
 - [x] SOP zeigt Markdown als Rohtext - Markdown-Rendering mit Streamdown implementieren
 - [x] Onboarding als eigenständige Kategorie (bereits als eigener Menüpunkt)
+
+## Premium-Features (Marktführer-Niveau)
+
+### Versionskontrolle (erweitert)
+- [x] UI: Versionshistorie-Button in Artikel-Ansicht (bereits vorhanden)
+- [x] UI: Versionen-Liste mit Autor, Datum, Zusammenfassung (bereits vorhanden)
+- [x] UI: Diff-Ansicht zwischen zwei Versionen (bereits vorhanden mit DiffViewer)
+- [x] UI: Version wiederherstellen mit Bestätigung (bereits vorhanden)
+
+### Analytics Dashboard
+- [x] Datenbank-Schema für Seitenaufrufe/Events
+- [x] Tracking für Artikel-Aufrufe implementieren
+- [x] Admin-Dashboard mit Statistiken erstellen
+- [x] Beliebte Artikel anzeigen
+- [x] Suchbegriffe-Analyse
+- [x] Benutzer-Aktivität anzeigen
+
+### Inhaltsverifizierung
+- [x] Datenbank-Felder für Verifizierungsstatus und Ablaufdatum
+- [x] API-Endpunkte für Verifizierung
+- [x] UI: Artikel als "verifiziert" markieren
+- [x] UI: Ablaufdatum für Überprüfung setzen
+- [x] Benachrichtigung bei abgelaufener Verifizierung
+- [x] Übersicht aller Artikel mit Verifizierungsstatus

@@ -46,6 +46,8 @@ import {
   Megaphone,
   GraduationCap,
   Sun,
+  BarChart3,
+  ShieldCheck,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -76,6 +78,8 @@ const adminMenuItems = [
   { icon: Sun, label: "Urlaubsansprüche", path: "/admin/leave-balances" },
   { icon: Megaphone, label: "Ankündigungen", path: "/admin/announcements" },
   { icon: GraduationCap, label: "Zuweisungen", path: "/admin/assignments" },
+  { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
+  { icon: ShieldCheck, label: "Verifizierung", path: "/admin/verification" },
   { icon: CheckSquare, label: "Reviews", path: "/admin/reviews" },
   { icon: MessageSquare, label: "Feedback", path: "/admin/feedback" },
   { icon: Shield, label: "Audit-Log", path: "/admin/audit-log" },

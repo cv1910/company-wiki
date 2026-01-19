@@ -556,3 +556,60 @@ export const systemSettings = mysqlTable("systemSettings", {
 
 export type SystemSetting = typeof systemSettings.$inferSelect;
 export type InsertSystemSetting = typeof systemSettings.$inferInsert;
+
+
+/**
+ * Page views for analytics tracking.
+ * Records each page view with user and resource information.
+ */
+export const pageViews = mysqlTable("pageViews", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  resourceType: mysqlEnum("resourceType", ["article", "sop", "category"]).notNull(),
+  resourceId: int("resourceId").notNull(),
+  resourceSlug: varchar("resourceSlug", { length: 500 }),
+  resourceTitle: varchar("resourceTitle", { length: 500 }),
+  sessionId: varchar("sessionId", { length: 100 }),
+  referrer: varchar("referrer", { length: 500 }),
+  userAgent: text("userAgent"),
+  viewedAt: timestamp("viewedAt").defaultNow().notNull(),
+});
+
+export type PageView = typeof pageViews.$inferSelect;
+export type InsertPageView = typeof pageViews.$inferInsert;
+
+/**
+ * Search queries for analytics.
+ * Tracks what users are searching for.
+ */
+export const searchQueries = mysqlTable("searchQueries", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  query: varchar("query", { length: 500 }).notNull(),
+  resultsCount: int("resultsCount").default(0).notNull(),
+  clickedResourceType: mysqlEnum("clickedResourceType", ["article", "sop"]),
+  clickedResourceId: int("clickedResourceId"),
+  searchedAt: timestamp("searchedAt").defaultNow().notNull(),
+});
+
+export type SearchQuery = typeof searchQueries.$inferSelect;
+export type InsertSearchQuery = typeof searchQueries.$inferInsert;
+
+/**
+ * Content verification status for articles.
+ * Tracks when content was last verified and when it needs review.
+ */
+export const contentVerification = mysqlTable("contentVerification", {
+  id: int("id").autoincrement().primaryKey(),
+  articleId: int("articleId").notNull().unique(),
+  isVerified: boolean("isVerified").default(false).notNull(),
+  verifiedById: int("verifiedById"),
+  verifiedAt: timestamp("verifiedAt"),
+  expiresAt: timestamp("expiresAt"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ContentVerification = typeof contentVerification.$inferSelect;
+export type InsertContentVerification = typeof contentVerification.$inferInsert;
