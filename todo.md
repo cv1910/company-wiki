@@ -518,9 +518,18 @@
 - [x] Frontend: Chat-Ansicht im Basecamp-Stil (Blasen, Datums-Trenner)
 - [x] Frontend: Direktnachrichten starten
 - [x] Frontend: Gruppen-Chats erstellen
-- [ ] Frontend: Datei-/Bild-Upload in Nachrichten (später)
+- [x] Frontend: Datei-/Bild-Upload in Nachrichten (Paperclip-Button, max 10MB)
 - [ ] Frontend: @Erwähnungen in Ohweees (später)
 - [ ] Frontend: Threads/Antworten (später)
 - [x] PWA: manifest.json für iOS Home-Screen
 - [ ] PWA: Service Worker für Offline-Unterstützung (später)
 - [ ] PWA: Push-Benachrichtigungen vorbereiten (später)
+
+## Datei-Upload in Ohweees
+- [ ] Backend: Datei-Upload-Endpunkt für Ohweees-Anhänge
+- [ ] Backend: S3-Integration für Datei-Speicherung
+- [ ] Frontend: Upload-Button im Chat-Eingabefeld
+- [ ] Frontend: Drag & Drop für Dateien
+- [ ] Frontend: Bild-Vorschau in Nachrichten
+- [ ] Frontend: Dokument-Download-Links in Nachrichten
+- [ ] Frontend: Upload-Fortschrittsanzeige

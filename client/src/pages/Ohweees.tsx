@@ -40,6 +40,11 @@ import {
   Paperclip,
   Smile,
   Hash,
+  FileText,
+  FileSpreadsheet,
+  FileImage,
+  File,
+  Download,
 } from "lucide-react";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { de } from "date-fns/locale";
@@ -107,6 +112,22 @@ function OhweeeMessage({
 
   const time = format(new Date(message.ohweee.createdAt), "HH:mm");
 
+  // Parse attachments
+  const attachments = (message.ohweee.attachments as { url: string; filename: string; mimeType: string; size: number }[] | null) || [];
+
+  const getFileIcon = (mimeType: string) => {
+    if (mimeType.startsWith("image/")) return FileImage;
+    if (mimeType.includes("spreadsheet") || mimeType.includes("excel")) return FileSpreadsheet;
+    if (mimeType.includes("document") || mimeType.includes("word") || mimeType === "application/pdf") return FileText;
+    return File;
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   return (
     <div className={`flex gap-3 group ${isOwn ? "flex-row-reverse" : ""}`}>
       {!isOwn && (
@@ -137,7 +158,57 @@ function OhweeeMessage({
             {message.ohweee.isPinned && (
               <Pin className="h-3 w-3 text-amber-500 absolute -top-1 -right-1" />
             )}
-            <p className="whitespace-pre-wrap break-words">{message.ohweee.content}</p>
+
+            {/* Attachments */}
+            {attachments.length > 0 && (
+              <div className="space-y-2 mb-2">
+                {attachments.map((attachment, index) => (
+                  <div key={index}>
+                    {attachment.mimeType.startsWith("image/") ? (
+                      <a
+                        href={attachment.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block"
+                      >
+                        <img
+                          src={attachment.url}
+                          alt={attachment.filename}
+                          className="max-w-full max-h-64 rounded-lg object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                        />
+                      </a>
+                    ) : (
+                      <a
+                        href={attachment.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                          isOwn
+                            ? "bg-amber-200/50 dark:bg-amber-800/30 hover:bg-amber-200/70"
+                            : "bg-background/50 hover:bg-background/70"
+                        }`}
+                      >
+                        {(() => {
+                          const IconComponent = getFileIcon(attachment.mimeType);
+                          return <IconComponent className="h-8 w-8 text-muted-foreground shrink-0" />;
+                        })()}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{attachment.filename}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatFileSize(attachment.size)}
+                          </p>
+                        </div>
+                        <Download className="h-4 w-4 text-muted-foreground shrink-0" />
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {message.ohweee.content && message.ohweee.content !== "[Datei]" && (
+              <p className="whitespace-pre-wrap break-words">{message.ohweee.content}</p>
+            )}
             {message.ohweee.isEdited && (
               <span className="text-xs text-muted-foreground ml-1">(bearbeitet)</span>
             )}
@@ -215,8 +286,13 @@ export default function OhweeesPage() {
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
   const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [pendingAttachments, setPendingAttachments] = useState<
+    { url: string; filename: string; mimeType: string; size: number }[]
+  >([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Queries
   const { data: rooms, isLoading: roomsLoading } = trpc.ohweees.rooms.useQuery();
@@ -296,6 +372,18 @@ export default function OhweeesPage() {
     },
   });
 
+  const uploadFile = trpc.ohweees.uploadFile.useMutation({
+    onSuccess: (file) => {
+      setPendingAttachments((prev) => [...prev, file]);
+      setIsUploading(false);
+      toast.success(`${file.filename} hochgeladen`);
+    },
+    onError: (error) => {
+      setIsUploading(false);
+      toast.error(error.message);
+    },
+  });
+
   // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -315,12 +403,47 @@ export default function OhweeesPage() {
     }
   }, [roomId]);
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    for (const file of Array.from(files)) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`${file.name} ist zu groß (max. 10MB)`);
+        continue;
+      }
+
+      setIsUploading(true);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(",")[1];
+        uploadFile.mutate({
+          filename: file.name,
+          mimeType: file.type || "application/octet-stream",
+          base64Data: base64,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveAttachment = (index: number) => {
+    setPendingAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSendMessage = () => {
-    if (!messageInput.trim() || !selectedRoomId) return;
+    if ((!messageInput.trim() && pendingAttachments.length === 0) || !selectedRoomId) return;
     sendMessage.mutate({
       roomId: selectedRoomId,
-      content: messageInput.trim(),
+      content: messageInput.trim() || (pendingAttachments.length > 0 ? "[Datei]" : ""),
+      attachments: pendingAttachments.length > 0 ? pendingAttachments : undefined,
     });
+    setPendingAttachments([]);
   };
 
   const handleEditMessage = () => {
@@ -626,7 +749,59 @@ export default function OhweeesPage() {
                   </Button>
                 </div>
               )}
+
+              {/* Pending Attachments Preview */}
+              {pendingAttachments.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3 max-w-3xl mx-auto">
+                  {pendingAttachments.map((attachment, index) => (
+                    <div
+                      key={index}
+                      className="relative group bg-muted rounded-lg overflow-hidden"
+                    >
+                      {attachment.mimeType.startsWith("image/") ? (
+                        <img
+                          src={attachment.url}
+                          alt={attachment.filename}
+                          className="h-20 w-20 object-cover"
+                        />
+                      ) : (
+                        <div className="h-20 w-20 flex flex-col items-center justify-center p-2">
+                          <Paperclip className="h-6 w-6 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground truncate w-full text-center mt-1">
+                            {attachment.filename.slice(0, 10)}...
+                          </span>
+                        </div>
+                      )}
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-1 right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleRemoveAttachment(index)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload Progress */}
+              {isUploading && (
+                <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground max-w-3xl mx-auto">
+                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                  <span>Datei wird hochgeladen...</span>
+                </div>
+              )}
+
               <div className="flex gap-2 items-end max-w-3xl mx-auto">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileSelect}
+                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
+                />
                 <div className="flex-1 relative">
                   <Textarea
                     placeholder="Schreibe ein Ohweee..."
@@ -644,7 +819,13 @@ export default function OhweeesPage() {
                     <Button variant="ghost" size="icon" className="h-7 w-7">
                       <Smile className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                    >
                       <Paperclip className="h-4 w-4" />
                     </Button>
                   </div>
@@ -654,7 +835,9 @@ export default function OhweeesPage() {
                   disabled={
                     editingMessageId
                       ? !editContent.trim() || editMessage.isPending
-                      : !messageInput.trim() || sendMessage.isPending
+                      : (!messageInput.trim() && pendingAttachments.length === 0) ||
+                        sendMessage.isPending ||
+                        isUploading
                   }
                 >
                   <Send className="h-4 w-4" />

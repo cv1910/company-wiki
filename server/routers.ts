@@ -4238,6 +4238,48 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         return db.searchOhweees(ctx.user.id, input.query, input.limit);
       }),
 
+    // Upload file for ohweee attachment
+    uploadFile: protectedProcedure
+      .input(
+        z.object({
+          filename: z.string(),
+          mimeType: z.string(),
+          base64Data: z.string(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const { storagePut } = await import("./storage");
+        
+        // Decode base64 data
+        const buffer = Buffer.from(input.base64Data, "base64");
+        const size = buffer.length;
+        
+        // Validate file size (max 10MB)
+        const maxSize = 10 * 1024 * 1024;
+        if (size > maxSize) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Datei zu groß (max. 10MB)",
+          });
+        }
+        
+        // Generate unique filename
+        const timestamp = Date.now();
+        const randomSuffix = Math.random().toString(36).substring(2, 8);
+        const safeFilename = input.filename.replace(/[^a-zA-Z0-9.-]/g, "_");
+        const key = `ohweees/${ctx.user.id}/${timestamp}-${randomSuffix}-${safeFilename}`;
+        
+        // Upload to S3
+        const { url } = await storagePut(key, buffer, input.mimeType);
+        
+        return {
+          url,
+          filename: input.filename,
+          mimeType: input.mimeType,
+          size,
+        };
+      }),
+
     // Get all users for starting DM (with recent chats first)
     getUsers: protectedProcedure.query(async ({ ctx }) => {
       const allUsers = await db.getAllUsers();
