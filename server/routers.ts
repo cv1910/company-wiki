@@ -2524,6 +2524,61 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         return db.getArticlesWithVerificationStatus(input);
       }),
   }),
+
+  // ==================== DASHBOARD SETTINGS ====================
+  dashboardSettings: router({
+    // Get current user's dashboard settings
+    get: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserDashboardSettings(ctx.user.id);
+    }),
+
+    // Update widget visibility
+    updateVisibility: protectedProcedure
+      .input(
+        z.object({
+          widgetId: z.string(),
+          visible: z.boolean(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        return db.updateWidgetVisibility(ctx.user.id, input.widgetId, input.visible);
+      }),
+
+    // Update widget order
+    updateOrder: protectedProcedure
+      .input(
+        z.object({
+          widgetOrder: z.array(z.string()),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        return db.updateWidgetOrder(ctx.user.id, input.widgetOrder);
+      }),
+
+    // Update all settings at once
+    update: protectedProcedure
+      .input(
+        z.object({
+          showWelcomeHero: z.boolean().optional(),
+          showAnnouncements: z.boolean().optional(),
+          showNavigation: z.boolean().optional(),
+          showStats: z.boolean().optional(),
+          showRecentArticles: z.boolean().optional(),
+          showActivityFeed: z.boolean().optional(),
+          showFavorites: z.boolean().optional(),
+          showOnboardingProgress: z.boolean().optional(),
+          widgetOrder: z.array(z.string()).optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        return db.upsertUserDashboardSettings(ctx.user.id, input);
+      }),
+
+    // Reset to default settings
+    reset: protectedProcedure.mutation(async ({ ctx }) => {
+      return db.resetDashboardSettings(ctx.user.id);
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

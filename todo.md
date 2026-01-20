@@ -301,3 +301,12 @@
 - [x] UI: Ablaufdatum für Überprüfung setzen
 - [x] Benachrichtigung bei abgelaufener Verifizierung
 - [x] Übersicht aller Artikel mit Verifizierungsstatus
+
+## Personalisierbare Dashboard-Widgets
+- [x] Datenbank-Schema für Widget-Präferenzen (userDashboardSettings)
+- [x] API-Endpunkte für Widget-Einstellungen (get, update)
+- [x] Widget-Komponenten modular gestalten
+- [x] Einstellungs-Dialog zum Ein-/Ausblenden von Widgets
+- [x] Drag & Drop für Widget-Anordnung
+- [x] Präferenzen persistent speichern
+- [x] Tests für Widget-Personalisierung

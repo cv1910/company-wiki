@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `userDashboardSettings` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`userId` int NOT NULL,\n\t`showWelcomeHero` boolean NOT NULL DEFAULT true,\n\t`showAnnouncements` boolean NOT NULL DEFAULT true,\n\t`showNavigation` boolean NOT NULL DEFAULT true,\n\t`showStats` boolean NOT NULL DEFAULT true,\n\t`showRecentArticles` boolean NOT NULL DEFAULT true,\n\t`showActivityFeed` boolean NOT NULL DEFAULT true,\n\t`showFavorites` boolean NOT NULL DEFAULT true,\n\t`showOnboardingProgress` boolean NOT NULL DEFAULT true,\n\t`widgetOrder` json,\n\t`createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n\t`updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n\tPRIMARY KEY(`id`),\n\tUNIQUE KEY `userDashboardSettings_userId_unique` (`userId`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute CREATE TABLE IF NOT EXISTS `userDashboardSettings` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`userId` int NOT NULL,\n\t`showWelcomeHero` boolean NOT NULL DEFAULT true,\n\t`showAnnouncements` boolean NOT NULL DEFAULT true,\n\t`showNavigation` boolean NOT NULL DEFAULT true,\n\t`showStats` boolean NOT NULL DEFAULT true,\n\t`showRecentArticles` boolean NOT NULL DEFAULT true,\n\t`showActivityFeed` boolean NOT NULL DEFAULT true,\n\t`showFavorites` boolean NOT NULL DEFAULT true,\n\t`showOnboardingProgress` boolean NOT NULL DEFAULT true,\n\t`widgetOrder` json,\n\t`createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n\t`updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n\tPRIMARY KEY(`id`),\n\tUNIQUE KEY `userDashboardSettings_userId_unique` (`userId`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 194
+}

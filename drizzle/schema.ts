@@ -613,3 +613,38 @@ export const contentVerification = mysqlTable("contentVerification", {
 
 export type ContentVerification = typeof contentVerification.$inferSelect;
 export type InsertContentVerification = typeof contentVerification.$inferInsert;
+
+
+/**
+ * User dashboard settings for personalized widget configuration.
+ * Stores which widgets are visible and their order.
+ */
+export const userDashboardSettings = mysqlTable("userDashboardSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  // Widget visibility settings
+  showWelcomeHero: boolean("showWelcomeHero").default(true).notNull(),
+  showAnnouncements: boolean("showAnnouncements").default(true).notNull(),
+  showNavigation: boolean("showNavigation").default(true).notNull(),
+  showStats: boolean("showStats").default(true).notNull(),
+  showRecentArticles: boolean("showRecentArticles").default(true).notNull(),
+  showActivityFeed: boolean("showActivityFeed").default(true).notNull(),
+  showFavorites: boolean("showFavorites").default(true).notNull(),
+  showOnboardingProgress: boolean("showOnboardingProgress").default(true).notNull(),
+  // Widget order (JSON array of widget IDs)
+  widgetOrder: json("widgetOrder").$type<string[]>().default([
+    "welcomeHero",
+    "announcements",
+    "navigation",
+    "stats",
+    "recentArticles",
+    "activityFeed",
+    "favorites",
+    "onboardingProgress"
+  ]).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserDashboardSetting = typeof userDashboardSettings.$inferSelect;
+export type InsertUserDashboardSetting = typeof userDashboardSettings.$inferInsert;

@@ -58,6 +58,8 @@ import {
   InsertSearchQuery,
   contentVerification,
   InsertContentVerification,
+  userDashboardSettings,
+  InsertUserDashboardSetting,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -2235,4 +2237,111 @@ export async function getArticlesWithVerificationStatus(filters?: {
     }
     return true;
   });
+}
+
+
+// ==================== USER DASHBOARD SETTINGS FUNCTIONS ====================
+
+const DEFAULT_WIDGET_ORDER = [
+  "welcomeHero",
+  "announcements",
+  "navigation",
+  "stats",
+  "recentArticles",
+  "activityFeed",
+  "favorites",
+  "onboardingProgress"
+];
+
+export async function getUserDashboardSettings(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db
+    .select()
+    .from(userDashboardSettings)
+    .where(eq(userDashboardSettings.userId, userId))
+    .limit(1);
+  
+  if (result[0]) {
+    return result[0];
+  }
+  
+  // Return default settings if none exist
+  return {
+    id: 0,
+    userId,
+    showWelcomeHero: true,
+    showAnnouncements: true,
+    showNavigation: true,
+    showStats: true,
+    showRecentArticles: true,
+    showActivityFeed: true,
+    showFavorites: true,
+    showOnboardingProgress: true,
+    widgetOrder: DEFAULT_WIDGET_ORDER,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+}
+
+export async function upsertUserDashboardSettings(userId: number, settings: Partial<InsertUserDashboardSetting>) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const existing = await db
+    .select()
+    .from(userDashboardSettings)
+    .where(eq(userDashboardSettings.userId, userId))
+    .limit(1);
+  
+  if (existing[0]) {
+    await db
+      .update(userDashboardSettings)
+      .set(settings)
+      .where(eq(userDashboardSettings.userId, userId));
+    return { ...existing[0], ...settings };
+  } else {
+    const result = await db.insert(userDashboardSettings).values({
+      userId,
+      ...settings,
+    });
+    return { id: result[0].insertId, userId, ...settings };
+  }
+}
+
+export async function updateWidgetVisibility(userId: number, widgetId: string, visible: boolean) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const fieldMap: Record<string, keyof typeof userDashboardSettings.$inferSelect> = {
+    welcomeHero: "showWelcomeHero",
+    announcements: "showAnnouncements",
+    navigation: "showNavigation",
+    stats: "showStats",
+    recentArticles: "showRecentArticles",
+    activityFeed: "showActivityFeed",
+    favorites: "showFavorites",
+    onboardingProgress: "showOnboardingProgress",
+  };
+  
+  const field = fieldMap[widgetId];
+  if (!field) return null;
+  
+  return upsertUserDashboardSettings(userId, { [field]: visible });
+}
+
+export async function updateWidgetOrder(userId: number, widgetOrder: string[]) {
+  return upsertUserDashboardSettings(userId, { widgetOrder });
+}
+
+export async function resetDashboardSettings(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db
+    .delete(userDashboardSettings)
+    .where(eq(userDashboardSettings.userId, userId));
+  
+  return getUserDashboardSettings(userId);
 }
