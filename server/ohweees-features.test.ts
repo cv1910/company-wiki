@@ -39,6 +39,7 @@ vi.mock("./db", async () => {
     removeUnreadMarker: vi.fn().mockResolvedValue(undefined),
     getUnreadMarkersForUser: vi.fn().mockResolvedValue([]),
     getUnreadMarkersBatch: vi.fn().mockResolvedValue(new Set([1, 3])),
+    getRoomsWithUnreadMarkers: vi.fn().mockResolvedValue(new Map([[1, 2], [3, 1]])),
     setTypingStatus: vi.fn().mockResolvedValue(undefined),
     clearTypingStatus: vi.fn().mockResolvedValue(undefined),
     getTypingUsersInRoom: vi.fn().mockResolvedValue([
@@ -133,6 +134,22 @@ describe("Ohweees: Typing Indicators API", () => {
     expect(result.length).toBe(1);
     expect(result[0].userName).toBe("Anna");
     expect(db.getTypingUsersInRoom).toHaveBeenCalledWith(1, ctx.user!.id);
+  });
+});
+
+describe("Ohweees: Rooms with Unread Markers API", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should get rooms with unread markers", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    const result = await caller.ohweees.getRoomsWithUnreadMarkers();
+    
+    expect(Array.isArray(result)).toBe(true);
+    expect(db.getRoomsWithUnreadMarkers).toHaveBeenCalledWith(ctx.user!.id);
   });
 });
 

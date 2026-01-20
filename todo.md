@@ -577,3 +577,14 @@
 - [x] Frontend: "Als ungelesen markieren" Option im Nachrichten-Menü
 - [x] Frontend: Typing-Indikator Anzeige ("Anna schreibt...")
 - [x] Frontend: Typing-Status beim Tippen senden
+
+## Ohweees: Visuelle Ungelesen-Markierung in Raumliste
+- [x] Backend: API für Ungelesen-Markierungen pro Raum
+- [x] Frontend: Räume mit Ungelesen-Markierungen in Sidebar hervorheben
+- [x] Frontend: Badge/Punkt bei Räumen mit ungelesenen Nachrichten
+
+## Ohweees: Erweiterte Emoji-Reaktionen
+- [x] Frontend: Emoji-Picker mit mehr Emojis
+- [x] Frontend: Emoji-Suche im Picker
+- [x] Frontend: Häufig verwendete Emojis anzeigen
+- [x] Frontend: Emoji-Kategorien (Smileys, Gesten, Herzen, etc.)

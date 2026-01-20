@@ -4352,3 +4352,26 @@ export async function cleanupOldTypingIndicators() {
     .delete(ohweeeTypingIndicators)
     .where(sql`${ohweeeTypingIndicators.lastTypingAt} < ${tenSecondsAgo}`);
 }
+
+
+// Get rooms with unread markers for a user
+export async function getRoomsWithUnreadMarkers(userId: number): Promise<Map<number, number>> {
+  const db = await getDb();
+  if (!db) return new Map();
+  
+  const results = await db
+    .select({
+      roomId: ohweees.roomId,
+      count: sql<number>`COUNT(DISTINCT ${ohweeeUnreadMarkers.ohweeeId})`,
+    })
+    .from(ohweeeUnreadMarkers)
+    .innerJoin(ohweees, eq(ohweeeUnreadMarkers.ohweeeId, ohweees.id))
+    .where(eq(ohweeeUnreadMarkers.userId, userId))
+    .groupBy(ohweees.roomId);
+  
+  const map = new Map<number, number>();
+  for (const r of results) {
+    map.set(r.roomId, Number(r.count));
+  }
+  return map;
+}

@@ -4539,6 +4539,13 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         return Array.from(markedIds);
       }),
 
+    // Get rooms with unread markers count
+    getRoomsWithUnreadMarkers: protectedProcedure.query(async ({ ctx }) => {
+      const roomsMap = await db.getRoomsWithUnreadMarkers(ctx.user.id);
+      // Convert Map to array of objects for JSON serialization
+      return Array.from(roomsMap.entries()).map(([roomId, count]) => ({ roomId, count }));
+    }),
+
     // ==================== TYPING INDICATORS ====================
     
     // Set typing status (call this while user is typing)

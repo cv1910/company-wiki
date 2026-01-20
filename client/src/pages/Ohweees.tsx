@@ -50,6 +50,7 @@ import {
 } from "lucide-react";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { de } from "date-fns/locale";
+import { EmojiPicker } from "@/components/EmojiPicker";
 
 // Date separator component
 function DateSeparator({ date }: { date: Date }) {
@@ -358,17 +359,12 @@ function OhweeeMessage({
             <div
               className={`absolute top-full mt-1 ${
                 isOwn ? "right-0" : "left-0"
-              } bg-popover border rounded-lg shadow-lg p-2 flex gap-1 z-50`}
+              } z-50`}
             >
-              {REACTION_EMOJIS.map((emoji) => (
-                <button
-                  key={emoji}
-                  onClick={() => onAddReaction(emoji)}
-                  className="hover:bg-muted p-1.5 rounded transition-colors text-lg"
-                >
-                  {emoji}
-                </button>
-              ))}
+              <EmojiPicker
+                onSelect={(emoji) => onAddReaction(emoji)}
+                onClose={onToggleReactionPicker}
+              />
             </div>
           )}
         </div>
@@ -663,9 +659,15 @@ export default function OhweeesPage() {
     { enabled: messageIds.length > 0 }
   );
   
+  // Rooms with unread markers for sidebar
+  const { data: roomsWithUnreadMarkers } = trpc.ohweees.getRoomsWithUnreadMarkers.useQuery(undefined, {
+    refetchInterval: 5000, // Refresh every 5 seconds
+  });
+  
   const markAsUnread = trpc.ohweees.markAsUnread.useMutation({
     onSuccess: () => {
       utils.ohweees.getUnreadMarkersBatch.invalidate();
+      utils.ohweees.getRoomsWithUnreadMarkers.invalidate();
       toast.success("Als ungelesen markiert");
     },
     onError: (error) => {
@@ -676,6 +678,7 @@ export default function OhweeesPage() {
   const removeUnreadMarker = trpc.ohweees.removeUnreadMarker.useMutation({
     onSuccess: () => {
       utils.ohweees.getUnreadMarkersBatch.invalidate();
+      utils.ohweees.getRoomsWithUnreadMarkers.invalidate();
       toast.success("Markierung entfernt");
     },
     onError: (error) => {
@@ -1073,6 +1076,10 @@ export default function OhweeesPage() {
                     <span className="absolute -top-1 -right-1 h-5 w-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
                       {room.unreadCount > 9 ? "9+" : room.unreadCount}
                     </span>
+                  )}
+                  {/* Unread marker indicator (manually marked) */}
+                  {roomsWithUnreadMarkers?.some(r => r.roomId === room.id) && (
+                    <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-amber-500 rounded-full border-2 border-background" title="Ungelesene Markierung" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
