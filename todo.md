@@ -494,3 +494,11 @@
 ## Buchungszeitraum-UI im Calendly-Stil
 - [x] Kombinierte Darstellung: "Gäste können bis zu X Tage in die Zukunft buchen, mit mindestens Y Stunden Vorlaufzeit"
 - [x] Inline-Dropdowns wie bei Calendly
+
+## Schedule-Verwaltung (Wiederverwendbare Verfügbarkeitsvorlagen)
+- [x] Datenbank-Schema für Schedules (Name, wöchentliche Zeiten, Zeitzone)
+- [x] Backend-API für Schedule-CRUD
+- [x] Event-Typen mit Schedule verknüpfen (statt eigener Verfügbarkeit)
+- [x] Frontend: Schedule-Verwaltungsseite unter Terminplanung ("Verfügbarkeit"-Tab)
+- [x] Frontend: Schedule-Auswahl im Event-Typ-Dialog ("Schedule verwenden" oder "Eigene Zeiten")
+- [x] Standard-Schedule "Arbeitszeiten" automatisch erstellen

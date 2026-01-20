@@ -134,6 +134,13 @@
       "when": 1768923368420,
       "tag": "0018_yellow_nighthawk",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1768924987381,
+      "tag": "0019_smiling_hellfire_club",
+      "breakpoints": true
     }
   ]
 }

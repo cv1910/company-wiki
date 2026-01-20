@@ -3202,6 +3202,132 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
 
   // ==================== SCHEDULING (CALENDLY-STYLE) ====================
   scheduling: router({
+    // ==================== SCHEDULES ====================
+    schedules: router({
+      // List all schedules for current user
+      list: protectedProcedure.query(async ({ ctx }) => {
+        return db.getSchedulesByOwner(ctx.user.id);
+      }),
+
+      // Get schedule by ID with availability
+      getById: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .query(async ({ input, ctx }) => {
+          const schedule = await db.getScheduleById(input.id);
+          if (!schedule) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Schedule nicht gefunden" });
+          }
+          if (schedule.ownerId !== ctx.user.id && ctx.user.role !== "admin") {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Keine Berechtigung" });
+          }
+          const availability = await db.getScheduleAvailability(input.id);
+          return { ...schedule, availability };
+        }),
+
+      // Create schedule
+      create: protectedProcedure
+        .input(
+          z.object({
+            name: z.string().min(1),
+            timezone: z.string().optional(),
+            isDefault: z.boolean().optional(),
+          })
+        )
+        .mutation(async ({ input, ctx }) => {
+          // If setting as default, unset other defaults
+          if (input.isDefault) {
+            await db.setDefaultSchedule(-1, ctx.user.id); // Unset all
+          }
+          const schedule = await db.createSchedule({
+            ...input,
+            ownerId: ctx.user.id,
+          });
+          return schedule;
+        }),
+
+      // Update schedule
+      update: protectedProcedure
+        .input(
+          z.object({
+            id: z.number(),
+            name: z.string().min(1).optional(),
+            timezone: z.string().optional(),
+            isDefault: z.boolean().optional(),
+          })
+        )
+        .mutation(async ({ input, ctx }) => {
+          const schedule = await db.getScheduleById(input.id);
+          if (!schedule) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Schedule nicht gefunden" });
+          }
+          if (schedule.ownerId !== ctx.user.id && ctx.user.role !== "admin") {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Keine Berechtigung" });
+          }
+          // If setting as default, unset other defaults first
+          if (input.isDefault) {
+            await db.setDefaultSchedule(input.id, ctx.user.id);
+          }
+          const { id, ...data } = input;
+          await db.updateSchedule(id, data);
+          return { success: true };
+        }),
+
+      // Delete schedule
+      delete: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input, ctx }) => {
+          const schedule = await db.getScheduleById(input.id);
+          if (!schedule) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Schedule nicht gefunden" });
+          }
+          if (schedule.ownerId !== ctx.user.id && ctx.user.role !== "admin") {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Keine Berechtigung" });
+          }
+          await db.deleteSchedule(input.id);
+          return { success: true };
+        }),
+
+      // Set schedule availability
+      setAvailability: protectedProcedure
+        .input(
+          z.object({
+            scheduleId: z.number(),
+            availabilities: z.array(
+              z.object({
+                dayOfWeek: z.number().min(0).max(6),
+                startTime: z.string().regex(/^\d{2}:\d{2}$/),
+                endTime: z.string().regex(/^\d{2}:\d{2}$/),
+                isAvailable: z.boolean().optional(),
+              })
+            ),
+          })
+        )
+        .mutation(async ({ input, ctx }) => {
+          const schedule = await db.getScheduleById(input.scheduleId);
+          if (!schedule) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Schedule nicht gefunden" });
+          }
+          if (schedule.ownerId !== ctx.user.id && ctx.user.role !== "admin") {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Keine Berechtigung" });
+          }
+          await db.setScheduleAvailability(
+            input.scheduleId,
+            input.availabilities.map((a) => ({
+              ...a,
+              scheduleId: input.scheduleId,
+              isAvailable: a.isAvailable ?? true,
+            }))
+          );
+          return { success: true };
+        }),
+
+      // Ensure default schedule exists
+      ensureDefault: protectedProcedure.mutation(async ({ ctx }) => {
+        const scheduleId = await db.ensureDefaultSchedule(ctx.user.id);
+        return { scheduleId };
+      }),
+    }),
+
     // ==================== EVENT TYPES ====================
     eventTypes: router({
       // List all event types for current user (host)
@@ -3257,6 +3383,7 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
             reminderMinutes: z.string().optional(),
             sendGuestReminder: z.boolean().optional(),
             sendHostReminder: z.boolean().optional(),
+            scheduleId: z.number().nullable().optional(),
           })
         )
         .mutation(async ({ input, ctx }) => {
@@ -3290,6 +3417,7 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
             reminderMinutes: z.string().optional(),
             sendGuestReminder: z.boolean().optional(),
             sendHostReminder: z.boolean().optional(),
+            scheduleId: z.number().nullable().optional(),
           })
         )
         .mutation(async ({ input, ctx }) => {

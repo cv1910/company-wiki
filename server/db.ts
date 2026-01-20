@@ -66,6 +66,10 @@ import {
   InsertGoogleCalendarConnection,
   calendarEventSyncMap,
   InsertCalendarEventSyncMap,
+  schedules,
+  InsertSchedule,
+  scheduleAvailability,
+  InsertScheduleAvailability,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -3175,4 +3179,153 @@ export async function updateBookingRemindersSent(bookingId: number, remindersSen
     .update(eventBookings)
     .set({ remindersSent })
     .where(eq(eventBookings.id, bookingId));
+}
+
+
+// ==================== SCHEDULES FUNCTIONS ====================
+
+// Create schedule
+export async function createSchedule(data: InsertSchedule) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [result] = await db.insert(schedules).values(data);
+  return { id: result.insertId, ...data };
+}
+
+// Update schedule
+export async function updateSchedule(id: number, data: Partial<InsertSchedule>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(schedules).set(data).where(eq(schedules.id, id));
+}
+
+// Delete schedule
+export async function deleteSchedule(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Delete related availability
+  await db.delete(scheduleAvailability).where(eq(scheduleAvailability.scheduleId, id));
+  // Remove schedule reference from event types
+  await db.update(eventTypes).set({ scheduleId: null }).where(eq(eventTypes.scheduleId, id));
+  // Delete schedule
+  await db.delete(schedules).where(eq(schedules.id, id));
+}
+
+// Get schedule by ID
+export async function getScheduleById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(schedules).where(eq(schedules.id, id)).limit(1);
+  return result[0];
+}
+
+// Get all schedules for an owner
+export async function getSchedulesByOwner(ownerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select()
+    .from(schedules)
+    .where(eq(schedules.ownerId, ownerId))
+    .orderBy(desc(schedules.isDefault), schedules.name);
+}
+
+// Get default schedule for owner
+export async function getDefaultSchedule(ownerId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db
+    .select()
+    .from(schedules)
+    .where(and(eq(schedules.ownerId, ownerId), eq(schedules.isDefault, true)))
+    .limit(1);
+  return result[0];
+}
+
+// Set schedule as default (unset others)
+export async function setDefaultSchedule(id: number, ownerId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Unset all other defaults for this owner
+  await db
+    .update(schedules)
+    .set({ isDefault: false })
+    .where(eq(schedules.ownerId, ownerId));
+  
+  // Set this one as default
+  await db
+    .update(schedules)
+    .set({ isDefault: true })
+    .where(eq(schedules.id, id));
+}
+
+// ==================== SCHEDULE AVAILABILITY FUNCTIONS ====================
+
+// Set availability for schedule (replaces existing)
+export async function setScheduleAvailability(scheduleId: number, availabilities: InsertScheduleAvailability[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Delete existing availability
+  await db.delete(scheduleAvailability).where(eq(scheduleAvailability.scheduleId, scheduleId));
+  
+  // Insert new availability
+  if (availabilities.length > 0) {
+    await db.insert(scheduleAvailability).values(availabilities);
+  }
+}
+
+// Get availability for schedule
+export async function getScheduleAvailability(scheduleId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select()
+    .from(scheduleAvailability)
+    .where(eq(scheduleAvailability.scheduleId, scheduleId))
+    .orderBy(scheduleAvailability.dayOfWeek, scheduleAvailability.startTime);
+}
+
+// Create or get default "Working Hours" schedule for a user
+export async function ensureDefaultSchedule(ownerId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Check if user already has a default schedule
+  const existing = await getDefaultSchedule(ownerId);
+  if (existing) {
+    return existing.id;
+  }
+  
+  // Create default "Working Hours" schedule
+  const schedule = await createSchedule({
+    name: "Arbeitszeiten",
+    timezone: "Europe/Berlin",
+    isDefault: true,
+    ownerId,
+  });
+  
+  // Set default availability (Mon-Fri 9:00-17:00)
+  const defaultAvailability: InsertScheduleAvailability[] = [];
+  for (let day = 1; day <= 5; day++) { // Monday to Friday
+    defaultAvailability.push({
+      scheduleId: schedule.id,
+      dayOfWeek: day,
+      startTime: "09:00",
+      endTime: "17:00",
+      isAvailable: true,
+    });
+  }
+  
+  await setScheduleAvailability(schedule.id, defaultAvailability);
+  
+  return schedule.id;
 }

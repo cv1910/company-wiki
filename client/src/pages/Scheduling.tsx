@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -207,6 +207,12 @@ function CreateEventTypeDialog({ open, onOpenChange, editEventType }: {
   const [reminderMinutes, setReminderMinutes] = useState(editEventType?.reminderMinutes || "1440,60");
   const [sendGuestReminder, setSendGuestReminder] = useState(editEventType?.sendGuestReminder !== false);
   const [sendHostReminder, setSendHostReminder] = useState(editEventType?.sendHostReminder !== false);
+  // Schedule selection
+  const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(editEventType?.scheduleId || null);
+  const [useCustomAvailability, setUseCustomAvailability] = useState(!editEventType?.scheduleId);
+  
+  // Load available schedules
+  const { data: schedules } = trpc.scheduling.schedules.list.useQuery();
   
   // Availability state
   const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
@@ -283,6 +289,8 @@ function CreateEventTypeDialog({ open, onOpenChange, editEventType }: {
     setReminderMinutes("1440,60");
     setSendGuestReminder(true);
     setSendHostReminder(true);
+    setSelectedScheduleId(null);
+    setUseCustomAvailability(true);
     setAvailability([]);
   };
 
@@ -302,6 +310,7 @@ function CreateEventTypeDialog({ open, onOpenChange, editEventType }: {
       reminderMinutes,
       sendGuestReminder,
       sendHostReminder,
+      scheduleId: useCustomAvailability ? null : selectedScheduleId,
     };
 
     if (editEventType) {
@@ -454,55 +463,121 @@ function CreateEventTypeDialog({ open, onOpenChange, editEventType }: {
           </TabsContent>
 
           <TabsContent value="availability" className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label>Wöchentliche Verfügbarkeit</Label>
-              <p className="text-sm text-muted-foreground">
-                Wählen Sie die Tage und Zeiten, an denen Sie verfügbar sind.
-              </p>
+            {/* Schedule Selection */}
+            <div className="space-y-3">
+              <Label>Verfügbarkeit</Label>
+              <div className="space-y-2">
+                <div 
+                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                    !useCustomAvailability ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/50"
+                  }`}
+                  onClick={() => setUseCustomAvailability(false)}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      !useCustomAvailability ? "border-primary" : "border-muted-foreground"
+                    }`}>
+                      {!useCustomAvailability && <div className="w-2 h-2 rounded-full bg-primary" />}
+                    </div>
+                    <span className="font-medium">Schedule verwenden</span>
+                  </div>
+                  {!useCustomAvailability && (
+                    <div className="mt-2 ml-6">
+                      <Select 
+                        value={selectedScheduleId?.toString() || ""} 
+                        onValueChange={(v) => setSelectedScheduleId(parseInt(v))}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Schedule auswählen..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {schedules?.map((s) => (
+                            <SelectItem key={s.id} value={s.id.toString()}>
+                              {s.name} {s.isDefault && "(Standard)"}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Verwendet die Zeiten aus dem ausgewählten Schedule
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                <div 
+                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                    useCustomAvailability ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/50"
+                  }`}
+                  onClick={() => setUseCustomAvailability(true)}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      useCustomAvailability ? "border-primary" : "border-muted-foreground"
+                    }`}>
+                      {useCustomAvailability && <div className="w-2 h-2 rounded-full bg-primary" />}
+                    </div>
+                    <span className="font-medium">Eigene Zeiten festlegen</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-3">
-              {DAYS_OF_WEEK.map(day => {
-                const dayAvail = availability.find(a => a.dayOfWeek === day.value);
-                const isAvailable = !!dayAvail;
-                
-                return (
-                  <div key={day.value} className="flex items-center gap-4">
-                    <button
-                      type="button"
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                        isAvailable 
-                          ? "bg-primary text-primary-foreground" 
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}
-                      onClick={() => toggleDayAvailability(day.value)}
-                    >
-                      {day.short}
-                    </button>
+            {/* Custom Availability (only shown when useCustomAvailability is true) */}
+            {useCustomAvailability && (
+              <>
+                <Separator />
+                <div className="space-y-2">
+                  <Label>Wöchentliche Verfügbarkeit</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Wählen Sie die Tage und Zeiten, an denen Sie verfügbar sind.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  {DAYS_OF_WEEK.map(day => {
+                    const dayAvail = availability.find(a => a.dayOfWeek === day.value);
+                    const isAvailable = !!dayAvail;
                     
-                    {isAvailable ? (
-                      <div className="flex items-center gap-2 flex-1">
-                        <Input
-                          type="time"
-                          value={dayAvail.startTime}
-                          onChange={(e) => updateDayTime(day.value, "startTime", e.target.value)}
-                          className="w-28"
-                        />
-                        <span className="text-muted-foreground">-</span>
-                        <Input
-                          type="time"
-                          value={dayAvail.endTime}
-                          onChange={(e) => updateDayTime(day.value, "endTime", e.target.value)}
-                          className="w-28"
-                        />
+                    return (
+                      <div key={day.value} className="flex items-center gap-4">
+                        <button
+                          type="button"
+                          className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+                            isAvailable 
+                              ? "bg-primary text-primary-foreground" 
+                              : "bg-muted text-muted-foreground hover:bg-muted/80"
+                          }`}
+                          onClick={() => toggleDayAvailability(day.value)}
+                        >
+                          {day.short}
+                        </button>
+                        
+                        {isAvailable ? (
+                          <div className="flex items-center gap-2 flex-1">
+                            <Input
+                              type="time"
+                              value={dayAvail.startTime}
+                              onChange={(e) => updateDayTime(day.value, "startTime", e.target.value)}
+                              className="w-28"
+                            />
+                            <span className="text-muted-foreground">-</span>
+                            <Input
+                              type="time"
+                              value={dayAvail.endTime}
+                              onChange={(e) => updateDayTime(day.value, "endTime", e.target.value)}
+                              className="w-28"
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">Nicht verfügbar</span>
+                        )}
                       </div>
-                    ) : (
-                      <span className="text-sm text-muted-foreground">Nicht verfügbar</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
             <div className="text-sm text-muted-foreground flex items-center gap-1">
               <HelpCircle className="h-4 w-4" />
@@ -726,6 +801,7 @@ export default function Scheduling() {
         <Tabs defaultValue="event-types" className="w-full">
           <TabsList>
             <TabsTrigger value="event-types">Event-Typen</TabsTrigger>
+            <TabsTrigger value="schedules">Verfügbarkeit</TabsTrigger>
             <TabsTrigger value="bookings">Buchungen</TabsTrigger>
           </TabsList>
 
@@ -780,6 +856,10 @@ export default function Scheduling() {
                 Neuer Event-Typ
               </Button>
             </div>
+          </TabsContent>
+
+          <TabsContent value="schedules" className="mt-6">
+            <SchedulesList />
           </TabsContent>
 
           <TabsContent value="bookings" className="mt-6">
@@ -948,5 +1028,425 @@ function BookingCard({ booking, onCancel, onConfirm, showConfirm, isPast }: {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+
+// ==================== SCHEDULES LIST ====================
+
+function SchedulesList() {
+  const [editSchedule, setEditSchedule] = useState<any>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  
+  const { data: schedules, isLoading } = trpc.scheduling.schedules.list.useQuery();
+  const ensureDefaultMutation = trpc.scheduling.schedules.ensureDefault.useMutation({
+    onSuccess: () => {
+      trpc.useUtils().scheduling.schedules.list.invalidate();
+    },
+  });
+  const deleteMutation = trpc.scheduling.schedules.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Schedule gelöscht!");
+      trpc.useUtils().scheduling.schedules.list.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  // Ensure default schedule exists
+  useEffect(() => {
+    if (!isLoading && schedules && schedules.length === 0) {
+      ensureDefaultMutation.mutate();
+    }
+  }, [isLoading, schedules]);
+
+  const handleEdit = (schedule: any) => {
+    setEditSchedule(schedule);
+    setCreateDialogOpen(true);
+  };
+
+  const handleDelete = (schedule: any) => {
+    if (schedule.isDefault) {
+      toast.error("Das Standard-Schedule kann nicht gelöscht werden.");
+      return;
+    }
+    if (confirm(`Möchten Sie "${schedule.name}" wirklich löschen?`)) {
+      deleteMutation.mutate({ id: schedule.id });
+    }
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setCreateDialogOpen(open);
+    if (!open) {
+      setEditSchedule(null);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="text-center py-12 text-muted-foreground">Laden...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Description */}
+      <div>
+        <h2 className="text-lg font-semibold mb-2">Verfügbarkeits-Vorlagen</h2>
+        <p className="text-muted-foreground">
+          Erstellen Sie wiederverwendbare Verfügbarkeits-Vorlagen (Schedules), die Sie 
+          verschiedenen Event-Typen zuweisen können. So müssen Sie die Zeiten nicht 
+          für jeden Event-Typ einzeln einstellen.
+        </p>
+      </div>
+
+      {/* Schedules List */}
+      {schedules && schedules.length > 0 ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          {schedules.map((schedule) => (
+            <ScheduleCard
+              key={schedule.id}
+              schedule={schedule}
+              onEdit={() => handleEdit(schedule)}
+              onDelete={() => handleDelete(schedule)}
+            />
+          ))}
+        </div>
+      ) : (
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Clock className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">Keine Schedules</h3>
+            <p className="text-muted-foreground text-center">
+              Ein Standard-Schedule wird automatisch erstellt.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Create Button */}
+      <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
+        <Plus className="h-4 w-4" />
+        Neues Schedule
+      </Button>
+
+      {/* Create/Edit Dialog */}
+      <ScheduleDialog
+        open={createDialogOpen}
+        onOpenChange={handleDialogClose}
+        editSchedule={editSchedule}
+      />
+    </div>
+  );
+}
+
+function ScheduleCard({ schedule, onEdit, onDelete }: { 
+  schedule: any; 
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const { data: scheduleWithAvailability } = trpc.scheduling.schedules.getById.useQuery(
+    { id: schedule.id },
+    { enabled: !!schedule.id }
+  );
+
+  const availability = scheduleWithAvailability?.availability || [];
+
+  // Group availability by day
+  const availabilityByDay = DAYS_OF_WEEK.map(day => {
+    const slots = availability.filter((a: any) => a.dayOfWeek === day.value && a.isAvailable);
+    return {
+      ...day,
+      slots,
+      isAvailable: slots.length > 0,
+    };
+  });
+
+  return (
+    <Card className="relative">
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle className="text-lg flex items-center gap-2">
+              {schedule.name}
+              {schedule.isDefault && (
+                <Badge variant="secondary" className="text-xs">Standard</Badge>
+              )}
+            </CardTitle>
+            <CardDescription className="text-sm">
+              {schedule.timezone || "Europe/Berlin"}
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={onEdit}>
+              <Edit className="h-4 w-4" />
+            </Button>
+            {!schedule.isDefault && (
+              <Button variant="ghost" size="icon" onClick={onDelete}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-1 text-sm">
+          {availabilityByDay.map(day => (
+            <div key={day.value} className="flex items-center gap-2">
+              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                day.isAvailable 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted text-muted-foreground"
+              }`}>
+                {day.short}
+              </span>
+              {day.isAvailable ? (
+                <span className="text-muted-foreground">
+                  {day.slots.map((s: any) => `${s.startTime} - ${s.endTime}`).join(", ")}
+                </span>
+              ) : (
+                <span className="text-muted-foreground/50">Nicht verfügbar</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ScheduleDialog({ open, onOpenChange, editSchedule }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  editSchedule?: any;
+}) {
+  const utils = trpc.useUtils();
+  
+  const [name, setName] = useState(editSchedule?.name || "");
+  const [timezone, setTimezone] = useState(editSchedule?.timezone || "Europe/Berlin");
+  const [isDefault, setIsDefault] = useState(editSchedule?.isDefault || false);
+  const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
+
+  // Load existing availability if editing
+  const { data: scheduleWithAvailability } = trpc.scheduling.schedules.getById.useQuery(
+    { id: editSchedule?.id },
+    { enabled: !!editSchedule?.id }
+  );
+
+  // Set form values when editing
+  useEffect(() => {
+    if (editSchedule) {
+      setName(editSchedule.name || "");
+      setTimezone(editSchedule.timezone || "Europe/Berlin");
+      setIsDefault(editSchedule.isDefault || false);
+    } else {
+      setName("");
+      setTimezone("Europe/Berlin");
+      setIsDefault(false);
+      setAvailability([]);
+    }
+  }, [editSchedule, open]);
+
+  // Set availability when loaded
+  useEffect(() => {
+    if (scheduleWithAvailability?.availability) {
+      setAvailability(scheduleWithAvailability.availability.map((a: any) => ({
+        dayOfWeek: a.dayOfWeek,
+        startTime: a.startTime,
+        endTime: a.endTime,
+        isAvailable: a.isAvailable,
+      })));
+    }
+  }, [scheduleWithAvailability]);
+
+  const createMutation = trpc.scheduling.schedules.create.useMutation({
+    onSuccess: async (data) => {
+      if (availability.length > 0) {
+        await setAvailabilityMutation.mutateAsync({
+          scheduleId: data.id,
+          availabilities: availability,
+        });
+      }
+      toast.success("Schedule erstellt!");
+      utils.scheduling.schedules.list.invalidate();
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const updateMutation = trpc.scheduling.schedules.update.useMutation({
+    onSuccess: async () => {
+      if (editSchedule?.id) {
+        await setAvailabilityMutation.mutateAsync({
+          scheduleId: editSchedule.id,
+          availabilities: availability,
+        });
+      }
+      toast.success("Schedule aktualisiert!");
+      utils.scheduling.schedules.list.invalidate();
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const setAvailabilityMutation = trpc.scheduling.schedules.setAvailability.useMutation();
+
+  const handleSubmit = () => {
+    const data = {
+      name,
+      timezone,
+      isDefault,
+    };
+
+    if (editSchedule) {
+      updateMutation.mutate({ id: editSchedule.id, ...data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  const toggleDayAvailability = (dayOfWeek: number) => {
+    const existing = availability.find(a => a.dayOfWeek === dayOfWeek);
+    if (existing) {
+      setAvailability(availability.filter(a => a.dayOfWeek !== dayOfWeek));
+    } else {
+      setAvailability([...availability, {
+        dayOfWeek,
+        startTime: "09:00",
+        endTime: "17:00",
+        isAvailable: true,
+      }]);
+    }
+  };
+
+  const updateDayTime = (dayOfWeek: number, field: "startTime" | "endTime", value: string) => {
+    setAvailability(availability.map(a => 
+      a.dayOfWeek === dayOfWeek ? { ...a, [field]: value } : a
+    ));
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{editSchedule ? "Schedule bearbeiten" : "Neues Schedule"}</DialogTitle>
+          <DialogDescription>
+            Erstellen Sie eine wiederverwendbare Verfügbarkeits-Vorlage.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Name */}
+          <div className="space-y-2">
+            <Label htmlFor="schedule-name">Name</Label>
+            <Input
+              id="schedule-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="z.B. Arbeitszeiten, Nachmittags, Wochenende"
+            />
+          </div>
+
+          {/* Timezone */}
+          <div className="space-y-2">
+            <Label htmlFor="schedule-timezone">Zeitzone</Label>
+            <Select value={timezone} onValueChange={setTimezone}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Europe/Berlin">Europe/Berlin (CET)</SelectItem>
+                <SelectItem value="Europe/London">Europe/London (GMT)</SelectItem>
+                <SelectItem value="America/New_York">America/New_York (EST)</SelectItem>
+                <SelectItem value="America/Los_Angeles">America/Los_Angeles (PST)</SelectItem>
+                <SelectItem value="Asia/Tokyo">Asia/Tokyo (JST)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Default Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Als Standard festlegen</Label>
+              <p className="text-xs text-muted-foreground">
+                Dieses Schedule wird für neue Event-Typen verwendet
+              </p>
+            </div>
+            <Switch
+              checked={isDefault}
+              onCheckedChange={setIsDefault}
+            />
+          </div>
+
+          <Separator />
+
+          {/* Weekly Availability */}
+          <div className="space-y-2">
+            <Label>Wöchentliche Verfügbarkeit</Label>
+            <p className="text-sm text-muted-foreground">
+              Wählen Sie die Tage und Zeiten, an denen Sie verfügbar sind.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {DAYS_OF_WEEK.map(day => {
+              const dayAvail = availability.find(a => a.dayOfWeek === day.value);
+              const isAvailable = !!dayAvail;
+              
+              return (
+                <div key={day.value} className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+                      isAvailable 
+                        ? "bg-primary text-primary-foreground" 
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                    onClick={() => toggleDayAvailability(day.value)}
+                  >
+                    {day.short}
+                  </button>
+                  
+                  {isAvailable ? (
+                    <div className="flex items-center gap-2 flex-1">
+                      <Input
+                        type="time"
+                        value={dayAvail.startTime}
+                        onChange={(e) => updateDayTime(day.value, "startTime", e.target.value)}
+                        className="w-28"
+                      />
+                      <span className="text-muted-foreground">-</span>
+                      <Input
+                        type="time"
+                        value={dayAvail.endTime}
+                        onChange={(e) => updateDayTime(day.value, "endTime", e.target.value)}
+                        className="w-28"
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Nicht verfügbar</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Abbrechen
+          </Button>
+          <Button 
+            onClick={handleSubmit}
+            disabled={!name || createMutation.isPending || updateMutation.isPending}
+          >
+            {editSchedule ? "Speichern" : "Erstellen"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

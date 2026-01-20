@@ -761,6 +761,8 @@ export const eventTypes = mysqlTable("eventTypes", {
   reminderMinutes: varchar("reminderMinutes", { length: 100 }).default("1440,60"),
   sendGuestReminder: boolean("sendGuestReminder").default(true),
   sendHostReminder: boolean("sendHostReminder").default(true),
+  // Schedule reference (if null, uses custom availability)
+  scheduleId: int("scheduleId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -832,3 +834,38 @@ export const eventBookings = mysqlTable("eventBookings", {
 
 export type EventBooking = typeof eventBookings.$inferSelect;
 export type InsertEventBooking = typeof eventBookings.$inferInsert;
+
+/**
+ * Reusable availability schedules that can be shared across event types.
+ * Similar to Calendly's "Schedules" feature.
+ */
+export const schedules = mysqlTable("schedules", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  timezone: varchar("timezone", { length: 64 }).default("Europe/Berlin").notNull(),
+  isDefault: boolean("isDefault").default(false).notNull(), // Default schedule for new event types
+  ownerId: int("ownerId").notNull(), // The user who owns this schedule
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Schedule = typeof schedules.$inferSelect;
+export type InsertSchedule = typeof schedules.$inferInsert;
+
+/**
+ * Weekly availability slots for schedules.
+ * Defines which days and times are available.
+ */
+export const scheduleAvailability = mysqlTable("scheduleAvailability", {
+  id: int("id").autoincrement().primaryKey(),
+  scheduleId: int("scheduleId").notNull(),
+  dayOfWeek: int("dayOfWeek").notNull(), // 0 = Sunday, 1 = Monday, etc.
+  startTime: varchar("startTime", { length: 5 }).notNull(), // Format: "09:00"
+  endTime: varchar("endTime", { length: 5 }).notNull(), // Format: "17:00"
+  isAvailable: boolean("isAvailable").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ScheduleAvailability = typeof scheduleAvailability.$inferSelect;
+export type InsertScheduleAvailability = typeof scheduleAvailability.$inferInsert;
