@@ -490,3 +490,7 @@
 
 ## Terminplanung nur für Admin sichtbar
 - [x] Terminplanung in der Navigation nur für Admin-Benutzer anzeigen (unter ADMINISTRATION)
+
+## Buchungszeitraum-UI im Calendly-Stil
+- [x] Kombinierte Darstellung: "Gäste können bis zu X Tage in die Zukunft buchen, mit mindestens Y Stunden Vorlaufzeit"
+- [x] Inline-Dropdowns wie bei Calendly

@@ -511,47 +511,46 @@ function CreateEventTypeDialog({ open, onOpenChange, editEventType }: {
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-4 mt-4">
-            {/* Min Notice */}
-            <div className="space-y-2">
-              <Label htmlFor="minNotice">Mindestvorlaufzeit</Label>
-              <Select value={minNoticeHours} onValueChange={setMinNoticeHours}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1 Stunde</SelectItem>
-                  <SelectItem value="2">2 Stunden</SelectItem>
-                  <SelectItem value="4">4 Stunden</SelectItem>
-                  <SelectItem value="24">1 Tag</SelectItem>
-                  <SelectItem value="48">2 Tage</SelectItem>
-                  <SelectItem value="168">1 Woche</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Wie viel Zeit muss mindestens vor einem Termin liegen?
-              </p>
-            </div>
-
-            {/* Max Days in Future */}
-            <div className="space-y-2">
-              <Label htmlFor="maxDays">Buchungszeitraum</Label>
-              <Select value={maxDaysInFuture} onValueChange={setMaxDaysInFuture}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7">7 Tage</SelectItem>
-                  <SelectItem value="14">14 Tage</SelectItem>
-                  <SelectItem value="30">30 Tage</SelectItem>
-                  <SelectItem value="60">60 Tage</SelectItem>
-                  <SelectItem value="90">90 Tage</SelectItem>
-                  <SelectItem value="180">180 Tage</SelectItem>
-                  <SelectItem value="365">1 Jahr</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Wie weit in die Zukunft können Termine gebucht werden?
-              </p>
+            {/* Date Range - Calendly Style */}
+            <div className="space-y-3">
+              <Label className="text-base font-medium">Verfügbarkeit</Label>
+              <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                <p className="text-sm flex flex-wrap items-center gap-1">
+                  <span>Gäste können bis zu</span>
+                  <Select value={maxDaysInFuture} onValueChange={setMaxDaysInFuture}>
+                    <SelectTrigger className="w-auto h-8 px-2 inline-flex bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">7 Tage</SelectItem>
+                      <SelectItem value="14">14 Tage</SelectItem>
+                      <SelectItem value="30">30 Tage</SelectItem>
+                      <SelectItem value="60">60 Tage</SelectItem>
+                      <SelectItem value="90">90 Tage</SelectItem>
+                      <SelectItem value="180">180 Tage</SelectItem>
+                      <SelectItem value="365">1 Jahr</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <span>in die Zukunft buchen</span>
+                </p>
+                <p className="text-sm flex flex-wrap items-center gap-1">
+                  <span>mit mindestens</span>
+                  <Select value={minNoticeHours} onValueChange={setMinNoticeHours}>
+                    <SelectTrigger className="w-auto h-8 px-2 inline-flex bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 Stunde</SelectItem>
+                      <SelectItem value="2">2 Stunden</SelectItem>
+                      <SelectItem value="4">4 Stunden</SelectItem>
+                      <SelectItem value="24">1 Tag</SelectItem>
+                      <SelectItem value="48">2 Tage</SelectItem>
+                      <SelectItem value="168">1 Woche</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <span>Vorlaufzeit</span>
+                </p>
+              </div>
             </div>
 
             {/* Buffer Times */}
