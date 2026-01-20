@@ -3199,6 +3199,524 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
       return result;
     }),
   }),
+
+  // ==================== SCHEDULING (CALENDLY-STYLE) ====================
+  scheduling: router({
+    // ==================== EVENT TYPES ====================
+    eventTypes: router({
+      // List all event types for current user (host)
+      list: protectedProcedure.query(async ({ ctx }) => {
+        return db.getEventTypesByHost(ctx.user.id);
+      }),
+
+      // List all active event types (public for booking)
+      listActive: publicProcedure.query(async () => {
+        return db.getActiveEventTypes();
+      }),
+
+      // Get event type by ID
+      getById: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .query(async ({ input }) => {
+          const eventType = await db.getEventTypeById(input.id);
+          if (!eventType) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Event-Typ nicht gefunden" });
+          }
+          return eventType;
+        }),
+
+      // Get event type by slug (public for booking page)
+      getBySlug: publicProcedure
+        .input(z.object({ slug: z.string() }))
+        .query(async ({ input }) => {
+          const eventType = await db.getEventTypeBySlug(input.slug);
+          if (!eventType) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Event-Typ nicht gefunden" });
+          }
+          // Get host info
+          const host = await db.getUserById(eventType.hostId);
+          return { ...eventType, host };
+        }),
+
+      // Create event type
+      create: protectedProcedure
+        .input(
+          z.object({
+            name: z.string().min(1),
+            description: z.string().optional(),
+            duration: z.number().min(5).max(480),
+            color: z.string().optional(),
+            locationType: z.enum(["google_meet", "phone", "in_person", "custom"]).optional(),
+            locationDetails: z.string().optional(),
+            minNoticeHours: z.number().optional(),
+            maxDaysInFuture: z.number().optional(),
+            bufferBefore: z.number().optional(),
+            bufferAfter: z.number().optional(),
+            requiresConfirmation: z.boolean().optional(),
+            confirmationMessage: z.string().optional(),
+          })
+        )
+        .mutation(async ({ input, ctx }) => {
+          const slug = generateSlug(input.name) + "-" + nanoid(8);
+          const eventType = await db.createEventType({
+            ...input,
+            slug,
+            hostId: ctx.user.id,
+          });
+          return eventType;
+        }),
+
+      // Update event type
+      update: protectedProcedure
+        .input(
+          z.object({
+            id: z.number(),
+            name: z.string().min(1).optional(),
+            description: z.string().optional(),
+            duration: z.number().min(5).max(480).optional(),
+            color: z.string().optional(),
+            locationType: z.enum(["google_meet", "phone", "in_person", "custom"]).optional(),
+            locationDetails: z.string().optional(),
+            isActive: z.boolean().optional(),
+            minNoticeHours: z.number().optional(),
+            maxDaysInFuture: z.number().optional(),
+            bufferBefore: z.number().optional(),
+            bufferAfter: z.number().optional(),
+            requiresConfirmation: z.boolean().optional(),
+            confirmationMessage: z.string().optional(),
+          })
+        )
+        .mutation(async ({ input, ctx }) => {
+          const eventType = await db.getEventTypeById(input.id);
+          if (!eventType) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Event-Typ nicht gefunden" });
+          }
+          if (eventType.hostId !== ctx.user.id && ctx.user.role !== "admin") {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Keine Berechtigung" });
+          }
+          const { id, ...data } = input;
+          await db.updateEventType(id, data);
+          return { success: true };
+        }),
+
+      // Delete event type
+      delete: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input, ctx }) => {
+          const eventType = await db.getEventTypeById(input.id);
+          if (!eventType) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Event-Typ nicht gefunden" });
+          }
+          if (eventType.hostId !== ctx.user.id && ctx.user.role !== "admin") {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Keine Berechtigung" });
+          }
+          await db.deleteEventType(input.id);
+          return { success: true };
+        }),
+    }),
+
+    // ==================== AVAILABILITY ====================
+    availability: router({
+      // Get availability for event type
+      get: protectedProcedure
+        .input(z.object({ eventTypeId: z.number() }))
+        .query(async ({ input }) => {
+          return db.getEventTypeAvailability(input.eventTypeId);
+        }),
+
+      // Set availability for event type
+      set: protectedProcedure
+        .input(
+          z.object({
+            eventTypeId: z.number(),
+            availabilities: z.array(
+              z.object({
+                dayOfWeek: z.number().min(0).max(6),
+                startTime: z.string().regex(/^\d{2}:\d{2}$/),
+                endTime: z.string().regex(/^\d{2}:\d{2}$/),
+                isAvailable: z.boolean().optional(),
+              })
+            ),
+          })
+        )
+        .mutation(async ({ input, ctx }) => {
+          const eventType = await db.getEventTypeById(input.eventTypeId);
+          if (!eventType) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Event-Typ nicht gefunden" });
+          }
+          if (eventType.hostId !== ctx.user.id && ctx.user.role !== "admin") {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Keine Berechtigung" });
+          }
+          await db.setEventTypeAvailability(
+            input.eventTypeId,
+            input.availabilities.map((a) => ({
+              ...a,
+              eventTypeId: input.eventTypeId,
+              isAvailable: a.isAvailable ?? true,
+            }))
+          );
+          return { success: true };
+        }),
+    }),
+
+    // ==================== DATE OVERRIDES ====================
+    dateOverrides: router({
+      // Get date overrides for event type
+      list: protectedProcedure
+        .input(z.object({ eventTypeId: z.number() }))
+        .query(async ({ input }) => {
+          return db.getDateOverrides(input.eventTypeId);
+        }),
+
+      // Add date override
+      add: protectedProcedure
+        .input(
+          z.object({
+            eventTypeId: z.number(),
+            date: z.string(), // ISO date string
+            isAvailable: z.boolean(),
+            startTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+            endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+            reason: z.string().optional(),
+          })
+        )
+        .mutation(async ({ input, ctx }) => {
+          const eventType = await db.getEventTypeById(input.eventTypeId);
+          if (!eventType) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Event-Typ nicht gefunden" });
+          }
+          if (eventType.hostId !== ctx.user.id && ctx.user.role !== "admin") {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Keine Berechtigung" });
+          }
+          const override = await db.addDateOverride({
+            eventTypeId: input.eventTypeId,
+            date: new Date(input.date),
+            isAvailable: input.isAvailable,
+            startTime: input.startTime,
+            endTime: input.endTime,
+            reason: input.reason,
+          });
+          return override;
+        }),
+
+      // Delete date override
+      delete: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => {
+          await db.deleteDateOverride(input.id);
+          return { success: true };
+        }),
+    }),
+
+    // ==================== BOOKINGS ====================
+    bookings: router({
+      // Get available time slots for a date
+      getAvailableSlots: publicProcedure
+        .input(
+          z.object({
+            eventTypeId: z.number(),
+            date: z.string(), // ISO date string (YYYY-MM-DD)
+          })
+        )
+        .query(async ({ input }) => {
+          const eventType = await db.getEventTypeById(input.eventTypeId);
+          if (!eventType || !eventType.isActive) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Event-Typ nicht gefunden" });
+          }
+
+          const date = new Date(input.date);
+          const dayOfWeek = date.getDay();
+
+          // Check for date override
+          const override = await db.getDateOverrideForDate(input.eventTypeId, date);
+          if (override && !override.isAvailable) {
+            return []; // Day is blocked
+          }
+
+          // Get availability for this day
+          const availabilities = await db.getEventTypeAvailability(input.eventTypeId);
+          let dayAvailability = availabilities.filter((a) => a.dayOfWeek === dayOfWeek && a.isAvailable);
+
+          // Use override times if available
+          if (override && override.isAvailable && override.startTime && override.endTime) {
+            dayAvailability = [
+              {
+                id: 0,
+                eventTypeId: input.eventTypeId,
+                dayOfWeek,
+                startTime: override.startTime,
+                endTime: override.endTime,
+                isAvailable: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ];
+          }
+
+          if (dayAvailability.length === 0) {
+            return []; // No availability for this day
+          }
+
+          // Get existing bookings for this day
+          const startOfDay = new Date(date);
+          startOfDay.setHours(0, 0, 0, 0);
+          const endOfDay = new Date(date);
+          endOfDay.setHours(23, 59, 59, 999);
+          const existingBookings = await db.getBookingsForEventType(input.eventTypeId, startOfDay, endOfDay);
+
+          // Generate time slots
+          const slots: { time: string; available: boolean }[] = [];
+          const duration = eventType.duration;
+          const bufferBefore = eventType.bufferBefore || 0;
+          const bufferAfter = eventType.bufferAfter || 0;
+          const minNoticeHours = eventType.minNoticeHours || 4;
+          const now = new Date();
+          const minBookingTime = new Date(now.getTime() + minNoticeHours * 60 * 60 * 1000);
+
+          for (const avail of dayAvailability) {
+            const [startHour, startMin] = avail.startTime.split(":").map(Number);
+            const [endHour, endMin] = avail.endTime.split(":").map(Number);
+
+            let currentTime = new Date(date);
+            currentTime.setHours(startHour, startMin, 0, 0);
+            const endTime = new Date(date);
+            endTime.setHours(endHour, endMin, 0, 0);
+
+            while (currentTime.getTime() + duration * 60 * 1000 <= endTime.getTime()) {
+              const slotStart = new Date(currentTime);
+              const slotEnd = new Date(currentTime.getTime() + duration * 60 * 1000);
+              const slotStartWithBuffer = new Date(slotStart.getTime() - bufferBefore * 60 * 1000);
+              const slotEndWithBuffer = new Date(slotEnd.getTime() + bufferAfter * 60 * 1000);
+
+              // Check if slot is in the past or within minimum notice
+              let available = slotStart > minBookingTime;
+
+              // Check for conflicts with existing bookings
+              if (available) {
+                for (const booking of existingBookings) {
+                  const bookingStart = new Date(booking.startTime);
+                  const bookingEnd = new Date(booking.endTime);
+                  // Check for overlap including buffer
+                  if (slotStartWithBuffer < bookingEnd && slotEndWithBuffer > bookingStart) {
+                    available = false;
+                    break;
+                  }
+                }
+              }
+
+              slots.push({
+                time: `${String(slotStart.getHours()).padStart(2, "0")}:${String(slotStart.getMinutes()).padStart(2, "0")}`,
+                available,
+              });
+
+              currentTime = new Date(currentTime.getTime() + duration * 60 * 1000);
+            }
+          }
+
+          return slots;
+        }),
+
+      // Get available dates for a month
+      getAvailableDates: publicProcedure
+        .input(
+          z.object({
+            eventTypeId: z.number(),
+            year: z.number(),
+            month: z.number(), // 1-12
+          })
+        )
+        .query(async ({ input }) => {
+          const eventType = await db.getEventTypeById(input.eventTypeId);
+          if (!eventType || !eventType.isActive) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Event-Typ nicht gefunden" });
+          }
+
+          const availabilities = await db.getEventTypeAvailability(input.eventTypeId);
+          const availableDays = new Set(availabilities.filter((a) => a.isAvailable).map((a) => a.dayOfWeek));
+
+          const daysInMonth = new Date(input.year, input.month, 0).getDate();
+          const now = new Date();
+          const minNoticeHours = eventType.minNoticeHours || 4;
+          const maxDaysInFuture = eventType.maxDaysInFuture || 60;
+          const maxDate = new Date(now.getTime() + maxDaysInFuture * 24 * 60 * 60 * 1000);
+
+          const dates: { date: string; available: boolean }[] = [];
+
+          for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(input.year, input.month - 1, day);
+            const dayOfWeek = date.getDay();
+            const dateStr = `${input.year}-${String(input.month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+            // Check basic availability
+            let available = availableDays.has(dayOfWeek);
+
+            // Check if date is in the past or too far in the future
+            if (date < now || date > maxDate) {
+              available = false;
+            }
+
+            // Check for date overrides
+            const override = await db.getDateOverrideForDate(input.eventTypeId, date);
+            if (override) {
+              available = override.isAvailable;
+            }
+
+            dates.push({ date: dateStr, available });
+          }
+
+          return dates;
+        }),
+
+      // Create booking
+      create: publicProcedure
+        .input(
+          z.object({
+            eventTypeId: z.number(),
+            startTime: z.string(), // ISO datetime string
+            guestName: z.string().min(1),
+            guestEmail: z.string().email(),
+            guestNotes: z.string().optional(),
+          })
+        )
+        .mutation(async ({ input, ctx }) => {
+          const eventType = await db.getEventTypeById(input.eventTypeId);
+          if (!eventType || !eventType.isActive) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Event-Typ nicht gefunden" });
+          }
+
+          const startTime = new Date(input.startTime);
+          const endTime = new Date(startTime.getTime() + eventType.duration * 60 * 1000);
+
+          // Check if slot is available
+          const isAvailable = await db.isTimeSlotAvailable(input.eventTypeId, startTime, endTime);
+          if (!isAvailable) {
+            throw new TRPCError({ code: "CONFLICT", message: "Dieser Zeitslot ist nicht mehr verfügbar" });
+          }
+
+          // Generate Google Meet link if needed
+          let meetingLink: string | undefined;
+          let googleEventId: string | undefined;
+          if (eventType.locationType === "google_meet") {
+            // Try to create Google Meet link via Google Calendar
+            const connection = await db.getGoogleCalendarConnection(eventType.hostId);
+            if (connection) {
+              try {
+                const result = await googleCalendarService.createGoogleCalendarEvent(eventType.hostId, {
+                  title: `${eventType.name} mit ${input.guestName}`,
+                  description: `Gebucht von: ${input.guestName} (${input.guestEmail})\n\n${input.guestNotes || ""}`,
+                  startDate: startTime,
+                  endDate: endTime,
+                  isAllDay: false,
+                  location: "",
+                  addGoogleMeet: true, // Request Google Meet link creation
+                });
+                googleEventId = result.googleEventId;
+                meetingLink = result.meetLink;
+                console.log("Google Meet link created:", meetingLink);
+              } catch (error) {
+                console.error("Failed to create Google Meet link:", error);
+              }
+            }
+          }
+
+          const booking = await db.createEventBooking({
+            eventTypeId: input.eventTypeId,
+            hostId: eventType.hostId,
+            guestUserId: ctx.user?.id,
+            guestName: input.guestName,
+            guestEmail: input.guestEmail,
+            guestNotes: input.guestNotes,
+            startTime,
+            endTime,
+            status: eventType.requiresConfirmation ? "pending" : "confirmed",
+            meetingLink,
+            googleEventId,
+          });
+
+          return booking;
+        }),
+
+      // Get bookings for host
+      listForHost: protectedProcedure
+        .input(
+          z.object({
+            startDate: z.string().optional(),
+            endDate: z.string().optional(),
+          }).optional()
+        )
+        .query(async ({ ctx, input }) => {
+          const startDate = input?.startDate ? new Date(input.startDate) : undefined;
+          const endDate = input?.endDate ? new Date(input.endDate) : undefined;
+          const bookings = await db.getBookingsForHost(ctx.user.id, startDate, endDate);
+          
+          // Get event type info for each booking
+          const bookingsWithEventType = await Promise.all(
+            bookings.map(async (booking) => {
+              const eventType = await db.getEventTypeById(booking.eventTypeId);
+              return { ...booking, eventType };
+            })
+          );
+          
+          return bookingsWithEventType;
+        }),
+
+      // Get bookings for guest (logged in user)
+      listForGuest: protectedProcedure.query(async ({ ctx }) => {
+        const bookings = await db.getBookingsForGuest(ctx.user.id);
+        
+        // Get event type and host info for each booking
+        const bookingsWithDetails = await Promise.all(
+          bookings.map(async (booking) => {
+            const eventType = await db.getEventTypeById(booking.eventTypeId);
+            const host = eventType ? await db.getUserById(eventType.hostId) : null;
+            return { ...booking, eventType, host };
+          })
+        );
+        
+        return bookingsWithDetails;
+      }),
+
+      // Cancel booking
+      cancel: protectedProcedure
+        .input(
+          z.object({
+            id: z.number(),
+            reason: z.string().optional(),
+          })
+        )
+        .mutation(async ({ input, ctx }) => {
+          const booking = await db.getEventBookingById(input.id);
+          if (!booking) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Buchung nicht gefunden" });
+          }
+          // Allow cancellation by host, guest, or admin
+          if (
+            booking.hostId !== ctx.user.id &&
+            booking.guestUserId !== ctx.user.id &&
+            ctx.user.role !== "admin"
+          ) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Keine Berechtigung" });
+          }
+          await db.cancelEventBooking(input.id, ctx.user.id, input.reason);
+          return { success: true };
+        }),
+
+      // Confirm booking (for hosts)
+      confirm: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input, ctx }) => {
+          const booking = await db.getEventBookingById(input.id);
+          if (!booking) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Buchung nicht gefunden" });
+          }
+          if (booking.hostId !== ctx.user.id && ctx.user.role !== "admin") {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Keine Berechtigung" });
+          }
+          await db.updateEventBooking(input.id, { status: "confirmed" });
+          return { success: true };
+        }),
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

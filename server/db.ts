@@ -2795,3 +2795,343 @@ export async function getUserSyncMappings(userId: number) {
     .from(calendarEventSyncMap)
     .where(eq(calendarEventSyncMap.userId, userId));
 }
+
+
+// ==================== EVENT TYPES (SCHEDULING) FUNCTIONS ====================
+
+import {
+  eventTypes,
+  InsertEventType,
+  eventTypeAvailability,
+  InsertEventTypeAvailability,
+  eventTypeDateOverrides,
+  InsertEventTypeDateOverride,
+  eventBookings,
+  InsertEventBooking,
+} from "../drizzle/schema";
+
+// Create event type
+export async function createEventType(data: InsertEventType) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [result] = await db.insert(eventTypes).values(data);
+  return { id: result.insertId, ...data };
+}
+
+// Update event type
+export async function updateEventType(id: number, data: Partial<InsertEventType>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(eventTypes).set(data).where(eq(eventTypes.id, id));
+}
+
+// Delete event type
+export async function deleteEventType(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Also delete related availability and overrides
+  await db.delete(eventTypeAvailability).where(eq(eventTypeAvailability.eventTypeId, id));
+  await db.delete(eventTypeDateOverrides).where(eq(eventTypeDateOverrides.eventTypeId, id));
+  await db.delete(eventTypes).where(eq(eventTypes.id, id));
+}
+
+// Get event type by ID
+export async function getEventTypeById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(eventTypes).where(eq(eventTypes.id, id)).limit(1);
+  return result[0];
+}
+
+// Get event type by slug
+export async function getEventTypeBySlug(slug: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(eventTypes).where(eq(eventTypes.slug, slug)).limit(1);
+  return result[0];
+}
+
+// Get all event types for a host
+export async function getEventTypesByHost(hostId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select()
+    .from(eventTypes)
+    .where(eq(eventTypes.hostId, hostId))
+    .orderBy(desc(eventTypes.createdAt));
+}
+
+// Get all active event types
+export async function getActiveEventTypes() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select()
+    .from(eventTypes)
+    .where(eq(eventTypes.isActive, true))
+    .orderBy(eventTypes.name);
+}
+
+// ==================== EVENT TYPE AVAILABILITY FUNCTIONS ====================
+
+// Set availability for event type (replaces existing)
+export async function setEventTypeAvailability(eventTypeId: number, availabilities: InsertEventTypeAvailability[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Delete existing availability
+  await db.delete(eventTypeAvailability).where(eq(eventTypeAvailability.eventTypeId, eventTypeId));
+  
+  // Insert new availability
+  if (availabilities.length > 0) {
+    await db.insert(eventTypeAvailability).values(availabilities);
+  }
+}
+
+// Get availability for event type
+export async function getEventTypeAvailability(eventTypeId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select()
+    .from(eventTypeAvailability)
+    .where(eq(eventTypeAvailability.eventTypeId, eventTypeId))
+    .orderBy(eventTypeAvailability.dayOfWeek, eventTypeAvailability.startTime);
+}
+
+// ==================== EVENT TYPE DATE OVERRIDES FUNCTIONS ====================
+
+// Add date override
+export async function addDateOverride(data: InsertEventTypeDateOverride) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [result] = await db.insert(eventTypeDateOverrides).values(data);
+  return { id: result.insertId, ...data };
+}
+
+// Update date override
+export async function updateDateOverride(id: number, data: Partial<InsertEventTypeDateOverride>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(eventTypeDateOverrides).set(data).where(eq(eventTypeDateOverrides.id, id));
+}
+
+// Delete date override
+export async function deleteDateOverride(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(eventTypeDateOverrides).where(eq(eventTypeDateOverrides.id, id));
+}
+
+// Get date overrides for event type
+export async function getDateOverrides(eventTypeId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select()
+    .from(eventTypeDateOverrides)
+    .where(eq(eventTypeDateOverrides.eventTypeId, eventTypeId))
+    .orderBy(eventTypeDateOverrides.date);
+}
+
+// Get date override for specific date
+export async function getDateOverrideForDate(eventTypeId: number, date: Date) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+  
+  const result = await db
+    .select()
+    .from(eventTypeDateOverrides)
+    .where(
+      and(
+        eq(eventTypeDateOverrides.eventTypeId, eventTypeId),
+        gte(eventTypeDateOverrides.date, startOfDay),
+        lte(eventTypeDateOverrides.date, endOfDay)
+      )
+    )
+    .limit(1);
+  
+  return result[0];
+}
+
+// ==================== EVENT BOOKINGS FUNCTIONS ====================
+
+// Create booking
+export async function createEventBooking(data: InsertEventBooking) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [result] = await db.insert(eventBookings).values(data);
+  return { id: result.insertId, ...data };
+}
+
+// Update booking
+export async function updateEventBooking(id: number, data: Partial<InsertEventBooking>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(eventBookings).set(data).where(eq(eventBookings.id, id));
+}
+
+// Get booking by ID
+export async function getEventBookingById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(eventBookings).where(eq(eventBookings.id, id)).limit(1);
+  return result[0];
+}
+
+// Get bookings for event type
+export async function getBookingsForEventType(eventTypeId: number, startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db
+    .select()
+    .from(eventBookings)
+    .where(
+      and(
+        eq(eventBookings.eventTypeId, eventTypeId),
+        or(
+          eq(eventBookings.status, "confirmed"),
+          eq(eventBookings.status, "pending")
+        )
+      )
+    );
+  
+  if (startDate && endDate) {
+    query = db
+      .select()
+      .from(eventBookings)
+      .where(
+        and(
+          eq(eventBookings.eventTypeId, eventTypeId),
+          or(
+            eq(eventBookings.status, "confirmed"),
+            eq(eventBookings.status, "pending")
+          ),
+          gte(eventBookings.startTime, startDate),
+          lte(eventBookings.startTime, endDate)
+        )
+      );
+  }
+  
+  return query.orderBy(eventBookings.startTime);
+}
+
+// Get bookings for host
+export async function getBookingsForHost(hostId: number, startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [eq(eventBookings.hostId, hostId)];
+  
+  if (startDate) {
+    conditions.push(gte(eventBookings.startTime, startDate));
+  }
+  if (endDate) {
+    conditions.push(lte(eventBookings.startTime, endDate));
+  }
+  
+  return db
+    .select()
+    .from(eventBookings)
+    .where(and(...conditions))
+    .orderBy(eventBookings.startTime);
+}
+
+// Get bookings for guest user
+export async function getBookingsForGuest(guestUserId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select()
+    .from(eventBookings)
+    .where(eq(eventBookings.guestUserId, guestUserId))
+    .orderBy(desc(eventBookings.startTime));
+}
+
+// Cancel booking
+export async function cancelEventBooking(id: number, cancelledById: number, reason?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(eventBookings)
+    .set({
+      status: "cancelled",
+      cancelledAt: new Date(),
+      cancelledById,
+      cancellationReason: reason,
+    })
+    .where(eq(eventBookings.id, id));
+}
+
+// Check if time slot is available
+export async function isTimeSlotAvailable(
+  eventTypeId: number,
+  startTime: Date,
+  endTime: Date,
+  excludeBookingId?: number
+) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const conditions = [
+    eq(eventBookings.eventTypeId, eventTypeId),
+    or(
+      eq(eventBookings.status, "confirmed"),
+      eq(eventBookings.status, "pending")
+    ),
+    // Check for overlapping bookings
+    or(
+      // New booking starts during existing booking
+      and(
+        lte(eventBookings.startTime, startTime),
+        gte(eventBookings.endTime, startTime)
+      ),
+      // New booking ends during existing booking
+      and(
+        lte(eventBookings.startTime, endTime),
+        gte(eventBookings.endTime, endTime)
+      ),
+      // New booking contains existing booking
+      and(
+        gte(eventBookings.startTime, startTime),
+        lte(eventBookings.endTime, endTime)
+      )
+    ),
+  ];
+  
+  if (excludeBookingId) {
+    conditions.push(sql`${eventBookings.id} != ${excludeBookingId}`);
+  }
+  
+  const overlapping = await db
+    .select()
+    .from(eventBookings)
+    .where(and(...conditions))
+    .limit(1);
+  
+  return overlapping.length === 0;
+}

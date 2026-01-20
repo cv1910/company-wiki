@@ -48,6 +48,10 @@ import Onboarding from "./pages/Onboarding";
 import Calendar from "./pages/Calendar";
 import CalendarSettings from "./pages/CalendarSettings";
 
+// Scheduling
+import Scheduling from "./pages/Scheduling";
+import Book from "./pages/Book";
+
 function Router() {
   return (
     <DashboardLayout>
@@ -79,6 +83,10 @@ function Router() {
         {/* Calendar */}
         <Route path="/calendar" component={Calendar} />
         <Route path="/calendar/settings" component={CalendarSettings} />
+        
+        {/* Scheduling */}
+        <Route path="/scheduling" component={Scheduling} />
+        <Route path="/book/:slug" component={Book} />
         
         {/* Settings & Mentions */}
         <Route path="/settings/email" component={EmailSettings} />

@@ -732,3 +732,97 @@ export const calendarEventSyncMap = mysqlTable("calendarEventSyncMap", {
 
 export type CalendarEventSyncMap = typeof calendarEventSyncMap.$inferSelect;
 export type InsertCalendarEventSyncMap = typeof calendarEventSyncMap.$inferInsert;
+
+
+/**
+ * Event types for scheduling (Calendly-style).
+ * Admins can create different event types that users can book.
+ */
+export const eventTypes = mysqlTable("eventTypes", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  description: text("description"),
+  duration: int("duration").notNull(), // Duration in minutes
+  color: varchar("color", { length: 32 }).default("blue"),
+  locationType: mysqlEnum("locationType", ["google_meet", "phone", "in_person", "custom"]).default("google_meet"),
+  locationDetails: text("locationDetails"), // Address for in-person, phone number, or custom link
+  hostId: int("hostId").notNull(), // The user who hosts this event type
+  isActive: boolean("isActive").default(true).notNull(),
+  // Booking settings
+  minNoticeHours: int("minNoticeHours").default(4), // Minimum hours before booking
+  maxDaysInFuture: int("maxDaysInFuture").default(60), // How far in advance can book
+  bufferBefore: int("bufferBefore").default(0), // Buffer time before meeting (minutes)
+  bufferAfter: int("bufferAfter").default(0), // Buffer time after meeting (minutes)
+  // Confirmation settings
+  requiresConfirmation: boolean("requiresConfirmation").default(false),
+  confirmationMessage: text("confirmationMessage"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EventType = typeof eventTypes.$inferSelect;
+export type InsertEventType = typeof eventTypes.$inferInsert;
+
+/**
+ * Weekly availability schedule for event types.
+ * Defines which days and times are available for booking.
+ */
+export const eventTypeAvailability = mysqlTable("eventTypeAvailability", {
+  id: int("id").autoincrement().primaryKey(),
+  eventTypeId: int("eventTypeId").notNull(),
+  dayOfWeek: int("dayOfWeek").notNull(), // 0 = Sunday, 1 = Monday, etc.
+  startTime: varchar("startTime", { length: 5 }).notNull(), // Format: "09:00"
+  endTime: varchar("endTime", { length: 5 }).notNull(), // Format: "12:00"
+  isAvailable: boolean("isAvailable").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EventTypeAvailability = typeof eventTypeAvailability.$inferSelect;
+export type InsertEventTypeAvailability = typeof eventTypeAvailability.$inferInsert;
+
+/**
+ * Date-specific availability overrides for event types.
+ * Can override weekly schedule for specific dates (e.g., holidays, special hours).
+ */
+export const eventTypeDateOverrides = mysqlTable("eventTypeDateOverrides", {
+  id: int("id").autoincrement().primaryKey(),
+  eventTypeId: int("eventTypeId").notNull(),
+  date: timestamp("date").notNull(), // The specific date
+  isAvailable: boolean("isAvailable").default(true).notNull(),
+  startTime: varchar("startTime", { length: 5 }), // Optional override times
+  endTime: varchar("endTime", { length: 5 }),
+  reason: varchar("reason", { length: 255 }), // e.g., "Holiday", "Special hours"
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EventTypeDateOverride = typeof eventTypeDateOverrides.$inferSelect;
+export type InsertEventTypeDateOverride = typeof eventTypeDateOverrides.$inferInsert;
+
+/**
+ * Bookings made by users for event types.
+ */
+export const eventBookings = mysqlTable("eventBookings", {
+  id: int("id").autoincrement().primaryKey(),
+  eventTypeId: int("eventTypeId").notNull(),
+  hostId: int("hostId").notNull(), // The host user
+  guestUserId: int("guestUserId"), // If booked by a logged-in user
+  guestName: varchar("guestName", { length: 255 }).notNull(),
+  guestEmail: varchar("guestEmail", { length: 320 }).notNull(),
+  guestNotes: text("guestNotes"),
+  startTime: timestamp("startTime").notNull(),
+  endTime: timestamp("endTime").notNull(),
+  status: mysqlEnum("status", ["pending", "confirmed", "cancelled", "completed"]).default("confirmed").notNull(),
+  meetingLink: text("meetingLink"), // Google Meet link or other meeting URL
+  googleEventId: varchar("googleEventId", { length: 255 }), // If synced with Google Calendar
+  cancellationReason: text("cancellationReason"),
+  cancelledAt: timestamp("cancelledAt"),
+  cancelledById: int("cancelledById"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EventBooking = typeof eventBookings.$inferSelect;
+export type InsertEventBooking = typeof eventBookings.$inferInsert;

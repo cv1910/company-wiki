@@ -450,3 +450,27 @@
 - [ ] Balken erstrecken sich über die entsprechenden Tage
 - [ ] Event-Titel im Balken anzeigen
 - [ ] Farbkodierung für verschiedene Events
+
+## Terminbuchungssystem (Calendly-Stil)
+- [ ] Datenbank-Schema für Event-Typen (eventTypes)
+- [ ] Datenbank-Schema für Verfügbarkeit (eventTypeAvailability)
+- [ ] Datenbank-Schema für Buchungen (eventBookings)
+- [ ] Backend-API: Event-Typen CRUD
+- [ ] Backend-API: Verfügbare Slots abrufen
+- [ ] Backend-API: Buchung erstellen
+- [ ] Admin-UI: Scheduling-Seite mit Event-Typen-Übersicht
+- [ ] Admin-UI: Event-Typ erstellen/bearbeiten Dialog
+- [ ] Admin-UI: Verfügbarkeit konfigurieren (Wochentage, Uhrzeiten)
+- [ ] Admin-UI: Datumsspezifische Verfügbarkeit
+- [ ] Buchungsseite: Kalenderansicht mit verfügbaren Tagen
+- [ ] Buchungsseite: Zeitslot-Auswahl
+- [ ] Buchungsseite: Buchungsformular (Name, E-Mail, Notizen)
+- [ ] Google Meet-Integration: Automatische Meeting-Link-Generierung
+- [ ] Ort-Optionen: Google Meet, Telefonat, Vor-Ort
+- [ ] Benachrichtigungen bei neuer Buchung
+- [ ] Tests für Terminbuchungssystem
+
+## Google Meet-Integration für Terminbuchung
+- [x] Bei Buchung automatisch Google Calendar-Event mit Google Meet-Link erstellen
+- [x] Google Meet-Link in Bestätigungsseite anzeigen
+- [x] Google Meet-Link in Buchungsdetails speichern

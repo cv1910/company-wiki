@@ -201,6 +201,7 @@ function localEventToGoogleEvent(event: {
   endDate: Date;
   isAllDay: boolean;
   location?: string | null;
+  addGoogleMeet?: boolean;
 }): object {
   const googleEvent: Record<string, unknown> = {
     summary: event.title,
@@ -225,6 +226,18 @@ function localEventToGoogleEvent(event: {
     googleEvent.end = {
       dateTime: event.endDate.toISOString(),
       timeZone: "Europe/Berlin",
+    };
+  }
+
+  // Add Google Meet conference if requested
+  if (event.addGoogleMeet) {
+    googleEvent.conferenceData = {
+      createRequest: {
+        requestId: `meet-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+        conferenceSolutionKey: {
+          type: "hangoutsMeet",
+        },
+      },
     };
   }
 
@@ -331,17 +344,21 @@ export async function fetchGoogleCalendarEvents(
 
 /**
  * Create event in Google Calendar
+ * @returns Object with googleEventId and optional meetLink
  */
 export async function createGoogleCalendarEvent(
   userId: number,
   event: Parameters<typeof localEventToGoogleEvent>[0],
   calendarId: string = "primary"
-): Promise<string> {
+): Promise<{ googleEventId: string; meetLink?: string }> {
   const googleEvent = localEventToGoogleEvent(event);
+
+  // Add conferenceDataVersion parameter if we're requesting a Google Meet
+  const conferenceParam = event.addGoogleMeet ? "?conferenceDataVersion=1" : "";
 
   const response = await googleCalendarRequest(
     userId,
-    `/calendars/${encodeURIComponent(calendarId)}/events`,
+    `/calendars/${encodeURIComponent(calendarId)}/events${conferenceParam}`,
     {
       method: "POST",
       body: JSON.stringify(googleEvent),
@@ -354,7 +371,19 @@ export async function createGoogleCalendarEvent(
   }
 
   const data = await response.json();
-  return data.id;
+  
+  // Extract Google Meet link from conference data
+  let meetLink: string | undefined;
+  if (data.conferenceData?.entryPoints) {
+    const videoEntry = data.conferenceData.entryPoints.find(
+      (ep: { entryPointType: string }) => ep.entryPointType === "video"
+    );
+    if (videoEntry) {
+      meetLink = videoEntry.uri;
+    }
+  }
+
+  return { googleEventId: data.id, meetLink };
 }
 
 /**
@@ -467,7 +496,7 @@ export async function syncLocalToGoogle(userId: number): Promise<{
           result.updated++;
         } else {
           // Create new Google event
-          const googleEventId = await createGoogleCalendarEvent(
+          const createResult = await createGoogleCalendarEvent(
             userId,
             {
               title: event.title,
@@ -484,7 +513,7 @@ export async function syncLocalToGoogle(userId: number): Promise<{
           await createSyncMapping({
             userId,
             localEventId: event.id,
-            googleEventId,
+            googleEventId: createResult.googleEventId,
             googleCalendarId: calendarId,
             syncDirection: "export",
           });
