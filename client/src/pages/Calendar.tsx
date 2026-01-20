@@ -78,6 +78,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { YearCalendarView } from "@/components/YearCalendarView";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1086,73 +1087,80 @@ export default function Calendar() {
     
     const eventBars = getEventBars();
 
+    // Total columns = number of weeks * 7 days
+    const totalDays = weeks.length * 7;
+    const cellWidth = 32; // px per day
+    const totalWidth = totalDays * cellWidth + 48; // +48 for weekday label column
+
     return (
       <div className="h-full overflow-auto">
-        <div className="min-w-[2000px]">
-          {/* Header with day numbers */}
+        <div style={{ minWidth: `${totalWidth}px` }}>
+          {/* Header row with day numbers - one cell per day across all weeks */}
           <div className="sticky top-0 bg-background z-20 border-b">
             <div className="flex">
               <div className="w-12 flex-shrink-0" /> {/* Spacer for weekday labels */}
-              {weeks.map((week, weekIdx) => (
-                <div key={weekIdx} className="flex">
-                  {week.map((day, dayIdx) => {
-                    const isCurrentYear = day.getFullYear() === currentDate.getFullYear();
-                    const isMonthStart = day.getDate() === 1;
-                    const monthAbbr = format(day, "MMM", { locale: de }).toUpperCase().slice(0, 3);
-                    
-                    return (
-                      <div
-                        key={dayIdx}
-                        className={cn(
-                          "w-8 text-center text-xs py-1 border-r border-border/30",
-                          !isCurrentYear && "text-muted-foreground/30",
-                          isToday(day) && "bg-red-500 text-white rounded-full mx-0.5"
-                        )}
-                      >
-                        {isMonthStart && (
-                          <span className={cn(
-                            "text-[9px] font-bold px-1 py-0.5 rounded",
-                            isCurrentYear ? "bg-muted text-muted-foreground" : "text-muted-foreground/30"
-                          )}>
-                            {monthAbbr}
-                          </span>
-                        )}
-                        {!isMonthStart && (
-                          <span className={isToday(day) ? "" : ""}>
-                            {format(day, "d")}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
+              {weeks.flatMap((week, weekIdx) =>
+                week.map((day, dayIdx) => {
+                  const isCurrentYear = day.getFullYear() === currentDate.getFullYear();
+                  const isMonthStart = day.getDate() === 1;
+                  const monthAbbr = format(day, "MMM", { locale: de }).toUpperCase().slice(0, 3);
+                  const globalIdx = weekIdx * 7 + dayIdx;
+                  
+                  return (
+                    <div
+                      key={globalIdx}
+                      className={cn(
+                        "flex-shrink-0 text-center text-xs py-1",
+                        !isCurrentYear && "text-muted-foreground/30"
+                      )}
+                      style={{ width: `${cellWidth}px` }}
+                    >
+                      {isMonthStart ? (
+                        <span className={cn(
+                          "text-[9px] font-bold px-1 py-0.5 rounded",
+                          isCurrentYear ? "bg-muted text-muted-foreground" : "text-muted-foreground/30"
+                        )}>
+                          {monthAbbr}
+                        </span>
+                      ) : (
+                        <span className={cn(
+                          isToday(day) && "bg-red-500 text-white rounded-full px-1.5 py-0.5"
+                        )}>
+                          {format(day, "d")}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
           
           {/* Calendar grid with weekday rows */}
           <div className="relative">
-            {weekDays.map((dayName, dayIdx) => (
-              <div key={dayIdx} className="flex border-b border-border/20 min-h-[50px] relative">
+            {weekDays.map((dayName, rowIdx) => (
+              <div key={rowIdx} className="flex border-b border-border/20 min-h-[50px] relative">
                 {/* Weekday label */}
-                <div className="w-12 flex-shrink-0 text-[10px] text-muted-foreground font-medium py-2 px-1 sticky left-0 bg-background z-10">
+                <div className="w-12 flex-shrink-0 text-[10px] text-muted-foreground font-medium py-2 px-1 sticky left-0 bg-background z-10 border-r">
                   {dayName}
                 </div>
                 
-                {/* Day cells */}
+                {/* Day cells - one per column (week*7 + dayOfWeek) */}
                 {weeks.map((week, weekIdx) => {
-                  const day = week[dayIdx];
+                  const day = week[rowIdx];
+                  if (!day) return null;
                   const isCurrentYear = day.getFullYear() === currentDate.getFullYear();
-                  const isWeekend = dayIdx >= 5;
+                  const isWeekend = rowIdx >= 5;
                   
                   return (
                     <div
                       key={weekIdx}
                       className={cn(
-                        "w-8 border-r border-border/10 cursor-pointer hover:bg-muted/50 transition-colors",
+                        "flex-shrink-0 border-r border-border/10 cursor-pointer hover:bg-muted/50 transition-colors",
                         isWeekend && "bg-muted/20",
                         !isCurrentYear && "bg-muted/10"
                       )}
+                      style={{ width: `${cellWidth}px` }}
                       onClick={() => {
                         setCurrentDate(day);
                         setViewMode("day");
@@ -1166,32 +1174,36 @@ export default function Calendar() {
             {/* Event bars overlay */}
             <div className="absolute top-0 left-12 right-0 pointer-events-none">
               {eventBars.map((bar, idx) => {
-                const topOffset = bar.startDay * 50 + 8 + bar.row * 18;
-                const leftOffset = bar.startWeek * 7 * 32 + bar.startDay * 32;
-                const width = ((bar.endWeek - bar.startWeek) * 7 + (bar.endDay - bar.startDay) + 1) * 32 - 4;
+                // Calculate position based on which row (weekday) the event starts
+                const rowHeight = 50;
+                const topOffset = bar.startDay * rowHeight + 8 + bar.row * 18;
+                // Left offset: startWeek columns
+                const leftOffset = bar.startWeek * cellWidth;
+                // Width spans from startWeek to endWeek
+                const spanWeeks = bar.endWeek - bar.startWeek + 1;
+                const width = spanWeeks * cellWidth - 4;
                 
-                // For events spanning multiple weeks, render per-row segments
-                if (bar.startWeek !== bar.endWeek) {
+                // For events spanning multiple weekday rows, render per-row segments
+                if (bar.startDay !== bar.endDay || bar.startWeek !== bar.endWeek) {
                   const segments: React.ReactElement[] = [];
                   
-                  for (let w = bar.startWeek; w <= bar.endWeek; w++) {
-                    const segStartDay = w === bar.startWeek ? bar.startDay : 0;
-                    const segEndDay = w === bar.endWeek ? bar.endDay : 6;
-                    
-                    const segTop = segStartDay * 50 + 8 + bar.row * 18;
-                    const segLeft = w * 7 * 32;
-                    const segWidth = (segEndDay - segStartDay + 1) * 32 - 4;
+                  // Simplified: render one bar per weekday row the event spans
+                  for (let dayRow = bar.startDay; dayRow <= (bar.startWeek === bar.endWeek ? bar.endDay : 6); dayRow++) {
+                    const segTop = dayRow * rowHeight + 8 + bar.row * 18;
+                    const segLeft = bar.startWeek * cellWidth;
+                    const segEndWeek = dayRow === bar.endDay ? bar.endWeek : bar.endWeek;
+                    const segWidth = (segEndWeek - bar.startWeek + 1) * cellWidth - 4;
                     
                     segments.push(
                       <div
-                        key={`${idx}-${w}`}
+                        key={`${idx}-${dayRow}`}
                         className={cn(
                           "absolute h-4 rounded text-[10px] text-white px-1 truncate pointer-events-auto cursor-pointer hover:opacity-80",
                           getDotColorClass(bar.event.color)
                         )}
                         style={{
                           top: segTop,
-                          left: segLeft + segStartDay * 32,
+                          left: segLeft,
                           width: segWidth,
                         }}
                         onClick={(e) => {
@@ -1200,7 +1212,7 @@ export default function Calendar() {
                         }}
                         title={bar.event.title}
                       >
-                        {w === bar.startWeek && bar.event.title}
+                        {dayRow === bar.startDay && bar.event.title}
                       </div>
                     );
                   }
@@ -1353,7 +1365,17 @@ export default function Calendar() {
           {viewMode === "month" && renderMonthView()}
           {viewMode === "week" && renderWeekView()}
           {viewMode === "day" && renderDayView()}
-          {viewMode === "year" && renderYearView()}
+          {viewMode === "year" && (
+            <YearCalendarView
+              currentDate={currentDate}
+              events={allEvents || []}
+              onDayClick={(day) => {
+                setCurrentDate(day);
+                setViewMode("day");
+              }}
+              onEventClick={openEditEventDialog}
+            />
+          )}
         </CardContent>
       </Card>
 
