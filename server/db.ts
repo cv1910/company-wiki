@@ -48,6 +48,19 @@ import {
   leaveRequests,
   InsertLeaveRequest,
   leaveBalances,
+  // Teams and Ohweees
+  teams,
+  InsertTeam,
+  teamMembers,
+  InsertTeamMember,
+  chatRooms,
+  InsertChatRoom,
+  chatRoomParticipants,
+  InsertChatRoomParticipant,
+  ohweees,
+  InsertOhweee,
+  ohweeeReadReceipts,
+  InsertOhweeeReadReceipt,
   InsertLeaveBalance,
   assignments,
   InsertAssignment,
@@ -3328,4 +3341,571 @@ export async function ensureDefaultSchedule(ownerId: number): Promise<number> {
   await setScheduleAvailability(schedule.id, defaultAvailability);
   
   return schedule.id;
+}
+
+
+// ==================== TEAMS FUNCTIONS ====================
+
+// Create team
+export async function createTeam(data: InsertTeam) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [result] = await db.insert(teams).values(data);
+  return { id: result.insertId, ...data };
+}
+
+// Update team
+export async function updateTeam(id: number, data: Partial<InsertTeam>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(teams).set(data).where(eq(teams.id, id));
+}
+
+// Delete team
+export async function deleteTeam(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Delete team members
+  await db.delete(teamMembers).where(eq(teamMembers.teamId, id));
+  // Delete team chat room
+  await db.delete(chatRooms).where(eq(chatRooms.teamId, id));
+  // Delete team
+  await db.delete(teams).where(eq(teams.id, id));
+}
+
+// Get team by ID
+export async function getTeamById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(teams).where(eq(teams.id, id)).limit(1);
+  return result[0];
+}
+
+// Get team by slug
+export async function getTeamBySlug(slug: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(teams).where(eq(teams.slug, slug)).limit(1);
+  return result[0];
+}
+
+// Get all teams
+export async function getAllTeams() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(teams).orderBy(teams.name);
+}
+
+// Get teams for user
+export async function getTeamsForUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select({
+      team: teams,
+      membership: teamMembers,
+    })
+    .from(teamMembers)
+    .innerJoin(teams, eq(teamMembers.teamId, teams.id))
+    .where(eq(teamMembers.userId, userId))
+    .orderBy(teams.name);
+}
+
+// ==================== TEAM MEMBERS FUNCTIONS ====================
+
+// Add team member
+export async function addTeamMember(data: InsertTeamMember) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Check if already a member
+  const existing = await db
+    .select()
+    .from(teamMembers)
+    .where(and(eq(teamMembers.teamId, data.teamId), eq(teamMembers.userId, data.userId)))
+    .limit(1);
+  
+  if (existing.length > 0) {
+    return existing[0];
+  }
+  
+  const [result] = await db.insert(teamMembers).values(data);
+  return { id: result.insertId, ...data };
+}
+
+// Remove team member
+export async function removeTeamMember(teamId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(teamMembers).where(
+    and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId))
+  );
+}
+
+// Update team member role
+export async function updateTeamMemberRole(teamId: number, userId: number, role: "member" | "admin") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(teamMembers)
+    .set({ role })
+    .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId)));
+}
+
+// Get team members
+export async function getTeamMembers(teamId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select({
+      membership: teamMembers,
+      user: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+        role: users.role,
+      },
+    })
+    .from(teamMembers)
+    .innerJoin(users, eq(teamMembers.userId, users.id))
+    .where(eq(teamMembers.teamId, teamId))
+    .orderBy(users.name);
+}
+
+// ==================== CHAT ROOMS FUNCTIONS ====================
+
+// Create chat room
+export async function createChatRoom(data: InsertChatRoom) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [result] = await db.insert(chatRooms).values(data);
+  return { id: result.insertId, ...data };
+}
+
+// Get or create direct message room between two users
+export async function getOrCreateDirectMessageRoom(userId1: number, userId2: number, createdById: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Find existing DM room between these two users
+  const existingRooms = await db
+    .select({ roomId: chatRoomParticipants.roomId })
+    .from(chatRoomParticipants)
+    .innerJoin(chatRooms, eq(chatRoomParticipants.roomId, chatRooms.id))
+    .where(
+      and(
+        eq(chatRooms.type, "direct"),
+        eq(chatRoomParticipants.userId, userId1)
+      )
+    );
+  
+  for (const room of existingRooms) {
+    const participants = await db
+      .select()
+      .from(chatRoomParticipants)
+      .where(eq(chatRoomParticipants.roomId, room.roomId));
+    
+    if (participants.length === 2 && participants.some(p => p.userId === userId2)) {
+      const [fullRoom] = await db.select().from(chatRooms).where(eq(chatRooms.id, room.roomId));
+      return fullRoom;
+    }
+  }
+  
+  // Create new DM room
+  const newRoom = await createChatRoom({
+    type: "direct",
+    createdById,
+  });
+  
+  // Add both participants
+  await addChatRoomParticipant({ roomId: newRoom.id, userId: userId1 });
+  await addChatRoomParticipant({ roomId: newRoom.id, userId: userId2 });
+  
+  return newRoom;
+}
+
+// Get or create team chat room
+export async function getOrCreateTeamChatRoom(teamId: number, createdById: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Find existing team room
+  const [existing] = await db
+    .select()
+    .from(chatRooms)
+    .where(and(eq(chatRooms.type, "team"), eq(chatRooms.teamId, teamId)))
+    .limit(1);
+  
+  if (existing) return existing;
+  
+  // Get team name
+  const team = await getTeamById(teamId);
+  
+  // Create new team room
+  const newRoom = await createChatRoom({
+    name: team?.name || "Team Chat",
+    type: "team",
+    teamId,
+    createdById,
+  });
+  
+  // Add all team members as participants
+  const members = await getTeamMembers(teamId);
+  for (const member of members) {
+    await addChatRoomParticipant({ roomId: newRoom.id, userId: member.user.id });
+  }
+  
+  return newRoom;
+}
+
+// Create group chat
+export async function createGroupChat(name: string, createdById: number, memberIds: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const newRoom = await createChatRoom({
+    name,
+    type: "group",
+    createdById,
+  });
+  
+  // Add all members including creator
+  const allMembers = Array.from(new Set([createdById, ...memberIds]));
+  for (const userId of allMembers) {
+    await addChatRoomParticipant({ roomId: newRoom.id, userId });
+  }
+  
+  return newRoom;
+}
+
+// Get chat room by ID
+export async function getChatRoomById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const [room] = await db.select().from(chatRooms).where(eq(chatRooms.id, id)).limit(1);
+  return room;
+}
+
+// Get chat rooms for user
+export async function getChatRoomsForUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select({
+      room: chatRooms,
+      participant: chatRoomParticipants,
+    })
+    .from(chatRoomParticipants)
+    .innerJoin(chatRooms, eq(chatRoomParticipants.roomId, chatRooms.id))
+    .where(eq(chatRoomParticipants.userId, userId))
+    .orderBy(desc(chatRooms.lastMessageAt));
+}
+
+// Update last message time
+export async function updateChatRoomLastMessage(roomId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(chatRooms)
+    .set({ lastMessageAt: new Date() })
+    .where(eq(chatRooms.id, roomId));
+}
+
+// ==================== CHAT ROOM PARTICIPANTS FUNCTIONS ====================
+
+// Add participant
+export async function addChatRoomParticipant(data: InsertChatRoomParticipant) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Check if already a participant
+  const existing = await db
+    .select()
+    .from(chatRoomParticipants)
+    .where(and(eq(chatRoomParticipants.roomId, data.roomId), eq(chatRoomParticipants.userId, data.userId)))
+    .limit(1);
+  
+  if (existing.length > 0) {
+    return existing[0];
+  }
+  
+  const [result] = await db.insert(chatRoomParticipants).values(data);
+  return { id: result.insertId, ...data };
+}
+
+// Remove participant
+export async function removeChatRoomParticipant(roomId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(chatRoomParticipants).where(
+    and(eq(chatRoomParticipants.roomId, roomId), eq(chatRoomParticipants.userId, userId))
+  );
+}
+
+// Get participants for room
+export async function getChatRoomParticipants(roomId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select({
+      participant: chatRoomParticipants,
+      user: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(chatRoomParticipants)
+    .innerJoin(users, eq(chatRoomParticipants.userId, users.id))
+    .where(eq(chatRoomParticipants.roomId, roomId))
+    .orderBy(users.name);
+}
+
+// Update last read time
+export async function updateLastReadTime(roomId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(chatRoomParticipants)
+    .set({ lastReadAt: new Date() })
+    .where(and(eq(chatRoomParticipants.roomId, roomId), eq(chatRoomParticipants.userId, userId)));
+}
+
+// ==================== OHWEEES FUNCTIONS ====================
+
+// Create ohweee
+export async function createOhweee(data: InsertOhweee) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [result] = await db.insert(ohweees).values(data);
+  
+  // Update room's last message time
+  await updateChatRoomLastMessage(data.roomId);
+  
+  return { id: result.insertId, ...data };
+}
+
+// Update ohweee
+export async function updateOhweee(id: number, content: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(ohweees)
+    .set({ content, isEdited: true, editedAt: new Date() })
+    .where(eq(ohweees.id, id));
+}
+
+// Delete ohweee (soft delete)
+export async function deleteOhweee(id: number, deletedById: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(ohweees)
+    .set({ isDeleted: true, deletedAt: new Date(), deletedById })
+    .where(eq(ohweees.id, id));
+}
+
+// Get ohweee by ID
+export async function getOhweeeById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const [ohweee] = await db.select().from(ohweees).where(eq(ohweees.id, id)).limit(1);
+  return ohweee;
+}
+
+// Get ohweees for room
+export async function getOhweeesForRoom(roomId: number, limit = 50, beforeId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [eq(ohweees.roomId, roomId), eq(ohweees.isDeleted, false)];
+  
+  if (beforeId) {
+    conditions.push(sql`${ohweees.id} < ${beforeId}`);
+  }
+  
+  const messages = await db
+    .select({
+      ohweee: ohweees,
+      sender: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(ohweees)
+    .innerJoin(users, eq(ohweees.senderId, users.id))
+    .where(and(...conditions))
+    .orderBy(desc(ohweees.createdAt))
+    .limit(limit);
+  
+  // Return in chronological order
+  return messages.reverse();
+}
+
+// Get thread replies
+export async function getOhweeeReplies(parentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select({
+      ohweee: ohweees,
+      sender: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(ohweees)
+    .innerJoin(users, eq(ohweees.senderId, users.id))
+    .where(and(eq(ohweees.parentId, parentId), eq(ohweees.isDeleted, false)))
+    .orderBy(ohweees.createdAt);
+}
+
+// Pin/unpin ohweee
+export async function toggleOhweeePin(id: number, pinnedById: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [ohweee] = await db.select().from(ohweees).where(eq(ohweees.id, id)).limit(1);
+  
+  if (!ohweee) throw new Error("Ohweee not found");
+  
+  await db
+    .update(ohweees)
+    .set({
+      isPinned: !ohweee.isPinned,
+      pinnedById: !ohweee.isPinned ? pinnedById : null,
+      pinnedAt: !ohweee.isPinned ? new Date() : null,
+    })
+    .where(eq(ohweees.id, id));
+}
+
+// Get pinned ohweees for room
+export async function getPinnedOhweees(roomId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select({
+      ohweee: ohweees,
+      sender: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(ohweees)
+    .innerJoin(users, eq(ohweees.senderId, users.id))
+    .where(and(eq(ohweees.roomId, roomId), eq(ohweees.isPinned, true), eq(ohweees.isDeleted, false)))
+    .orderBy(desc(ohweees.pinnedAt));
+}
+
+// Get unread count for user in room
+export async function getUnreadCountForRoom(roomId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  
+  // Get user's last read time
+  const [participant] = await db
+    .select()
+    .from(chatRoomParticipants)
+    .where(and(eq(chatRoomParticipants.roomId, roomId), eq(chatRoomParticipants.userId, userId)))
+    .limit(1);
+  
+  if (!participant) return 0;
+  
+  const conditions = [
+    eq(ohweees.roomId, roomId),
+    eq(ohweees.isDeleted, false),
+    sql`${ohweees.senderId} != ${userId}`,
+  ];
+  
+  if (participant.lastReadAt) {
+    conditions.push(sql`${ohweees.createdAt} > ${participant.lastReadAt}`);
+  }
+  
+  const [result] = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(ohweees)
+    .where(and(...conditions));
+  
+  return result?.count || 0;
+}
+
+// Get total unread count for user across all rooms
+export async function getTotalUnreadCount(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  
+  const rooms = await getChatRoomsForUser(userId);
+  let total = 0;
+  
+  for (const { room } of rooms) {
+    total += await getUnreadCountForRoom(room.id, userId);
+  }
+  
+  return total;
+}
+
+// Search ohweees
+export async function searchOhweees(userId: number, query: string, limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get rooms user is part of
+  const userRooms = await getChatRoomsForUser(userId);
+  const roomIds = userRooms.map(r => r.room.id);
+  
+  if (roomIds.length === 0) return [];
+  
+  return db
+    .select({
+      ohweee: ohweees,
+      sender: {
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+      },
+      room: chatRooms,
+    })
+    .from(ohweees)
+    .innerJoin(users, eq(ohweees.senderId, users.id))
+    .innerJoin(chatRooms, eq(ohweees.roomId, chatRooms.id))
+    .where(
+      and(
+        inArray(ohweees.roomId, roomIds),
+        eq(ohweees.isDeleted, false),
+        like(ohweees.content, `%${query}%`)
+      )
+    )
+    .orderBy(desc(ohweees.createdAt))
+    .limit(limit);
 }

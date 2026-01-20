@@ -3886,6 +3886,390 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         }),
     }),
   }),
+
+  // ==================== TEAMS ====================
+  teams: router({
+    // List all teams
+    list: protectedProcedure.query(async () => {
+      return db.getAllTeams();
+    }),
+
+    // Get teams for current user
+    myTeams: protectedProcedure.query(async ({ ctx }) => {
+      return db.getTeamsForUser(ctx.user.id);
+    }),
+
+    // Get team by ID with members
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const team = await db.getTeamById(input.id);
+        if (!team) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Team nicht gefunden" });
+        }
+        const members = await db.getTeamMembers(input.id);
+        return { ...team, members };
+      }),
+
+    // Create team (admin only)
+    create: adminProcedure
+      .input(
+        z.object({
+          name: z.string().min(1),
+          description: z.string().optional(),
+          color: z.string().optional(),
+          icon: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const slug = generateSlug(input.name) + "-" + nanoid(6);
+        const team = await db.createTeam({
+          ...input,
+          slug,
+          createdById: ctx.user.id,
+        });
+        return team;
+      }),
+
+    // Update team (admin only)
+    update: adminProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().min(1).optional(),
+          description: z.string().optional(),
+          color: z.string().optional(),
+          icon: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateTeam(id, data);
+        return { success: true };
+      }),
+
+    // Delete team (admin only)
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteTeam(input.id);
+        return { success: true };
+      }),
+
+    // Add member to team (admin only)
+    addMember: adminProcedure
+      .input(
+        z.object({
+          teamId: z.number(),
+          userId: z.number(),
+          role: z.enum(["member", "admin"]).optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const member = await db.addTeamMember({
+          teamId: input.teamId,
+          userId: input.userId,
+          role: input.role || "member",
+        });
+        // Also add to team chat room if exists
+        const room = await db.getOrCreateTeamChatRoom(input.teamId, input.userId);
+        await db.addChatRoomParticipant({ roomId: room.id, userId: input.userId });
+        return member;
+      }),
+
+    // Remove member from team (admin only)
+    removeMember: adminProcedure
+      .input(
+        z.object({
+          teamId: z.number(),
+          userId: z.number(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await db.removeTeamMember(input.teamId, input.userId);
+        return { success: true };
+      }),
+
+    // Update member role (admin only)
+    updateMemberRole: adminProcedure
+      .input(
+        z.object({
+          teamId: z.number(),
+          userId: z.number(),
+          role: z.enum(["member", "admin"]),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await db.updateTeamMemberRole(input.teamId, input.userId, input.role);
+        return { success: true };
+      }),
+  }),
+
+  // ==================== OHWEEES (CHAT) ====================
+  ohweees: router({
+    // Get all chat rooms for current user
+    rooms: protectedProcedure.query(async ({ ctx }) => {
+      const rooms = await db.getChatRoomsForUser(ctx.user.id);
+      
+      // Add unread count and participants info
+      const roomsWithDetails = await Promise.all(
+        rooms.map(async ({ room, participant }) => {
+          const unreadCount = await db.getUnreadCountForRoom(room.id, ctx.user.id);
+          const participants = await db.getChatRoomParticipants(room.id);
+          return {
+            ...room,
+            unreadCount,
+            participants: participants.map((p) => p.user),
+            lastReadAt: participant.lastReadAt,
+          };
+        })
+      );
+      
+      return roomsWithDetails;
+    }),
+
+    // Get room by ID with messages
+    getRoom: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        const room = await db.getChatRoomById(input.id);
+        if (!room) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Chat-Raum nicht gefunden" });
+        }
+        
+        // Check if user is participant
+        const participants = await db.getChatRoomParticipants(input.id);
+        const isParticipant = participants.some((p) => p.user.id === ctx.user.id);
+        if (!isParticipant) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Kein Zugriff auf diesen Chat" });
+        }
+        
+        const messages = await db.getOhweeesForRoom(input.id);
+        const pinnedMessages = await db.getPinnedOhweees(input.id);
+        
+        // Mark as read
+        await db.updateLastReadTime(input.id, ctx.user.id);
+        
+        return {
+          ...room,
+          participants: participants.map((p) => p.user),
+          messages,
+          pinnedMessages,
+        };
+      }),
+
+    // Get more messages (pagination)
+    getMessages: protectedProcedure
+      .input(
+        z.object({
+          roomId: z.number(),
+          beforeId: z.number().optional(),
+          limit: z.number().optional(),
+        })
+      )
+      .query(async ({ input, ctx }) => {
+        // Verify access
+        const participants = await db.getChatRoomParticipants(input.roomId);
+        if (!participants.some((p) => p.user.id === ctx.user.id)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Kein Zugriff" });
+        }
+        
+        return db.getOhweeesForRoom(input.roomId, input.limit || 50, input.beforeId);
+      }),
+
+    // Start direct message with user
+    startDM: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (input.userId === ctx.user.id) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Kann keinen Chat mit sich selbst starten" });
+        }
+        const room = await db.getOrCreateDirectMessageRoom(ctx.user.id, input.userId, ctx.user.id);
+        return room;
+      }),
+
+    // Create group chat
+    createGroup: protectedProcedure
+      .input(
+        z.object({
+          name: z.string().min(1),
+          memberIds: z.array(z.number()),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const room = await db.createGroupChat(input.name, ctx.user.id, input.memberIds);
+        return room;
+      }),
+
+    // Get team chat room
+    getTeamRoom: protectedProcedure
+      .input(z.object({ teamId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        // Verify user is team member
+        const teams = await db.getTeamsForUser(ctx.user.id);
+        if (!teams.some((t) => t.team.id === input.teamId)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Kein Teammitglied" });
+        }
+        
+        const room = await db.getOrCreateTeamChatRoom(input.teamId, ctx.user.id);
+        const messages = await db.getOhweeesForRoom(room.id);
+        const participants = await db.getChatRoomParticipants(room.id);
+        
+        // Mark as read
+        await db.updateLastReadTime(room.id, ctx.user.id);
+        
+        return {
+          ...room,
+          participants: participants.map((p) => p.user),
+          messages,
+        };
+      }),
+
+    // Send ohweee (message)
+    send: protectedProcedure
+      .input(
+        z.object({
+          roomId: z.number(),
+          content: z.string().min(1),
+          parentId: z.number().optional(),
+          attachments: z.array(
+            z.object({
+              url: z.string(),
+              filename: z.string(),
+              mimeType: z.string(),
+              size: z.number(),
+            })
+          ).optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        // Verify access
+        const participants = await db.getChatRoomParticipants(input.roomId);
+        if (!participants.some((p) => p.user.id === ctx.user.id)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Kein Zugriff" });
+        }
+        
+        const ohweee = await db.createOhweee({
+          roomId: input.roomId,
+          senderId: ctx.user.id,
+          content: input.content,
+          parentId: input.parentId,
+          attachments: input.attachments || null,
+        });
+        
+        return ohweee;
+      }),
+
+    // Edit ohweee
+    edit: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          content: z.string().min(1),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const ohweee = await db.getOhweeeById(input.id);
+        if (!ohweee) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Nachricht nicht gefunden" });
+        }
+        if (ohweee.senderId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Nur eigene Nachrichten bearbeiten" });
+        }
+        
+        await db.updateOhweee(input.id, input.content);
+        return { success: true };
+      }),
+
+    // Delete ohweee
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const ohweee = await db.getOhweeeById(input.id);
+        if (!ohweee) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Nachricht nicht gefunden" });
+        }
+        // Allow deletion by sender or admin
+        if (ohweee.senderId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Keine Berechtigung" });
+        }
+        
+        await db.deleteOhweee(input.id, ctx.user.id);
+        return { success: true };
+      }),
+
+    // Toggle pin
+    togglePin: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.toggleOhweeePin(input.id, ctx.user.id);
+        return { success: true };
+      }),
+
+    // Get thread replies
+    getReplies: protectedProcedure
+      .input(z.object({ parentId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getOhweeeReplies(input.parentId);
+      }),
+
+    // Mark room as read
+    markRead: protectedProcedure
+      .input(z.object({ roomId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updateLastReadTime(input.roomId, ctx.user.id);
+        return { success: true };
+      }),
+
+    // Get total unread count
+    unreadCount: protectedProcedure.query(async ({ ctx }) => {
+      return db.getTotalUnreadCount(ctx.user.id);
+    }),
+
+    // Search messages
+    search: protectedProcedure
+      .input(
+        z.object({
+          query: z.string().min(1),
+          limit: z.number().optional(),
+        })
+      )
+      .query(async ({ input, ctx }) => {
+        return db.searchOhweees(ctx.user.id, input.query, input.limit);
+      }),
+
+    // Get all users for starting DM (with recent chats first)
+    getUsers: protectedProcedure.query(async ({ ctx }) => {
+      const allUsers = await db.getAllUsers();
+      const rooms = await db.getChatRoomsForUser(ctx.user.id);
+      
+      // Get users from recent DMs
+      const recentDMUserIds = new Set<number>();
+      for (const { room } of rooms) {
+        if (room.type === "direct") {
+          const participants = await db.getChatRoomParticipants(room.id);
+          for (const p of participants) {
+            if (p.user.id !== ctx.user.id) {
+              recentDMUserIds.add(p.user.id);
+            }
+          }
+        }
+      }
+      
+      // Sort: recent DMs first, then alphabetically
+      const sortedUsers = allUsers
+        .filter((u) => u.id !== ctx.user.id)
+        .sort((a, b) => {
+          const aRecent = recentDMUserIds.has(a.id);
+          const bRecent = recentDMUserIds.has(b.id);
+          if (aRecent && !bRecent) return -1;
+          if (!aRecent && bRecent) return 1;
+          return (a.name || "").localeCompare(b.name || "");
+        });
+      
+      return sortedUsers;
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

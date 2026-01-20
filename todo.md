@@ -502,3 +502,25 @@
 - [x] Frontend: Schedule-Verwaltungsseite unter Terminplanung ("Verfügbarkeit"-Tab)
 - [x] Frontend: Schedule-Auswahl im Event-Typ-Dialog ("Schedule verwenden" oder "Eigene Zeiten")
 - [x] Standard-Schedule "Arbeitszeiten" automatisch erstellen
+
+## Ohweees-Messaging-System (Basecamp-Stil)
+- [x] Datenbank: Teams-Tabelle (Name, Beschreibung, Farbe)
+- [x] Datenbank: Team-Mitgliedschaften (User-Team-Zuordnung)
+- [x] Datenbank: Chat-Räume (Team-Räume, Direktnachrichten, Gruppen)
+- [x] Datenbank: Ohweees (Nachrichten mit Anhängen, Threads)
+- [x] Datenbank: Lesebestätigungen
+- [x] Backend-API: Team-CRUD
+- [x] Backend-API: Chat-Raum-CRUD
+- [x] Backend-API: Ohweee-CRUD (senden, bearbeiten, löschen, anpinnen)
+- [x] Backend-API: Ungelesen-Zähler
+- [x] Frontend: Team-Verwaltung (Admin unter /admin/teams)
+- [x] Frontend: Ohweees-Übersicht mit Avatar-Grid
+- [x] Frontend: Chat-Ansicht im Basecamp-Stil (Blasen, Datums-Trenner)
+- [x] Frontend: Direktnachrichten starten
+- [x] Frontend: Gruppen-Chats erstellen
+- [ ] Frontend: Datei-/Bild-Upload in Nachrichten (später)
+- [ ] Frontend: @Erwähnungen in Ohweees (später)
+- [ ] Frontend: Threads/Antworten (später)
+- [x] PWA: manifest.json für iOS Home-Screen
+- [ ] PWA: Service Worker für Offline-Unterstützung (später)
+- [ ] PWA: Push-Benachrichtigungen vorbereiten (später)

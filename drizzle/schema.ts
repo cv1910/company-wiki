@@ -869,3 +869,113 @@ export const scheduleAvailability = mysqlTable("scheduleAvailability", {
 
 export type ScheduleAvailability = typeof scheduleAvailability.$inferSelect;
 export type InsertScheduleAvailability = typeof scheduleAvailability.$inferInsert;
+
+
+/**
+ * Teams for organizing employees into groups.
+ * Used for team-based chat rooms and permissions.
+ */
+export const teams = mysqlTable("teams", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  description: text("description"),
+  color: varchar("color", { length: 32 }).default("blue"),
+  icon: varchar("icon", { length: 64 }),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Team = typeof teams.$inferSelect;
+export type InsertTeam = typeof teams.$inferInsert;
+
+/**
+ * Team memberships - links users to teams.
+ */
+export const teamMembers = mysqlTable("teamMembers", {
+  id: int("id").autoincrement().primaryKey(),
+  teamId: int("teamId").notNull(),
+  userId: int("userId").notNull(),
+  role: mysqlEnum("role", ["member", "admin"]).default("member").notNull(),
+  joinedAt: timestamp("joinedAt").defaultNow().notNull(),
+});
+
+export type TeamMember = typeof teamMembers.$inferSelect;
+export type InsertTeamMember = typeof teamMembers.$inferInsert;
+
+/**
+ * Chat rooms for Ohweees messaging.
+ * Can be team rooms, direct messages, or group chats.
+ */
+export const chatRooms = mysqlTable("chatRooms", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }), // Null for direct messages
+  type: mysqlEnum("type", ["team", "direct", "group"]).notNull(),
+  teamId: int("teamId"), // For team rooms
+  createdById: int("createdById").notNull(),
+  lastMessageAt: timestamp("lastMessageAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ChatRoom = typeof chatRooms.$inferSelect;
+export type InsertChatRoom = typeof chatRooms.$inferInsert;
+
+/**
+ * Chat room participants - who can see/send messages in a room.
+ */
+export const chatRoomParticipants = mysqlTable("chatRoomParticipants", {
+  id: int("id").autoincrement().primaryKey(),
+  roomId: int("roomId").notNull(),
+  userId: int("userId").notNull(),
+  lastReadAt: timestamp("lastReadAt"),
+  joinedAt: timestamp("joinedAt").defaultNow().notNull(),
+});
+
+export type ChatRoomParticipant = typeof chatRoomParticipants.$inferSelect;
+export type InsertChatRoomParticipant = typeof chatRoomParticipants.$inferInsert;
+
+/**
+ * Ohweees - the actual messages in chat rooms.
+ * Named after the user's preferred terminology (like Basecamp's "Pings").
+ */
+export const ohweees = mysqlTable("ohweees", {
+  id: int("id").autoincrement().primaryKey(),
+  roomId: int("roomId").notNull(),
+  senderId: int("senderId").notNull(),
+  content: text("content").notNull(),
+  // For threaded replies
+  parentId: int("parentId"), // If this is a reply to another ohweee
+  // Attachments stored as JSON array of {url, filename, mimeType, size}
+  attachments: json("attachments"),
+  // Pinned messages
+  isPinned: boolean("isPinned").default(false).notNull(),
+  pinnedById: int("pinnedById"),
+  pinnedAt: timestamp("pinnedAt"),
+  // Edit tracking
+  isEdited: boolean("isEdited").default(false).notNull(),
+  editedAt: timestamp("editedAt"),
+  // Soft delete
+  isDeleted: boolean("isDeleted").default(false).notNull(),
+  deletedAt: timestamp("deletedAt"),
+  deletedById: int("deletedById"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Ohweee = typeof ohweees.$inferSelect;
+export type InsertOhweee = typeof ohweees.$inferInsert;
+
+/**
+ * Read receipts for ohweees - tracks who has read each message.
+ */
+export const ohweeeReadReceipts = mysqlTable("ohweeeReadReceipts", {
+  id: int("id").autoincrement().primaryKey(),
+  ohweeeId: int("ohweeeId").notNull(),
+  userId: int("userId").notNull(),
+  readAt: timestamp("readAt").defaultNow().notNull(),
+});
+
+export type OhweeeReadReceipt = typeof ohweeeReadReceipts.$inferSelect;
+export type InsertOhweeeReadReceipt = typeof ohweeeReadReceipts.$inferInsert;

@@ -69,6 +69,7 @@ const menuItems = [
   { icon: GraduationCap, label: "Onboarding", path: "/onboarding" },
   { icon: Search, label: "Suche", path: "/search" },
   { icon: MessageCircle, label: "AI-Assistent", path: "/chat" },
+  { icon: Mail, label: "Ohweees", path: "/ohweees" },
   { icon: CalendarDays, label: "Kalender", path: "/calendar" },
   { icon: Calendar, label: "Urlaub", path: "/leave" },
   { icon: AtSign, label: "Erwähnungen", path: "/mentions" },
@@ -76,6 +77,7 @@ const menuItems = [
 
 const adminMenuItems = [
   { icon: CalendarClock, label: "Terminplanung", path: "/scheduling" },
+  { icon: Users, label: "Teams", path: "/admin/teams" },
   { icon: FolderOpen, label: "Bereiche", path: "/admin/categories" },
   { icon: Users, label: "Benutzer", path: "/admin/users" },
   { icon: Calendar, label: "Urlaubsanträge", path: "/admin/leave" },
