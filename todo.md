@@ -519,7 +519,12 @@
 - [x] Frontend: Direktnachrichten starten
 - [x] Frontend: Gruppen-Chats erstellen
 - [x] Frontend: Datei-/Bild-Upload in Nachrichten (Paperclip-Button, max 10MB)
-- [ ] Frontend: @Erwähnungen in Ohweees (später)
+- [ ] Frontend: @Erwähnungen in Ohweees
+  - [ ] Datenbank-Schema für Ohweee-Mentions
+  - [ ] Backend: Mentions-Erkennung beim Senden
+  - [ ] Backend: Benachrichtigungen an erwähnte Benutzer
+  - [ ] Frontend: @-Autocomplete im Eingabefeld
+  - [ ] Frontend: Mentions visuell hervorheben
 - [ ] Frontend: Threads/Antworten (später)
 - [x] PWA: manifest.json für iOS Home-Screen
 - [ ] PWA: Service Worker für Offline-Unterstützung (später)

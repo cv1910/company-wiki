@@ -686,3 +686,42 @@ Ihr Company Wiki Team
     console.error("[Email] Failed to send booking reminder to host:", error);
   }
 }
+
+/**
+ * Send mention notification email
+ */
+export async function sendMentionEmail(params: {
+  recipientEmail: string;
+  recipientName: string;
+  mentionedByName: string;
+  contextType: string;
+  contextTitle: string;
+  contextLink: string;
+  excerpt: string;
+}): Promise<void> {
+  const subject = `${params.mentionedByName} hat dich in einem ${params.contextType} erwähnt`;
+  
+  const content = `
+Hallo ${params.recipientName},
+
+${params.mentionedByName} hat dich in "${params.contextTitle}" erwähnt:
+
+"${params.excerpt}"
+
+Klicke hier, um die Nachricht zu sehen:
+${params.contextLink}
+
+---
+Company Wiki
+`;
+
+  try {
+    await notifyOwner({
+      title: subject,
+      content: `An: ${params.recipientEmail}\n\n${content}`,
+    });
+    console.log(`[Email] Mention notification sent to ${params.recipientEmail}`);
+  } catch (error) {
+    console.error("[Email] Failed to send mention email:", error);
+  }
+}

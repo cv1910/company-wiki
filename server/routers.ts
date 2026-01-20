@@ -10,6 +10,7 @@ import { nanoid } from "nanoid";
 import * as embeddings from "./embeddings";
 import DiffMatchPatch from "diff-match-patch";
 import * as googleCalendarService from "./googleCalendar";
+import { sendMentionEmail } from "./email";
 
 // Initialize diff-match-patch
 const dmp = new DiffMatchPatch();
@@ -4156,6 +4157,64 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           parentId: input.parentId,
           attachments: input.attachments || null,
         });
+        
+        // Process @mentions
+        const mentionRegex = /@\[(.*?)\]\((\d+)\)/g;
+        let match;
+        const mentionedUserIds = new Set<number>();
+        
+        while ((match = mentionRegex.exec(input.content)) !== null) {
+          const userId = parseInt(match[2], 10);
+          if (userId !== ctx.user.id && !mentionedUserIds.has(userId)) {
+            mentionedUserIds.add(userId);
+          }
+        }
+        
+        // Get room info for context
+        const room = await db.getChatRoomById(input.roomId);
+        const roomName = room?.name || "Direktnachricht";
+        
+        // Create mentions and notifications
+        for (const mentionedUserId of Array.from(mentionedUserIds)) {
+          // Create mention record
+          await db.createMention({
+            mentionedUserId,
+            mentionedByUserId: ctx.user.id,
+            contextType: "ohweee",
+            contextId: ohweee.id,
+            contextTitle: roomName,
+          });
+          
+          // Create in-app notification
+          await db.createNotification({
+            userId: mentionedUserId,
+            type: "mention",
+            title: `${ctx.user.name || "Jemand"} hat dich in einem Ohweee erwähnt`,
+            message: input.content.substring(0, 200),
+          });
+          
+          // Send email notification
+          try {
+            const mentionedUser = await db.getUserById(mentionedUserId);
+            if (mentionedUser?.email) {
+              const emailSettings = await db.getEmailSettings(mentionedUserId);
+              // Check if mentioned setting is enabled (default true)
+              if (emailSettings?.mentioned !== false) {
+                await sendMentionEmail({
+                  recipientEmail: mentionedUser.email,
+                  recipientName: mentionedUser.name || "Kollege",
+                  mentionedByName: ctx.user.name || "Jemand",
+                  contextType: "Ohweee",
+                  contextTitle: roomName,
+                  contextLink: `/ohweees?room=${input.roomId}`,
+                  excerpt: input.content.substring(0, 300),
+                });
+              }
+            }
+          } catch (emailError) {
+            console.error("Failed to send mention email:", emailError);
+          }
+        }
         
         return ohweee;
       }),

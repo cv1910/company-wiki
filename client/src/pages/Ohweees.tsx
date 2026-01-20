@@ -112,6 +112,47 @@ function OhweeeMessage({
 
   const time = format(new Date(message.ohweee.createdAt), "HH:mm");
 
+  // Render content with highlighted mentions
+  const renderContentWithMentions = (content: string) => {
+    const mentionRegex = /@\[(.*?)\]\((\d+)\)/g;
+    const parts: (string | React.ReactElement)[] = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = mentionRegex.exec(content)) !== null) {
+      // Add text before mention
+      if (match.index > lastIndex) {
+        parts.push(content.substring(lastIndex, match.index));
+      }
+      
+      const userName = match[1];
+      const userId = parseInt(match[2], 10);
+      const isSelfMention = userId === currentUserId;
+      
+      parts.push(
+        <span
+          key={`mention-${match.index}`}
+          className={`inline-flex items-center px-1.5 py-0.5 rounded font-medium ${
+            isSelfMention
+              ? "bg-primary/20 text-primary"
+              : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+          }`}
+        >
+          @{userName}
+        </span>
+      );
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add remaining text
+    if (lastIndex < content.length) {
+      parts.push(content.substring(lastIndex));
+    }
+    
+    return parts.length > 0 ? parts : content;
+  };
+
   // Parse attachments
   const attachments = (message.ohweee.attachments as { url: string; filename: string; mimeType: string; size: number }[] | null) || [];
 
@@ -207,7 +248,9 @@ function OhweeeMessage({
             )}
 
             {message.ohweee.content && message.ohweee.content !== "[Datei]" && (
-              <p className="whitespace-pre-wrap break-words">{message.ohweee.content}</p>
+              <p className="whitespace-pre-wrap break-words">
+                {renderContentWithMentions(message.ohweee.content)}
+              </p>
             )}
             {message.ohweee.isEdited && (
               <span className="text-xs text-muted-foreground ml-1">(bearbeitet)</span>
@@ -290,9 +333,16 @@ export default function OhweeesPage() {
     { url: string; filename: string; mimeType: string; size: number }[]
   >([]);
   const [isUploading, setIsUploading] = useState(false);
+  
+  // @Mention state
+  const [showMentionSuggestions, setShowMentionSuggestions] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [mentionStartIndex, setMentionStartIndex] = useState(-1);
+  const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Queries
   const { data: rooms, isLoading: roomsLoading } = trpc.ohweees.rooms.useQuery();
@@ -454,7 +504,94 @@ export default function OhweeesPage() {
     });
   };
 
+  // Filter users for @mention suggestions
+  const filteredMentionUsers = allUsers?.filter((u) =>
+    u.name?.toLowerCase().includes(mentionQuery.toLowerCase()) ||
+    u.email?.toLowerCase().includes(mentionQuery.toLowerCase())
+  ).slice(0, 5) || [];
+
+  const handleMentionSelect = (selectedUser: { id: number; name: string | null }) => {
+    const currentValue = editingMessageId ? editContent : messageInput;
+    const beforeMention = currentValue.substring(0, mentionStartIndex);
+    const afterMention = currentValue.substring(
+      mentionStartIndex + mentionQuery.length + 1
+    );
+    const mentionText = `@[${selectedUser.name || "Benutzer"}](${selectedUser.id}) `;
+    const newValue = beforeMention + mentionText + afterMention;
+    
+    if (editingMessageId) {
+      setEditContent(newValue);
+    } else {
+      setMessageInput(newValue);
+    }
+    
+    setShowMentionSuggestions(false);
+    setMentionQuery("");
+    setMentionStartIndex(-1);
+    setSelectedMentionIndex(0);
+    textareaRef.current?.focus();
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    const cursorPos = e.target.selectionStart || 0;
+    
+    if (editingMessageId) {
+      setEditContent(value);
+    } else {
+      setMessageInput(value);
+    }
+    
+    // Check for @ trigger
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const lastAtIndex = textBeforeCursor.lastIndexOf("@");
+    
+    if (lastAtIndex !== -1) {
+      const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
+      // Check if there's no space after @ (still typing mention)
+      if (!textAfterAt.includes(" ") && !textAfterAt.includes("]")) {
+        setShowMentionSuggestions(true);
+        setMentionQuery(textAfterAt);
+        setMentionStartIndex(lastAtIndex);
+        setSelectedMentionIndex(0);
+        return;
+      }
+    }
+    
+    setShowMentionSuggestions(false);
+    setMentionQuery("");
+    setMentionStartIndex(-1);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Handle mention suggestions navigation
+    if (showMentionSuggestions && filteredMentionUsers.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedMentionIndex((prev) =>
+          prev < filteredMentionUsers.length - 1 ? prev + 1 : 0
+        );
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedMentionIndex((prev) =>
+          prev > 0 ? prev - 1 : filteredMentionUsers.length - 1
+        );
+        return;
+      }
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        handleMentionSelect(filteredMentionUsers[selectedMentionIndex]);
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setShowMentionSuggestions(false);
+        return;
+      }
+    }
+    
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (editingMessageId) {
@@ -803,14 +940,47 @@ export default function OhweeesPage() {
                   accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
                 />
                 <div className="flex-1 relative">
+                  {/* @Mention Suggestions Popup */}
+                  {showMentionSuggestions && filteredMentionUsers.length > 0 && (
+                    <div className="absolute bottom-full left-0 mb-2 w-64 bg-popover border rounded-lg shadow-lg z-50 overflow-hidden">
+                      <div className="py-1">
+                        {filteredMentionUsers.map((mentionUser, index) => (
+                          <button
+                            key={mentionUser.id}
+                            className={`w-full px-3 py-2 flex items-center gap-2 text-left hover:bg-muted transition-colors ${
+                              index === selectedMentionIndex ? "bg-muted" : ""
+                            }`}
+                            onClick={() => handleMentionSelect(mentionUser)}
+                          >
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={mentionUser.avatarUrl || undefined} />
+                              <AvatarFallback className="text-xs">
+                                {getInitials(mentionUser.name || mentionUser.email || "?")}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {mentionUser.name || mentionUser.email}
+                              </p>
+                              {mentionUser.name && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {mentionUser.email}
+                                </p>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="px-3 py-1.5 text-xs text-muted-foreground border-t bg-muted/50">
+                        ↑↓ zum Navigieren, Enter zum Auswählen
+                      </div>
+                    </div>
+                  )}
                   <Textarea
-                    placeholder="Schreibe ein Ohweee..."
+                    ref={textareaRef}
+                    placeholder="Schreibe ein Ohweee... (@ für Erwähnung)"
                     value={editingMessageId ? editContent : messageInput}
-                    onChange={(e) =>
-                      editingMessageId
-                        ? setEditContent(e.target.value)
-                        : setMessageInput(e.target.value)
-                    }
+                    onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
                     className="min-h-[44px] max-h-32 resize-none pr-20"
                     rows={1}
