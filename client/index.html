@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 
   <head>
     <meta charset="UTF-8" />
@@ -10,17 +10,112 @@
     
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#3b82f6" />
+    <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="description" content="ohwee - Dein Team-Hub für Wissen, Kommunikation und Zusammenarbeit" />
+    <meta name="application-name" content="ohwee" />
     
     <!-- iOS PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="ohwee" />
-    <link rel="apple-touch-icon" href="/icon-192.svg" />
+    <meta name="format-detection" content="telephone=no" />
     
-    <!-- Splash Screens for iOS -->
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icon-152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/icon-167.png" />
+    
+    <!-- iOS Splash Screens -->
+    <!-- iPhone X / XS / 11 Pro / 12 mini / 13 mini -->
+    <link rel="apple-touch-startup-image" 
+          href="/splash-1125x2436.png"
+          media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" />
+    <!-- iPhone XR / 11 -->
+    <link rel="apple-touch-startup-image" 
+          href="/splash-828x1792.png"
+          media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" />
+    <!-- iPhone XS Max / 11 Pro Max -->
+    <link rel="apple-touch-startup-image" 
+          href="/splash-1242x2688.png"
+          media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" />
+    <!-- iPhone 12 / 12 Pro / 13 / 13 Pro / 14 -->
+    <link rel="apple-touch-startup-image" 
+          href="/splash-1170x2532.png"
+          media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" />
+    <!-- iPhone 12 Pro Max / 13 Pro Max / 14 Plus -->
+    <link rel="apple-touch-startup-image" 
+          href="/splash-1284x2778.png"
+          media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" />
+    <!-- iPhone 14 Pro -->
+    <link rel="apple-touch-startup-image" 
+          href="/splash-1179x2556.png"
+          media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" />
+    <!-- iPhone 14 Pro Max / 15 Pro Max -->
+    <link rel="apple-touch-startup-image" 
+          href="/splash-1290x2796.png"
+          media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" />
+    <!-- iPad Pro 12.9" -->
+    <link rel="apple-touch-startup-image" 
+          href="/splash-2048x2732.png"
+          media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" />
+    <!-- iPad Pro 11" -->
+    <link rel="apple-touch-startup-image" 
+          href="/splash-1668x2388.png"
+          media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#0a0a0a" />
+    <meta name="msapplication-TileImage" content="/icon-144.png" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+    
+    <!-- Mobile Web App -->
     <meta name="mobile-web-app-capable" content="yes" />
+    
+    <!-- Preconnect to important origins -->
+    <link rel="preconnect" href="https://fonts.cdnfonts.com" />
+    
+    <!-- Disable iOS link highlighting -->
+    <style>
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+      
+      /* Prevent pull-to-refresh on iOS */
+      html, body {
+        overscroll-behavior-y: contain;
+      }
+      
+      /* Smooth scrolling */
+      html {
+        scroll-behavior: smooth;
+      }
+      
+      /* Loading state before React hydrates */
+      #root:empty::before {
+        content: '';
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 40px;
+        height: 40px;
+        margin: -20px 0 0 -20px;
+        border: 3px solid rgba(59, 130, 246, 0.2);
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: spinner 0.8s linear infinite;
+      }
+      
+      @keyframes spinner {
+        to { transform: rotate(360deg); }
+      }
+    </style>
   </head>
 
   <body>

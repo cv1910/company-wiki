@@ -684,3 +684,25 @@
 - [x] Backend: API für Profil-Update
 - [x] Frontend: Profil-Bearbeitungs-Dialog
 - [x] Frontend: Erweiterte Profilansicht
+
+## Globale Suche (Spotlight-Stil)
+- [x] Backend: Such-API über Artikel, SOPs, Ohweees, Personen
+- [x] Frontend: Spotlight-Dialog mit Cmd+K / Ctrl+K
+- [x] Frontend: Kategorisierte Suchergebnisse
+- [x] Frontend: Schnellaktionen (Neuer Artikel, Nachricht an...)
+- [x] Frontend: Tastaturnavigation in Ergebnissen
+
+## Mobile-Optimierung State of the Art
+- [x] Mobile Navigation: Bottom-Tab-Bar für Hauptbereiche
+- [x] Mobile Sidebar: Slide-in Drawer mit Swipe-Geste
+- [x] Touch-optimierte Buttons und Abstände
+- [x] Pull-to-Refresh für Listen (CSS vorbereitet)
+- [x] Swipe-Aktionen für Listenelemente (CSS vorbereitet)
+- [x] Native-ähnliche Übergänge und Animationen
+- [x] Safe-Area Unterstützung (Notch, Home-Indicator)
+
+## PWA-Optimierung
+- [x] Manifest mit App-Icons in allen Größen
+- [x] Splash-Screen für App-Start (Meta-Tags vorbereitet)
+- [x] iOS-spezifische Meta-Tags
+- [x] Add-to-Homescreen Unterstützung

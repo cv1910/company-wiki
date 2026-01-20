@@ -1166,6 +1166,23 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         }
       }),
 
+    // Spotlight global search (articles, sops, ohweees, users, rooms)
+    spotlight: protectedProcedure
+      .input(
+        z.object({
+          query: z.string().min(1),
+          limit: z.number().optional().default(20),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        return db.globalSearch(input.query, ctx.user.id, input.limit);
+      }),
+
+    // Quick actions for spotlight
+    quickActions: protectedProcedure.query(() => {
+      return db.getQuickActions();
+    }),
+
     // Find similar articles
     similar: protectedProcedure
       .input(z.object({ articleId: z.number(), limit: z.number().optional() }))

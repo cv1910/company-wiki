@@ -2,6 +2,8 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { UserProfile } from "@/components/UserProfile";
+import { Spotlight, useSpotlight } from "@/components/Spotlight";
+import { MobileNavigation } from "@/components/MobileNavigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -181,6 +183,9 @@ function DashboardLayoutContent({
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  
+  // Spotlight search
+  const { open: spotlightOpen, setOpen: setSpotlightOpen } = useSpotlight();
   
   // Enable keyboard shortcuts
   useKeyboardShortcuts(true);
@@ -482,7 +487,14 @@ function DashboardLayoutContent({
           open={showUserProfile}
           onOpenChange={setShowUserProfile}
         />
+        <Spotlight
+          open={spotlightOpen}
+          onOpenChange={setSpotlightOpen}
+        />
       </SidebarInset>
+      
+      {/* Mobile Bottom Navigation */}
+      <MobileNavigation />
     </>
   );
 }

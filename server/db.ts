@@ -5317,3 +5317,222 @@ export async function searchUserProfiles(query: string) {
 
   return results;
 }
+
+
+// ============ Global Search ============
+
+export interface GlobalSearchResult {
+  type: "article" | "sop" | "ohweee" | "user" | "room";
+  id: number;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  url: string;
+  icon?: string;
+  avatarUrl?: string;
+  createdAt?: Date;
+}
+
+export async function globalSearch(
+  query: string,
+  userId: number,
+  limit: number = 20
+): Promise<GlobalSearchResult[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const searchTerm = `%${query}%`;
+  const results: GlobalSearchResult[] = [];
+
+  // Search Articles
+  const articleResults = await db
+    .select({
+      id: articles.id,
+      title: articles.title,
+      content: articles.content,
+      categoryId: articles.categoryId,
+      createdAt: articles.createdAt,
+    })
+    .from(articles)
+    .where(
+      and(
+        eq(articles.status, "published"),
+        or(
+          like(articles.title, searchTerm),
+          like(articles.content, searchTerm)
+        )
+      )
+    )
+    .limit(5);
+
+  for (const article of articleResults) {
+    results.push({
+      type: "article",
+      id: article.id,
+      title: article.title,
+      subtitle: "Wiki-Artikel",
+      description: article.content?.substring(0, 100) + "...",
+      url: `/wiki/${article.id}`,
+      icon: "FileText",
+      createdAt: article.createdAt,
+    });
+  }
+
+  // Search SOPs
+  const sopResults = await db
+    .select({
+      id: sops.id,
+      title: sops.title,
+      description: sops.description,
+      createdAt: sops.createdAt,
+    })
+    .from(sops)
+    .where(
+      or(
+        like(sops.title, searchTerm),
+        like(sops.description, searchTerm)
+      )
+    )
+    .limit(5);
+
+  for (const sop of sopResults) {
+    results.push({
+      type: "sop",
+      id: sop.id,
+      title: sop.title,
+      subtitle: "SOP",
+      description: sop.description?.substring(0, 100) + "...",
+      url: `/sops/${sop.id}`,
+      icon: "ClipboardList",
+      createdAt: sop.createdAt,
+    });
+  }
+
+  // Search Ohweees Messages
+  const ohweeeResults = await db
+    .select({
+      id: ohweees.id,
+      content: ohweees.content,
+      roomId: ohweees.roomId,
+      createdAt: ohweees.createdAt,
+      senderName: users.name,
+    })
+    .from(ohweees)
+    .innerJoin(users, eq(ohweees.senderId, users.id))
+    .where(
+      and(
+        eq(ohweees.isDeleted, false),
+        like(ohweees.content, searchTerm)
+      )
+    )
+    .limit(5);
+
+  for (const msg of ohweeeResults) {
+    results.push({
+      type: "ohweee",
+      id: msg.id,
+      title: msg.content?.substring(0, 50) + (msg.content && msg.content.length > 50 ? "..." : ""),
+      subtitle: `Nachricht von ${msg.senderName}`,
+      url: `/ohweees?room=${msg.roomId}&message=${msg.id}`,
+      icon: "MessageCircle",
+      createdAt: msg.createdAt,
+    });
+  }
+
+  // Search Users
+  const userResults = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      avatarUrl: users.avatarUrl,
+      position: userProfiles.position,
+      department: userProfiles.department,
+    })
+    .from(users)
+    .leftJoin(userProfiles, eq(users.id, userProfiles.userId))
+    .where(
+      or(
+        like(users.name, searchTerm),
+        like(users.email, searchTerm),
+        like(userProfiles.position, searchTerm),
+        like(userProfiles.department, searchTerm)
+      )
+    )
+    .limit(5);
+
+  for (const user of userResults) {
+    results.push({
+      type: "user",
+      id: user.id,
+      title: user.name || "Unbekannt",
+      subtitle: user.position || user.department || user.email || undefined,
+      url: `/team/${user.id}`,
+      icon: "User",
+      avatarUrl: user.avatarUrl || undefined,
+    });
+  }
+
+  // Search Chat Rooms
+  const roomResults = await db
+    .select({
+      id: chatRooms.id,
+      name: chatRooms.name,
+      type: chatRooms.type,
+      createdAt: chatRooms.createdAt,
+    })
+    .from(chatRooms)
+    .innerJoin(chatRoomParticipants, eq(chatRooms.id, chatRoomParticipants.roomId))
+    .where(
+      and(
+        eq(chatRoomParticipants.userId, userId),
+        like(chatRooms.name, searchTerm)
+      )
+    )
+    .limit(5);
+
+  for (const room of roomResults) {
+    results.push({
+      type: "room",
+      id: room.id,
+      title: room.name || "Direktnachricht",
+      subtitle: room.type === "direct" ? "Direktnachricht" : "Chat-Raum",
+      url: `/ohweees?room=${room.id}`,
+      icon: "MessageSquare",
+      createdAt: room.createdAt,
+    });
+  }
+
+  // Sort by relevance (exact matches first, then by date)
+  results.sort((a, b) => {
+    const aExact = a.title.toLowerCase().includes(query.toLowerCase()) ? 1 : 0;
+    const bExact = b.title.toLowerCase().includes(query.toLowerCase()) ? 1 : 0;
+    if (aExact !== bExact) return bExact - aExact;
+    
+    const aDate = a.createdAt?.getTime() || 0;
+    const bDate = b.createdAt?.getTime() || 0;
+    return bDate - aDate;
+  });
+
+  return results.slice(0, limit);
+}
+
+// Quick Actions for Spotlight
+export interface QuickAction {
+  id: string;
+  title: string;
+  subtitle: string;
+  icon: string;
+  url?: string;
+  action?: string;
+}
+
+export function getQuickActions(): QuickAction[] {
+  return [
+    { id: "new-article", title: "Neuer Artikel", subtitle: "Wiki-Artikel erstellen", icon: "Plus", url: "/wiki/new" },
+    { id: "new-sop", title: "Neue SOP", subtitle: "Standard Operating Procedure erstellen", icon: "Plus", url: "/sops/new" },
+    { id: "new-chat", title: "Neuer Chat", subtitle: "Ohweees-Raum erstellen", icon: "MessageSquare", action: "new-chat" },
+    { id: "new-announcement", title: "Neue Ankündigung", subtitle: "Team-Ankündigung erstellen", icon: "Megaphone", action: "new-announcement" },
+    { id: "request-leave", title: "Urlaub beantragen", subtitle: "Urlaubsantrag stellen", icon: "Calendar", url: "/urlaub" },
+  ];
+}
