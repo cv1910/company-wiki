@@ -1,7 +1,7 @@
 {
-  "name": "Company Wiki",
-  "short_name": "Wiki",
-  "description": "Ihr internes Firmenwissen - Wiki, SOPs, Kalender und mehr",
+  "name": "ohwee",
+  "short_name": "ohwee",
+  "description": "ohwee - Dein Team-Hub für Wissen, Kommunikation und Zusammenarbeit",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

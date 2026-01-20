@@ -1136,3 +1136,63 @@ export const ohweeePollVotes = mysqlTable("ohweee_poll_votes", {
 
 export type OhweeePollVote = typeof ohweeePollVotes.$inferSelect;
 export type InsertOhweeePollVote = typeof ohweeePollVotes.$inferInsert;
+
+
+/**
+ * User notification settings
+ */
+export const userNotificationSettings = mysqlTable("user_notification_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  // Ohweees notifications
+  mentionsEnabled: boolean("mentionsEnabled").default(true).notNull(),
+  directMessagesEnabled: boolean("directMessagesEnabled").default(true).notNull(),
+  roomUpdatesEnabled: boolean("roomUpdatesEnabled").default(true).notNull(),
+  soundEnabled: boolean("soundEnabled").default(true).notNull(),
+  // Task notifications
+  taskRemindersEnabled: boolean("taskRemindersEnabled").default(true).notNull(),
+  taskAssignmentsEnabled: boolean("taskAssignmentsEnabled").default(true).notNull(),
+  // Wiki notifications
+  articleUpdatesEnabled: boolean("articleUpdatesEnabled").default(false).notNull(),
+  // Browser notifications
+  browserNotificationsEnabled: boolean("browserNotificationsEnabled").default(true).notNull(),
+  // Email notifications (future)
+  emailDigestEnabled: boolean("emailDigestEnabled").default(false).notNull(),
+  emailDigestFrequency: mysqlEnum("emailDigestFrequency", ["daily", "weekly", "never"]).default("never").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserNotificationSettings = typeof userNotificationSettings.$inferSelect;
+export type InsertUserNotificationSettings = typeof userNotificationSettings.$inferInsert;
+
+/**
+ * Extended user profiles
+ */
+export const userProfiles = mysqlTable("user_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  // Professional info
+  position: varchar("position", { length: 255 }),
+  department: varchar("department", { length: 255 }),
+  location: varchar("location", { length: 255 }),
+  // Contact info
+  phone: varchar("phone", { length: 50 }),
+  mobilePhone: varchar("mobilePhone", { length: 50 }),
+  // Skills and expertise
+  skills: text("skills"), // JSON array of skills
+  bio: text("bio"),
+  // Social links
+  linkedinUrl: varchar("linkedinUrl", { length: 500 }),
+  // Work info
+  startDate: timestamp("startDate"),
+  manager: varchar("manager", { length: 255 }),
+  // Availability
+  status: mysqlEnum("status", ["available", "busy", "away", "offline"]).default("available").notNull(),
+  statusMessage: varchar("statusMessage", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserProfile = typeof userProfiles.$inferSelect;
+export type InsertUserProfile = typeof userProfiles.$inferInsert;

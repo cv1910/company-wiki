@@ -1,5 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { NotificationSettings } from "@/components/NotificationSettings";
+import { UserProfile } from "@/components/UserProfile";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,6 +52,7 @@ import {
   Sun,
   BarChart3,
   ShieldCheck,
+  User,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -125,11 +128,10 @@ export default function DashboardLayout({
           </div>
           <div className="flex flex-col items-center gap-4">
             <h1 className="text-2xl font-semibold tracking-tight text-center">
-              Company Wiki
+              ohwee
             </h1>
             <p className="text-sm text-muted-foreground text-center max-w-sm">
-              Melden Sie sich mit Ihrem Google Workspace-Konto an, um auf das
-              Unternehmenswiki zuzugreifen.
+              Melde dich mit deinem Google-Konto an, um auf ohwee zuzugreifen.
             </p>
           </div>
           <Button
@@ -176,6 +178,8 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showNotificationSettings, setShowNotificationSettings] = useState(false);
+  const [showUserProfile, setShowUserProfile] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   
   // Enable keyboard shortcuts
@@ -250,7 +254,7 @@ function DashboardLayoutContent({
                 <div className="flex items-center gap-2 min-w-0">
                   <Book className="h-5 w-5 text-primary shrink-0" />
                   <span className="font-semibold tracking-tight truncate">
-                    Company Wiki
+                    ohwee
                   </span>
                 </div>
               ) : null}
@@ -379,6 +383,20 @@ function DashboardLayoutContent({
                     </Badge>
                   )}
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setShowUserProfile(true)}
+                  className="cursor-pointer"
+                >
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Mein Profil</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setShowNotificationSettings(true)}
+                  className="cursor-pointer"
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Einstellungen</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={logout}
@@ -409,7 +427,7 @@ function DashboardLayoutContent({
           <div className="flex border-b h-14 items-center justify-between bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
             <div className="flex items-center gap-3">
               <span className="font-medium text-foreground">
-                {activeMenuItem?.label ?? "Company Wiki"}
+                {activeMenuItem?.label ?? "ohwee"}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -445,7 +463,7 @@ function DashboardLayoutContent({
               <div className="flex items-center gap-2">
                 <Book className="h-5 w-5 text-primary" />
                 <span className="font-medium text-foreground">
-                  {activeMenuItem?.label ?? "Company Wiki"}
+                  {activeMenuItem?.label ?? "ohwee"}
                 </span>
               </div>
             </div>
@@ -456,6 +474,14 @@ function DashboardLayoutContent({
         )}
         <main className="flex-1 p-6 page-transition">{children}</main>
         {showShortcuts && <KeyboardShortcutsHelp onClose={() => setShowShortcuts(false)} />}
+        <NotificationSettings
+          open={showNotificationSettings}
+          onOpenChange={setShowNotificationSettings}
+        />
+        <UserProfile
+          open={showUserProfile}
+          onOpenChange={setShowUserProfile}
+        />
       </SidebarInset>
     </>
   );

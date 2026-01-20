@@ -101,6 +101,10 @@ import {
   InsertOhweeePollOption,
   ohweeePollVotes,
   InsertOhweeePollVote,
+  userNotificationSettings,
+  InsertUserNotificationSettings,
+  userProfiles,
+  InsertUserProfile,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -5145,6 +5149,171 @@ export async function getPinnedMessagesForRoom(roomId: number): Promise<{
       )
     )
     .orderBy(desc(ohweees.pinnedAt));
+
+  return results;
+}
+
+
+// ============================================
+// User Notification Settings
+// ============================================
+
+export async function getUserNotificationSettings(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const results = await db
+    .select()
+    .from(userNotificationSettings)
+    .where(eq(userNotificationSettings.userId, userId))
+    .limit(1);
+
+  return results[0] || null;
+}
+
+export async function upsertUserNotificationSettings(
+  userId: number,
+  settings: Partial<InsertUserNotificationSettings>
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const existing = await getUserNotificationSettings(userId);
+
+  if (existing) {
+    await db
+      .update(userNotificationSettings)
+      .set(settings)
+      .where(eq(userNotificationSettings.userId, userId));
+  } else {
+    await db.insert(userNotificationSettings).values({
+      userId,
+      ...settings,
+    });
+  }
+
+  return getUserNotificationSettings(userId);
+}
+
+// ============================================
+// User Profiles
+// ============================================
+
+export async function getUserProfile(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const results = await db
+    .select()
+    .from(userProfiles)
+    .where(eq(userProfiles.userId, userId))
+    .limit(1);
+
+  return results[0] || null;
+}
+
+export async function getUserProfileWithUser(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const results = await db
+    .select({
+      profile: userProfiles,
+      user: users,
+    })
+    .from(users)
+    .leftJoin(userProfiles, eq(users.id, userProfiles.userId))
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  return results[0] || null;
+}
+
+export async function upsertUserProfile(
+  userId: number,
+  profile: Partial<InsertUserProfile>
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const existing = await getUserProfile(userId);
+
+  if (existing) {
+    await db
+      .update(userProfiles)
+      .set(profile)
+      .where(eq(userProfiles.userId, userId));
+  } else {
+    await db.insert(userProfiles).values({
+      userId,
+      ...profile,
+    });
+  }
+
+  return getUserProfile(userId);
+}
+
+export async function updateUserStatus(
+  userId: number,
+  status: "available" | "busy" | "away" | "offline",
+  statusMessage?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const existing = await getUserProfile(userId);
+
+  if (existing) {
+    await db
+      .update(userProfiles)
+      .set({ status, statusMessage: statusMessage || null })
+      .where(eq(userProfiles.userId, userId));
+  } else {
+    await db.insert(userProfiles).values({
+      userId,
+      status,
+      statusMessage: statusMessage || null,
+    });
+  }
+}
+
+export async function getAllUserProfiles() {
+  const db = await getDb();
+  if (!db) return [];
+
+  const results = await db
+    .select({
+      user: users,
+      profile: userProfiles,
+    })
+    .from(users)
+    .leftJoin(userProfiles, eq(users.id, userProfiles.userId))
+    .orderBy(users.name);
+
+  return results;
+}
+
+export async function searchUserProfiles(query: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const results = await db
+    .select({
+      user: users,
+      profile: userProfiles,
+    })
+    .from(users)
+    .leftJoin(userProfiles, eq(users.id, userProfiles.userId))
+    .where(
+      or(
+        like(users.name, `%${query}%`),
+        like(users.email, `%${query}%`),
+        like(userProfiles.position, `%${query}%`),
+        like(userProfiles.department, `%${query}%`),
+        like(userProfiles.skills, `%${query}%`)
+      )
+    )
+    .orderBy(users.name);
 
   return results;
 }

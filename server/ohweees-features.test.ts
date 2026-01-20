@@ -86,6 +86,29 @@ vi.mock("./db", async () => {
     unpinMessage: vi.fn().mockResolvedValue(undefined),
     getPinnedMessagesForRoom: vi.fn().mockResolvedValue([]),
     getOhweeeById: vi.fn().mockResolvedValue({ id: 1, roomId: 1, content: "Test", senderId: 1 }),
+    // Notification Settings
+    getUserNotificationSettings: vi.fn().mockResolvedValue({
+      mentionsEnabled: true,
+      directMessagesEnabled: true,
+      roomUpdatesEnabled: true,
+      soundEnabled: true,
+      taskRemindersEnabled: true,
+      taskAssignmentsEnabled: true,
+      articleUpdatesEnabled: false,
+      browserNotificationsEnabled: true,
+      emailDigestEnabled: false,
+      emailDigestFrequency: "never",
+    }),
+    upsertUserNotificationSettings: vi.fn().mockResolvedValue(undefined),
+    // User Profiles
+    getUserProfileWithUser: vi.fn().mockResolvedValue({
+      user: { id: 1, name: "Test User", email: "test@example.com", avatarUrl: null, createdAt: new Date() },
+      profile: { position: "Developer", department: "Engineering", status: "available" },
+    }),
+    upsertUserProfile: vi.fn().mockResolvedValue(undefined),
+    updateUserStatus: vi.fn().mockResolvedValue(undefined),
+    getAllUserProfiles: vi.fn().mockResolvedValue([]),
+    searchUserProfiles: vi.fn().mockResolvedValue([]),
   };
 });
 
@@ -696,5 +719,100 @@ describe("Ohweees: Pinned Messages API", () => {
     const caller = appRouter.createCaller(ctx);
     
     await expect(caller.ohweees.pinMessage({ ohweeeId: 999 })).rejects.toThrow("Message not found");
+  });
+});
+
+
+describe("Notification Settings API", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should get notification settings for authenticated user", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    const result = await caller.settings.getNotificationSettings();
+    
+    expect(db.getUserNotificationSettings).toHaveBeenCalledWith(1);
+    expect(result.mentionsEnabled).toBe(true);
+    expect(result.soundEnabled).toBe(true);
+  });
+
+  it("should update notification settings", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    await caller.settings.updateNotificationSettings({
+      mentionsEnabled: false,
+      soundEnabled: false,
+    });
+    
+    expect(db.upsertUserNotificationSettings).toHaveBeenCalledWith(1, {
+      mentionsEnabled: false,
+      soundEnabled: false,
+    });
+  });
+});
+
+describe("User Profile API", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should get user profile", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    const result = await caller.profile.getProfile({ userId: 1 });
+    
+    expect(db.getUserProfileWithUser).toHaveBeenCalledWith(1);
+    expect(result?.user.name).toBe("Test User");
+    expect(result?.profile?.position).toBe("Developer");
+  });
+
+  it("should update own profile", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    await caller.profile.updateProfile({
+      position: "Senior Developer",
+      department: "Product",
+    });
+    
+    expect(db.upsertUserProfile).toHaveBeenCalledWith(1, {
+      position: "Senior Developer",
+      department: "Product",
+    });
+  });
+
+  it("should update user status", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    await caller.profile.updateStatus({
+      status: "busy",
+      statusMessage: "In a meeting",
+    });
+    
+    expect(db.updateUserStatus).toHaveBeenCalledWith(1, "busy", "In a meeting");
+  });
+
+  it("should get all profiles", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    await caller.profile.getAllProfiles();
+    
+    expect(db.getAllUserProfiles).toHaveBeenCalled();
+  });
+
+  it("should search profiles", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    await caller.profile.searchProfiles({ query: "Developer" });
+    
+    expect(db.searchUserProfiles).toHaveBeenCalledWith("Developer");
   });
 });

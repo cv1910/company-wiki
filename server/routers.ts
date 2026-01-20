@@ -4973,6 +4973,94 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         return db.getPinnedMessagesForRoom(input.roomId);
       }),
   }),
+
+  // User Settings Router
+  settings: router({
+    // Get notification settings
+    getNotificationSettings: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserNotificationSettings(ctx.user.id);
+    }),
+
+    // Update notification settings
+    updateNotificationSettings: protectedProcedure
+      .input(
+        z.object({
+          mentionsEnabled: z.boolean().optional(),
+          directMessagesEnabled: z.boolean().optional(),
+          roomUpdatesEnabled: z.boolean().optional(),
+          soundEnabled: z.boolean().optional(),
+          taskRemindersEnabled: z.boolean().optional(),
+          taskAssignmentsEnabled: z.boolean().optional(),
+          articleUpdatesEnabled: z.boolean().optional(),
+          browserNotificationsEnabled: z.boolean().optional(),
+          emailDigestEnabled: z.boolean().optional(),
+          emailDigestFrequency: z.enum(["daily", "weekly", "never"]).optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        return db.upsertUserNotificationSettings(ctx.user.id, input);
+      }),
+  }),
+
+  // User Profile Router
+  profile: router({
+    // Get own profile
+    getMyProfile: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserProfileWithUser(ctx.user.id);
+    }),
+
+    // Get profile by user ID
+    getProfile: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getUserProfileWithUser(input.userId);
+      }),
+
+    // Update own profile
+    updateProfile: protectedProcedure
+      .input(
+        z.object({
+          position: z.string().optional().nullable(),
+          department: z.string().optional().nullable(),
+          location: z.string().optional().nullable(),
+          phone: z.string().optional().nullable(),
+          mobilePhone: z.string().optional().nullable(),
+          skills: z.string().optional().nullable(),
+          bio: z.string().optional().nullable(),
+          linkedinUrl: z.string().optional().nullable(),
+          startDate: z.date().optional().nullable(),
+          manager: z.string().optional().nullable(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        return db.upsertUserProfile(ctx.user.id, input);
+      }),
+
+    // Update status
+    updateStatus: protectedProcedure
+      .input(
+        z.object({
+          status: z.enum(["available", "busy", "away", "offline"]),
+          statusMessage: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        await db.updateUserStatus(ctx.user.id, input.status, input.statusMessage);
+        return { success: true };
+      }),
+
+    // Get all profiles (for directory)
+    getAllProfiles: protectedProcedure.query(async () => {
+      return db.getAllUserProfiles();
+    }),
+
+    // Search profiles
+    searchProfiles: protectedProcedure
+      .input(z.object({ query: z.string() }))
+      .query(async ({ input }) => {
+        return db.searchUserProfiles(input.query);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

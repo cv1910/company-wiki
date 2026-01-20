@@ -662,3 +662,25 @@
 - [x] Backend: API zum Abrufen gepinnter Nachrichten
 - [x] Frontend: Pin-Option im Nachrichten-Menü
 - [x] Frontend: Gepinnte Nachrichten oben im Chat anzeigen
+
+## Umbenennung zu ohwee
+- [x] App-Titel von "Company Wiki" zu "ohwee" ändern
+- [x] Logo und Branding aktualisieren
+- [x] Alle Textreferenzen aktualisieren
+
+## Dark Mode Optimierung
+- [x] Farbpalette für Dark Mode verfeinern
+- [x] Kontraste verbessern
+- [x] Sanftere Übergänge zwischen Farben
+
+## Benachrichtigungs-Einstellungen
+- [x] Datenbank: Tabelle für Benutzer-Einstellungen
+- [x] Backend: API für Einstellungen speichern/laden
+- [x] Frontend: Einstellungs-Dialog mit Optionen
+- [x] Optionen: @Mentions, Direktnachrichten, Raum-Updates, Sound
+
+## Erweiterte Mitarbeiter-Profile
+- [x] Datenbank: Felder für Skills, Abteilung, Telefon, Position
+- [x] Backend: API für Profil-Update
+- [x] Frontend: Profil-Bearbeitungs-Dialog
+- [x] Frontend: Erweiterte Profilansicht

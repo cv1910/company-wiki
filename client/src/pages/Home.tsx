@@ -370,7 +370,7 @@ export default function Home() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium text-primary">Company Wiki</span>
+              <span className="text-sm font-medium text-primary">ohwee</span>
             </div>
             <h1 className="text-3xl font-bold tracking-tight">
               Willkommen zurück, {user?.name?.split(" ")[0] || "Benutzer"}!
