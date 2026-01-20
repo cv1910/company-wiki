@@ -671,12 +671,18 @@ export const calendarEvents = mysqlTable("calendarEvents", {
   // Linked resources (optional)
   linkedResourceType: mysqlEnum("linkedResourceType", ["leave_request", "article", "sop"]),
   linkedResourceId: int("linkedResourceId"),
-  // Recurrence (for future expansion)
+  // Recurrence settings
   isRecurring: boolean("isRecurring").default(false).notNull(),
   recurrenceRule: varchar("recurrenceRule", { length: 255 }),
-  // Metadata
+  // Extended event options (Hey Calendar style)
   location: varchar("location", { length: 500 }),
   notes: text("notes"),
+  link: varchar("link", { length: 1000 }),
+  invites: json("invites"), // Array of user IDs or emails
+  isCircleEvent: boolean("isCircleEvent").default(false).notNull(),
+  showCountdown: boolean("showCountdown").default(false).notNull(),
+  reminderMinutes: int("reminderMinutes"), // Minutes before event to send reminder
+  // Metadata
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -352,3 +352,17 @@
 - [x] Frontend: Verbindungs-UI in Kalender-Einstellungen
 - [x] Frontend: Sync-Status und letzte Synchronisation anzeigen
 - [x] Tests für Google Calendar-Integration
+
+## Jahreskalender Hey-Style & Erweiterte Termin-Optionen
+- [x] Datenbank: Neue Felder für Termine (link, invites, notes, repeat, countdown, isCircleEvent)
+- [x] Jahreskalender: Horizontales Scroll-Layout wie Hey Calendar
+- [x] Jahreskalender: Wochentage als Zeilen, Tage als Spalten
+- [x] Jahreskalender: Mehrtägige Events als horizontale Balken
+- [x] Jahreskalender: Monatswechsel-Markierungen
+- [x] Termin-Dialog: Link-Option hinzufügen
+- [x] Termin-Dialog: Invites-Option hinzufügen (UI vorbereitet)
+- [x] Termin-Dialog: Notes-Option hinzufügen
+- [x] Termin-Dialog: Repeat-Option hinzufügen
+- [x] Termin-Dialog: Countdown-Option hinzufügen
+- [x] Termin-Dialog: Circle Event-Option hinzufügen
+- [x] Termin-Dialog: Erinnerung/Notify-Option hinzufügen

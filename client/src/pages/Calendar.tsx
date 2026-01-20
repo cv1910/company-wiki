@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,15 @@ import {
   FileDown,
   FileUp,
   Settings,
+  Link2,
+  Users,
+  FileText,
+  Repeat,
+  Timer,
+  Circle,
+  Bell,
+  X,
+  ArrowRight,
 } from "lucide-react";
 import {
   format,
@@ -164,6 +173,18 @@ export default function Calendar() {
   const [eventColor, setEventColor] = useState("blue");
   const [eventType, setEventType] = useState("personal");
   const [eventLocation, setEventLocation] = useState("");
+  // Extended options (Hey Calendar style)
+  const [eventLink, setEventLink] = useState("");
+  const [eventNotes, setEventNotes] = useState("");
+  const [eventIsCircle, setEventIsCircle] = useState(false);
+  const [eventShowCountdown, setEventShowCountdown] = useState(false);
+  const [eventReminderMinutes, setEventReminderMinutes] = useState<number | null>(null);
+  const [eventIsRecurring, setEventIsRecurring] = useState(false);
+  const [eventRecurrenceRule, setEventRecurrenceRule] = useState("");
+  // UI state for optional fields
+  const [showLinkField, setShowLinkField] = useState(false);
+  const [showNotesField, setShowNotesField] = useState(false);
+  const [showRepeatField, setShowRepeatField] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -348,6 +369,17 @@ export default function Calendar() {
     setEventColor("blue");
     setEventType("personal");
     setEventLocation("");
+    // Extended options reset
+    setEventLink("");
+    setEventNotes("");
+    setEventIsCircle(false);
+    setEventShowCountdown(false);
+    setEventReminderMinutes(null);
+    setEventIsRecurring(false);
+    setEventRecurrenceRule("");
+    setShowLinkField(false);
+    setShowNotesField(false);
+    setShowRepeatField(false);
     setEditingEvent(null);
     setSelectedDate(null);
   };
@@ -700,65 +732,293 @@ export default function Calendar() {
     );
   };
 
-  // Render year view
+  // Render year view - Hey Calendar style with horizontal scroll
   const renderYearView = () => {
-    const months = eachMonthOfInterval({
-      start: startOfYear(currentDate),
-      end: endOfYear(currentDate),
+    const yearStart = startOfYear(currentDate);
+    const yearEnd = endOfYear(currentDate);
+    const allDays = eachDayOfInterval({ start: yearStart, end: yearEnd });
+    
+    // Group days by week (Monday start)
+    const weeks: Date[][] = [];
+    let currentWeek: Date[] = [];
+    
+    // Fill in days before Jan 1 to complete the first week
+    const firstDayOfWeek = getDay(yearStart);
+    const daysToFill = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+    for (let i = daysToFill; i > 0; i--) {
+      currentWeek.push(subDays(yearStart, i));
+    }
+    
+    allDays.forEach((day) => {
+      currentWeek.push(day);
+      if (currentWeek.length === 7) {
+        weeks.push(currentWeek);
+        currentWeek = [];
+      }
     });
+    
+    // Fill remaining days of last week
+    if (currentWeek.length > 0) {
+      const lastDay = currentWeek[currentWeek.length - 1];
+      while (currentWeek.length < 7) {
+        currentWeek.push(addDays(lastDay, currentWeek.length - currentWeek.indexOf(lastDay)));
+      }
+      weeks.push(currentWeek);
+    }
+
+    const weekDays = ["MO", "DI", "MI", "DO", "FR", "SA", "SO"];
+    
+    // Get events that span multiple days for rendering as bars
+    const getMultiDayEvents = () => {
+      if (!allEvents) return [];
+      return allEvents.filter((event: CalendarEvent) => {
+        const start = new Date(event.startDate);
+        const end = new Date(event.endDate);
+        return differenceInDays(end, start) >= 1 || event.isAllDay;
+      });
+    };
+    
+    const multiDayEvents = getMultiDayEvents();
+    
+    // Calculate event bar positions
+    const getEventBars = () => {
+      const bars: Array<{
+        event: CalendarEvent;
+        startWeek: number;
+        startDay: number;
+        endWeek: number;
+        endDay: number;
+        row: number;
+      }> = [];
+      
+      // Track occupied rows per week-day
+      const occupied: Map<string, number[]> = new Map();
+      
+      multiDayEvents.forEach((event: CalendarEvent) => {
+        const eventStart = new Date(event.startDate);
+        const eventEnd = new Date(event.endDate);
+        
+        // Find start position
+        let startWeekIdx = -1;
+        let startDayIdx = -1;
+        let endWeekIdx = -1;
+        let endDayIdx = -1;
+        
+        weeks.forEach((week, wi) => {
+          week.forEach((day, di) => {
+            if (isSameDay(day, eventStart) || (day > eventStart && startWeekIdx === -1)) {
+              if (startWeekIdx === -1) {
+                startWeekIdx = wi;
+                startDayIdx = di;
+              }
+            }
+            if (isSameDay(day, eventEnd) || (day >= eventEnd && endWeekIdx === -1)) {
+              endWeekIdx = wi;
+              endDayIdx = di;
+            }
+          });
+        });
+        
+        if (startWeekIdx === -1) startWeekIdx = 0;
+        if (startDayIdx === -1) startDayIdx = 0;
+        if (endWeekIdx === -1) endWeekIdx = weeks.length - 1;
+        if (endDayIdx === -1) endDayIdx = 6;
+        
+        // Find available row
+        let row = 0;
+        let foundRow = false;
+        while (!foundRow) {
+          foundRow = true;
+          for (let w = startWeekIdx; w <= endWeekIdx; w++) {
+            const startD = w === startWeekIdx ? startDayIdx : 0;
+            const endD = w === endWeekIdx ? endDayIdx : 6;
+            for (let d = startD; d <= endD; d++) {
+              const key = `${w}-${d}`;
+              const rows = occupied.get(key) || [];
+              if (rows.includes(row)) {
+                foundRow = false;
+                break;
+              }
+            }
+            if (!foundRow) break;
+          }
+          if (!foundRow) row++;
+        }
+        
+        // Mark as occupied
+        for (let w = startWeekIdx; w <= endWeekIdx; w++) {
+          const startD = w === startWeekIdx ? startDayIdx : 0;
+          const endD = w === endWeekIdx ? endDayIdx : 6;
+          for (let d = startD; d <= endD; d++) {
+            const key = `${w}-${d}`;
+            const rows = occupied.get(key) || [];
+            rows.push(row);
+            occupied.set(key, rows);
+          }
+        }
+        
+        bars.push({
+          event,
+          startWeek: startWeekIdx,
+          startDay: startDayIdx,
+          endWeek: endWeekIdx,
+          endDay: endDayIdx,
+          row,
+        });
+      });
+      
+      return bars;
+    };
+    
+    const eventBars = getEventBars();
 
     return (
-      <div className="grid grid-cols-3 md:grid-cols-4 gap-4 p-4">
-        {months.map((month) => {
-          const monthStart = startOfMonth(month);
-          const monthEnd = endOfMonth(month);
-          const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-          const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
-          const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
-
-          return (
-            <Card
-              key={month.toISOString()}
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => {
-                setCurrentDate(month);
-                setViewMode("month");
-              }}
-            >
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">
-                  {format(month, "MMMM", { locale: de })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-2">
-                <div className="grid grid-cols-7 gap-0.5 text-[10px]">
-                  {["M", "D", "M", "D", "F", "S", "S"].map((d, i) => (
-                    <div key={i} className="text-center text-muted-foreground">
-                      {d}
-                    </div>
-                  ))}
-                  {days.map((day, i) => {
-                    const hasEvents = getEventsForDay(day).length > 0;
-                    const isCurrentMonth = isSameMonth(day, month);
+      <div className="h-full overflow-auto">
+        <div className="min-w-[2000px]">
+          {/* Header with day numbers */}
+          <div className="sticky top-0 bg-background z-20 border-b">
+            <div className="flex">
+              <div className="w-12 flex-shrink-0" /> {/* Spacer for weekday labels */}
+              {weeks.map((week, weekIdx) => (
+                <div key={weekIdx} className="flex">
+                  {week.map((day, dayIdx) => {
+                    const isCurrentYear = day.getFullYear() === currentDate.getFullYear();
+                    const isMonthStart = day.getDate() === 1;
+                    const monthAbbr = format(day, "MMM", { locale: de }).toUpperCase().slice(0, 3);
+                    
                     return (
                       <div
-                        key={i}
+                        key={dayIdx}
                         className={cn(
-                          "text-center py-0.5 rounded-sm",
-                          !isCurrentMonth && "text-muted-foreground/30",
-                          isToday(day) && "bg-primary text-primary-foreground",
-                          hasEvents && isCurrentMonth && !isToday(day) && "bg-primary/20"
+                          "w-8 text-center text-xs py-1 border-r border-border/30",
+                          !isCurrentYear && "text-muted-foreground/30",
+                          isToday(day) && "bg-red-500 text-white rounded-full mx-0.5"
                         )}
                       >
-                        {format(day, "d")}
+                        {isMonthStart && (
+                          <span className={cn(
+                            "text-[9px] font-bold px-1 py-0.5 rounded",
+                            isCurrentYear ? "bg-muted text-muted-foreground" : "text-muted-foreground/30"
+                          )}>
+                            {monthAbbr}
+                          </span>
+                        )}
+                        {!isMonthStart && (
+                          <span className={isToday(day) ? "" : ""}>
+                            {format(day, "d")}
+                          </span>
+                        )}
                       </div>
                     );
                   })}
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+              ))}
+            </div>
+          </div>
+          
+          {/* Calendar grid with weekday rows */}
+          <div className="relative">
+            {weekDays.map((dayName, dayIdx) => (
+              <div key={dayIdx} className="flex border-b border-border/20 min-h-[50px] relative">
+                {/* Weekday label */}
+                <div className="w-12 flex-shrink-0 text-[10px] text-muted-foreground font-medium py-2 px-1 sticky left-0 bg-background z-10">
+                  {dayName}
+                </div>
+                
+                {/* Day cells */}
+                {weeks.map((week, weekIdx) => {
+                  const day = week[dayIdx];
+                  const isCurrentYear = day.getFullYear() === currentDate.getFullYear();
+                  const isWeekend = dayIdx >= 5;
+                  
+                  return (
+                    <div
+                      key={weekIdx}
+                      className={cn(
+                        "w-8 border-r border-border/10 cursor-pointer hover:bg-muted/50 transition-colors",
+                        isWeekend && "bg-muted/20",
+                        !isCurrentYear && "bg-muted/10"
+                      )}
+                      onClick={() => {
+                        setCurrentDate(day);
+                        setViewMode("day");
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+            
+            {/* Event bars overlay */}
+            <div className="absolute top-0 left-12 right-0 pointer-events-none">
+              {eventBars.map((bar, idx) => {
+                const topOffset = bar.startDay * 50 + 8 + bar.row * 18;
+                const leftOffset = bar.startWeek * 7 * 32 + bar.startDay * 32;
+                const width = ((bar.endWeek - bar.startWeek) * 7 + (bar.endDay - bar.startDay) + 1) * 32 - 4;
+                
+                // For events spanning multiple weeks, render per-row segments
+                if (bar.startWeek !== bar.endWeek) {
+                  const segments: React.ReactElement[] = [];
+                  
+                  for (let w = bar.startWeek; w <= bar.endWeek; w++) {
+                    const segStartDay = w === bar.startWeek ? bar.startDay : 0;
+                    const segEndDay = w === bar.endWeek ? bar.endDay : 6;
+                    
+                    const segTop = segStartDay * 50 + 8 + bar.row * 18;
+                    const segLeft = w * 7 * 32;
+                    const segWidth = (segEndDay - segStartDay + 1) * 32 - 4;
+                    
+                    segments.push(
+                      <div
+                        key={`${idx}-${w}`}
+                        className={cn(
+                          "absolute h-4 rounded text-[10px] text-white px-1 truncate pointer-events-auto cursor-pointer hover:opacity-80",
+                          getDotColorClass(bar.event.color)
+                        )}
+                        style={{
+                          top: segTop,
+                          left: segLeft + segStartDay * 32,
+                          width: segWidth,
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditEventDialog(bar.event);
+                        }}
+                        title={bar.event.title}
+                      >
+                        {w === bar.startWeek && bar.event.title}
+                      </div>
+                    );
+                  }
+                  
+                  return <React.Fragment key={idx}>{segments}</React.Fragment>;
+                }
+                
+                return (
+                  <div
+                    key={idx}
+                    className={cn(
+                      "absolute h-4 rounded text-[10px] text-white px-1 truncate pointer-events-auto cursor-pointer hover:opacity-80",
+                      getDotColorClass(bar.event.color)
+                    )}
+                    style={{
+                      top: topOffset,
+                      left: leftOffset,
+                      width: width,
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEditEventDialog(bar.event);
+                    }}
+                    title={bar.event.title}
+                  >
+                    {bar.event.title}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
     );
   };
@@ -883,141 +1143,289 @@ export default function Calendar() {
         </CardContent>
       </Card>
 
-      {/* Event Dialog */}
+      {/* Event Dialog - Hey Calendar Style */}
       <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>
-              {editingEvent ? "Termin bearbeiten" : "Neuer Termin"}
-            </DialogTitle>
-            <DialogDescription>
-              {editingEvent
-                ? "Bearbeite die Details deines Termins"
-                : "Erstelle einen neuen Termin in deinem Kalender"}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden">
+          {/* Header with category selector */}
+          <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
+            <Select value={eventType} onValueChange={setEventType}>
+              <SelectTrigger className="w-auto border-0 bg-transparent p-0 h-auto font-medium text-foreground hover:bg-transparent focus:ring-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {EVENT_TYPES.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full"
+              onClick={() => setShowEventDialog(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
 
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Titel *</Label>
+          <div className="p-4 space-y-4">
+            {/* Title */}
+            <div>
+              <h2 className="text-xl font-semibold text-primary mb-1">
+                {editingEvent ? "Termin bearbeiten" : "Neuer Termin"}
+              </h2>
               <Input
-                id="title"
                 value={eventTitle}
                 onChange={(e) => setEventTitle(e.target.value)}
                 placeholder="Termintitel eingeben..."
+                className="text-lg border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary"
               />
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Date range - Hey style */}
+            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+              <div className="flex-1">
+                <Input
+                  type={eventIsAllDay ? "date" : "datetime-local"}
+                  value={eventStartDate}
+                  onChange={(e) => setEventStartDate(e.target.value)}
+                  className="border-0 bg-transparent p-0 h-auto text-base focus-visible:ring-0"
+                />
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <div className="flex-1">
+                <Input
+                  type={eventIsAllDay ? "date" : "datetime-local"}
+                  value={eventEndDate}
+                  onChange={(e) => setEventEndDate(e.target.value)}
+                  className="border-0 bg-transparent p-0 h-auto text-base focus-visible:ring-0"
+                />
+              </div>
+            </div>
+
+            {/* All day toggle */}
+            <div className="flex items-center justify-center gap-2">
               <Switch
                 id="all-day"
                 checked={eventIsAllDay}
                 onCheckedChange={setEventIsAllDay}
+                className="data-[state=checked]:bg-green-500"
               />
-              <Label htmlFor="all-day">Ganztägig</Label>
+              <Label htmlFor="all-day" className="text-sm">Ganztägig</Label>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="start">Start *</Label>
+            {/* Reminder */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Bell className="h-4 w-4" />
+              <Select
+                value={eventReminderMinutes?.toString() || "none"}
+                onValueChange={(v) => setEventReminderMinutes(v === "none" ? null : parseInt(v))}
+              >
+                <SelectTrigger className="border-0 bg-transparent p-0 h-auto w-auto focus:ring-0">
+                  <SelectValue placeholder="Keine Erinnerung" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Keine Erinnerung</SelectItem>
+                  <SelectItem value="0">Zum Zeitpunkt</SelectItem>
+                  <SelectItem value="5">5 Minuten vorher</SelectItem>
+                  <SelectItem value="15">15 Minuten vorher</SelectItem>
+                  <SelectItem value="30">30 Minuten vorher</SelectItem>
+                  <SelectItem value="60">1 Stunde vorher</SelectItem>
+                  <SelectItem value="1440">1 Tag vorher (08:00)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Quick action buttons - Hey style */}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={showLinkField ? "secondary" : "outline"}
+                size="sm"
+                className="rounded-full text-xs"
+                onClick={() => setShowLinkField(!showLinkField)}
+              >
+                <Link2 className="h-3 w-3 mr-1" />
+                Link
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full text-xs"
+                onClick={() => {
+                  setEventLocation(eventLocation || "");
+                }}
+              >
+                <MapPin className="h-3 w-3 mr-1" />
+                Ort
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full text-xs opacity-50 cursor-not-allowed"
+                disabled
+                title="Einladungen - Bald verfügbar"
+              >
+                <Users className="h-3 w-3 mr-1" />
+                Einladen
+              </Button>
+              <Button
+                variant={showNotesField ? "secondary" : "outline"}
+                size="sm"
+                className="rounded-full text-xs"
+                onClick={() => setShowNotesField(!showNotesField)}
+              >
+                <FileText className="h-3 w-3 mr-1" />
+                Notizen
+              </Button>
+              <Button
+                variant={showRepeatField ? "secondary" : "outline"}
+                size="sm"
+                className="rounded-full text-xs"
+                onClick={() => setShowRepeatField(!showRepeatField)}
+              >
+                <Repeat className="h-3 w-3 mr-1" />
+                Wiederholen
+              </Button>
+              <Button
+                variant={eventShowCountdown ? "secondary" : "outline"}
+                size="sm"
+                className="rounded-full text-xs"
+                onClick={() => setEventShowCountdown(!eventShowCountdown)}
+              >
+                <Timer className="h-3 w-3 mr-1" />
+                Countdown
+              </Button>
+              <Button
+                variant={eventIsCircle ? "secondary" : "outline"}
+                size="sm"
+                className="rounded-full text-xs"
+                onClick={() => setEventIsCircle(!eventIsCircle)}
+              >
+                <Circle className="h-3 w-3 mr-1" />
+                Circle Event
+              </Button>
+            </div>
+
+            {/* Conditional fields */}
+            {showLinkField && (
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Link</Label>
                 <Input
-                  id="start"
-                  type={eventIsAllDay ? "date" : "datetime-local"}
-                  value={eventStartDate}
-                  onChange={(e) => setEventStartDate(e.target.value)}
+                  value={eventLink}
+                  onChange={(e) => setEventLink(e.target.value)}
+                  placeholder="https://..."
+                  className="text-sm"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="end">Ende *</Label>
-                <Input
-                  id="end"
-                  type={eventIsAllDay ? "date" : "datetime-local"}
-                  value={eventEndDate}
-                  onChange={(e) => setEventEndDate(e.target.value)}
-                />
-              </div>
-            </div>
+            )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Farbe</Label>
-                <Select value={eventColor} onValueChange={setEventColor}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {EVENT_COLORS.map((color) => (
-                      <SelectItem key={color.value} value={color.value}>
-                        <div className="flex items-center gap-2">
-                          <div className={cn("w-3 h-3 rounded-full", color.class)} />
-                          {color.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Typ</Label>
-                <Select value={eventType} onValueChange={setEventType}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {EVENT_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="location">Ort</Label>
+            {/* Location field - always visible but collapsible */}
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Ort</Label>
               <Input
-                id="location"
                 value={eventLocation}
                 onChange={(e) => setEventLocation(e.target.value)}
                 placeholder="Ort eingeben..."
+                className="text-sm"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Beschreibung</Label>
+            {showNotesField && (
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Notizen</Label>
+                <Textarea
+                  value={eventNotes}
+                  onChange={(e) => setEventNotes(e.target.value)}
+                  placeholder="Notizen hinzufügen..."
+                  rows={2}
+                  className="text-sm"
+                />
+              </div>
+            )}
+
+            {showRepeatField && (
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Wiederholung</Label>
+                <Select
+                  value={eventRecurrenceRule || "none"}
+                  onValueChange={(v) => {
+                    setEventRecurrenceRule(v === "none" ? "" : v);
+                    setEventIsRecurring(v !== "none");
+                  }}
+                >
+                  <SelectTrigger className="text-sm">
+                    <SelectValue placeholder="Keine Wiederholung" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Keine Wiederholung</SelectItem>
+                    <SelectItem value="FREQ=DAILY">Täglich</SelectItem>
+                    <SelectItem value="FREQ=WEEKLY">Wöchentlich</SelectItem>
+                    <SelectItem value="FREQ=BIWEEKLY">Alle 2 Wochen</SelectItem>
+                    <SelectItem value="FREQ=MONTHLY">Monatlich</SelectItem>
+                    <SelectItem value="FREQ=YEARLY">Jährlich</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Color picker */}
+            <div className="flex items-center gap-2">
+              <Label className="text-xs text-muted-foreground">Farbe:</Label>
+              <div className="flex gap-1">
+                {EVENT_COLORS.map((color) => (
+                  <button
+                    key={color.value}
+                    type="button"
+                    className={cn(
+                      "w-6 h-6 rounded-full transition-all",
+                      color.class,
+                      eventColor === color.value && "ring-2 ring-offset-2 ring-primary"
+                    )}
+                    onClick={() => setEventColor(color.value)}
+                    title={color.label}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Beschreibung</Label>
               <Textarea
-                id="description"
                 value={eventDescription}
                 onChange={(e) => setEventDescription(e.target.value)}
-                placeholder="Beschreibung eingeben..."
-                rows={3}
+                placeholder="Beschreibung hinzufügen..."
+                rows={2}
+                className="text-sm"
               />
             </div>
           </div>
 
-          <DialogFooter className="flex justify-between">
-            {editingEvent && editingEvent.id > 0 && (
+          {/* Footer */}
+          <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30">
+            {editingEvent && editingEvent.id > 0 ? (
               <Button
-                variant="destructive"
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
                 onClick={handleDelete}
                 disabled={deleteEvent.isPending}
               >
                 Löschen
               </Button>
+            ) : (
+              <div />
             )}
-            <div className="flex gap-2 ml-auto">
-              <Button variant="outline" onClick={() => setShowEventDialog(false)}>
-                Abbrechen
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={createEvent.isPending || updateEvent.isPending}
-              >
-                {editingEvent ? "Speichern" : "Erstellen"}
-              </Button>
-            </div>
-          </DialogFooter>
+            <Button
+              onClick={handleSubmit}
+              disabled={createEvent.isPending || updateEvent.isPending || !eventTitle.trim()}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {editingEvent ? "Speichern" : "Termin hinzufügen"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

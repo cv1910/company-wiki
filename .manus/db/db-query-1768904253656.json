@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `calendarEvents` ADD `link` varchar(1000);\nALTER TABLE `calendarEvents` ADD `invites` json;\nALTER TABLE `calendarEvents` ADD `isCircleEvent` boolean DEFAULT false NOT NULL;\nALTER TABLE `calendarEvents` ADD `showCountdown` boolean DEFAULT false NOT NULL;\nALTER TABLE `calendarEvents` ADD `reminderMinutes` int;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute ALTER TABLE `calendarEvents` ADD `link` varchar(1000);\nALTER TABLE `calendarEvents` ADD `invites` json;\nALTER TABLE `calendarEvents` ADD `isCircleEvent` boolean DEFAULT false NOT NULL;\nALTER TABLE `calendarEvents` ADD `showCountdown` boolean DEFAULT false NOT NULL;\nALTER TABLE `calendarEvents` ADD `reminderMinutes` int;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2453
+}
