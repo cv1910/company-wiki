@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useState, useRef } from "react";
 import {
   format,
   startOfYear,
@@ -79,6 +79,8 @@ export function YearCalendarView({
 }: YearCalendarViewProps) {
   const year = currentDate.getFullYear();
   const { setOpen } = useSidebar();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [rowHeight, setRowHeight] = useState(52);
   
   // Hide sidebar completely when year view is active
   useEffect(() => {
@@ -126,6 +128,30 @@ export function YearCalendarView({
     
     return allRows;
   }, [currentDate]);
+
+  // Calculate dynamic row height based on available space
+  useEffect(() => {
+    const calculateRowHeight = () => {
+      // Use viewport height minus header (60px) and preview bar (44px) to calculate available space
+      const viewportHeight = window.innerHeight;
+      const headerHeight = 60; // Header is approximately 60px
+      const previewBarHeight = 44; // Preview mode bar at bottom
+      const padding = 10; // Extra padding for safety
+      const availableHeight = viewportHeight - headerHeight - previewBarHeight - padding;
+      const numRows = rows.length;
+      // Calculate height per row to fit all rows without scrolling
+      const calculatedHeight = Math.floor(availableHeight / numRows);
+      // Set minimum height of 28px and maximum of 60px
+      setRowHeight(Math.max(28, Math.min(60, calculatedHeight)));
+    };
+    
+    // Initial calculation with a small delay to ensure DOM is ready
+    setTimeout(calculateRowHeight, 50);
+    calculateRowHeight();
+    window.addEventListener('resize', calculateRowHeight);
+    
+    return () => window.removeEventListener('resize', calculateRowHeight);
+  }, [rows.length]);
 
   // Get events for a specific row of days
   const getEventsForRow = (row: Date[]) => {
@@ -191,10 +217,16 @@ export function YearCalendarView({
     return bars;
   };
 
+  // Calculate dynamic font sizes based on row height
+  const weekdayFontSize = rowHeight < 35 ? '7px' : rowHeight < 45 ? '8px' : '9px';
+  const dayFontSize = rowHeight < 35 ? '10px' : rowHeight < 45 ? '11px' : '13px';
+  const monthFontSize = rowHeight < 35 ? '6px' : rowHeight < 45 ? '7px' : '8px';
+  const todaySize = rowHeight < 35 ? '16px' : rowHeight < 45 ? '18px' : '20px';
+
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-950 overflow-hidden">
       {/* Compact header - Hey style */}
-      <div className="flex-shrink-0 flex items-center justify-between px-6 py-3 border-b border-gray-100 dark:border-gray-800">
+      <div className="flex-shrink-0 flex items-center justify-between px-6 py-2 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-4">
           <button
             onClick={() => window.history.back()}
@@ -214,9 +246,9 @@ export function YearCalendarView({
         </button>
       </div>
       
-      {/* Calendar grid - Hey style with exact proportions */}
-      <div className="flex-1 overflow-auto px-2">
-        <div className="min-w-full">
+      {/* Calendar grid - Hey style with dynamic height - use 100% of available space */}
+      <div ref={containerRef} className="flex-1 overflow-hidden px-2" style={{ height: 'calc(100vh - 60px)' }}>
+        <div className="h-full flex flex-col">
           {rows.map((row, rowIdx) => {
             const rowEvents = getEventsForRow(row);
             const eventBars = getEventBars(row, rowEvents);
@@ -224,11 +256,11 @@ export function YearCalendarView({
             return (
               <div
                 key={rowIdx}
-                className="grid relative"
+                className="grid relative flex-1"
                 style={{ 
                   gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))`,
-                  // Hey Calendar exact height: ~50-55px per row
-                  height: '52px'
+                  minHeight: `${rowHeight}px`,
+                  maxHeight: `${rowHeight}px`,
                 }}
               >
                 {row.map((day, dayIdx) => {
@@ -244,7 +276,7 @@ export function YearCalendarView({
                       key={dayIdx}
                       className={cn(
                         "relative cursor-pointer transition-colors",
-                        "flex items-start gap-0.5 pl-1 pt-1",
+                        "flex items-start gap-0.5 pl-0.5 pt-0.5",
                         !isCurrentYear && "opacity-30",
                         // Weekend (SAT, SUN) gray background - Hey style
                         isWeekendDay && "bg-gray-50 dark:bg-gray-900/30",
@@ -257,17 +289,30 @@ export function YearCalendarView({
                       title={format(day, "EEEE, d. MMMM yyyy", { locale: de })}
                     >
                       {/* Weekday abbreviation - Hey style: very small, gray, uppercase */}
-                      <span className="text-[9px] font-medium text-gray-400 dark:text-gray-500 uppercase leading-none mt-0.5">
+                      <span 
+                        className="font-medium text-gray-400 dark:text-gray-500 uppercase leading-none mt-0.5"
+                        style={{ fontSize: weekdayFontSize }}
+                      >
                         {WEEKDAY_ABBREVS[dayOfWeek]}
                       </span>
                       
                       {/* Day number - Hey style: larger, bold */}
                       {dayIsToday ? (
-                        <span className="text-[13px] font-bold text-white bg-red-500 rounded-full min-w-[20px] h-[20px] flex items-center justify-center leading-none">
+                        <span 
+                          className="font-bold text-white bg-red-500 rounded-full flex items-center justify-center leading-none"
+                          style={{ 
+                            fontSize: dayFontSize, 
+                            minWidth: todaySize, 
+                            height: todaySize 
+                          }}
+                        >
                           {day.getDate()}
                         </span>
                       ) : (
-                        <span className="text-[13px] font-bold text-gray-800 dark:text-gray-200 leading-none">
+                        <span 
+                          className="font-bold text-gray-800 dark:text-gray-200 leading-none"
+                          style={{ fontSize: dayFontSize }}
+                        >
                           {day.getDate()}
                         </span>
                       )}
@@ -276,9 +321,10 @@ export function YearCalendarView({
                       {isFirstOfMonth && (
                         <span 
                           className={cn(
-                            "text-[8px] font-bold text-white px-1 py-0.5 rounded leading-none",
+                            "font-bold text-white px-0.5 py-0.5 rounded leading-none",
                             MONTH_COLORS[monthIdx]
                           )}
+                          style={{ fontSize: monthFontSize }}
                         >
                           {MONTH_ABBREVS[monthIdx]}
                         </span>
@@ -293,19 +339,24 @@ export function YearCalendarView({
                     {eventBars.map((bar, idx) => {
                       const leftPercent = (bar.startDay / row.length) * 100;
                       const widthPercent = ((bar.endDay - bar.startDay + 1) / row.length) * 100;
-                      const topOffset = bar.rowNum === 0 ? 'calc(100% - 14px)' : 'calc(100% - 26px)';
+                      const eventBarHeight = rowHeight < 40 ? '8px' : '11px';
+                      const topOffset = bar.rowNum === 0 
+                        ? `calc(100% - ${parseInt(eventBarHeight) + 2}px)` 
+                        : `calc(100% - ${(parseInt(eventBarHeight) + 2) * 2}px)`;
                       
                       return (
                         <div
                           key={idx}
                           className={cn(
-                            "absolute h-[11px] rounded text-[9px] text-white px-1 truncate pointer-events-auto cursor-pointer hover:opacity-80 flex items-center",
+                            "absolute rounded text-white px-1 truncate pointer-events-auto cursor-pointer hover:opacity-80 flex items-center",
                             getEventBgColor(bar.event.color)
                           )}
                           style={{
                             top: topOffset,
                             left: `calc(${leftPercent}% + 2px)`,
                             width: `calc(${widthPercent}% - 4px)`,
+                            height: eventBarHeight,
+                            fontSize: rowHeight < 40 ? '7px' : '9px',
                           }}
                           onClick={(e) => {
                             e.stopPropagation();

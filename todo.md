@@ -440,3 +440,7 @@
 ## Jahreskalender Quadratische Zellen
 - [x] Zellen mit 28 Tagen pro Zeile wie bei Hey
 - [x] Trennlinien wie bei Hey (Rahmen um jede Zelle)
+
+## Jahreskalender Dynamische Zeilenhöhe
+- [x] Zeilenhöhe dynamisch berechnen basierend auf verfügbarer Bildschirmhöhe
+- [x] Alle Zeilen ohne Scrollen in den sichtbaren Bereich passen (nach Publizierung)
