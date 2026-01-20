@@ -65,6 +65,20 @@ vi.mock("./db", async () => {
     getDueTasksForUser: vi.fn().mockResolvedValue([]),
     getTasksDueTodayForUser: vi.fn().mockResolvedValue([]),
     getOverdueTasksForUser: vi.fn().mockResolvedValue([]),
+    // Polls
+    createPoll: vi.fn().mockResolvedValue(1),
+    createOhweee: vi.fn().mockResolvedValue({ id: 100 }),
+    getPollById: vi.fn().mockResolvedValue({ id: 1, question: "Test?", createdById: 1, isClosed: false }),
+    getPollWithOptions: vi.fn().mockResolvedValue({
+      poll: { id: 1, question: "Test?", createdById: 1, isClosed: false },
+      options: [{ id: 1, text: "Option 1" }, { id: 2, text: "Option 2" }],
+    }),
+    getPollByOhweeeId: vi.fn().mockResolvedValue({ id: 1, question: "Test?", createdById: 1, isClosed: false }),
+    getPollResults: vi.fn().mockResolvedValue({ options: [], totalVotes: 0, voterCount: 0, voters: [] }),
+    getUserVotesForPoll: vi.fn().mockResolvedValue([]),
+    votePoll: vi.fn().mockResolvedValue(undefined),
+    closePoll: vi.fn().mockResolvedValue(undefined),
+    deletePoll: vi.fn().mockResolvedValue(undefined),
   };
 });
 
@@ -442,5 +456,133 @@ describe("Ohweees: Feature Integration", () => {
     // Stop typing
     const stopResult = await caller.ohweees.clearTyping({ roomId: 1 });
     expect(stopResult.success).toBe(true);
+  });
+});
+
+describe("Ohweees: Polls API", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should create a poll when user is participant", async () => {
+    const ctx = createAuthContext();
+    vi.mocked(db.getChatRoomParticipants).mockResolvedValue([
+      { participant: { id: 1, roomId: 1, userId: ctx.user!.id, joinedAt: new Date(), lastReadAt: new Date() }, user: ctx.user as any }
+    ]);
+    
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.ohweees.createPoll({
+      roomId: 1,
+      question: "Welche Option?",
+      options: ["Option A", "Option B"],
+    });
+    
+    expect(result.pollId).toBe(1);
+    expect(result.ohweeeId).toBe(100);
+    expect(db.createPoll).toHaveBeenCalled();
+  });
+
+  it("should reject poll creation when user is not participant", async () => {
+    const ctx = createAuthContext();
+    vi.mocked(db.getChatRoomParticipants).mockResolvedValue([]);
+    
+    const caller = appRouter.createCaller(ctx);
+    
+    await expect(caller.ohweees.createPoll({
+      roomId: 1,
+      question: "Test?",
+      options: ["A", "B"],
+    })).rejects.toThrow();
+  });
+
+  it("should get poll by message ID", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    const result = await caller.ohweees.getPollByMessage({ ohweeeId: 100 });
+    
+    expect(result).not.toBeNull();
+    expect(result?.question).toBe("Test?");
+    expect(db.getPollByOhweeeId).toHaveBeenCalledWith(100);
+  });
+
+  it("should vote on a poll", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    const result = await caller.ohweees.votePoll({
+      pollId: 1,
+      optionId: 1,
+    });
+    
+    expect(result.totalVotes).toBeDefined();
+    expect(db.votePoll).toHaveBeenCalledWith(1, 1, ctx.user!.id);
+  });
+
+  it("should close a poll when user is creator", async () => {
+    const ctx = createAuthContext();
+    vi.mocked(db.getPollById).mockResolvedValue({
+      id: 1,
+      question: "Test?",
+      createdById: ctx.user!.id,
+      isClosed: false,
+      roomId: 1,
+      ohweeeId: 100,
+      allowMultiple: false,
+      isAnonymous: false,
+      expiresAt: null,
+      closedAt: null,
+      createdAt: new Date(),
+    });
+    
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.ohweees.closePoll({ pollId: 1 });
+    
+    expect(result.success).toBe(true);
+    expect(db.closePoll).toHaveBeenCalledWith(1);
+  });
+
+  it("should reject closing poll when user is not creator", async () => {
+    const ctx = createAuthContext();
+    vi.mocked(db.getPollById).mockResolvedValue({
+      id: 1,
+      question: "Test?",
+      createdById: 999, // Different user
+      isClosed: false,
+      roomId: 1,
+      ohweeeId: 100,
+      allowMultiple: false,
+      isAnonymous: false,
+      expiresAt: null,
+      closedAt: null,
+      createdAt: new Date(),
+    });
+    
+    const caller = appRouter.createCaller(ctx);
+    
+    await expect(caller.ohweees.closePoll({ pollId: 1 })).rejects.toThrow();
+  });
+
+  it("should delete a poll when user is creator", async () => {
+    const ctx = createAuthContext();
+    vi.mocked(db.getPollById).mockResolvedValue({
+      id: 1,
+      question: "Test?",
+      createdById: ctx.user!.id,
+      isClosed: false,
+      roomId: 1,
+      ohweeeId: 100,
+      allowMultiple: false,
+      isAnonymous: false,
+      expiresAt: null,
+      closedAt: null,
+      createdAt: new Date(),
+    });
+    
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.ohweees.deletePoll({ pollId: 1 });
+    
+    expect(result.success).toBe(true);
+    expect(db.deletePoll).toHaveBeenCalledWith(1);
   });
 });

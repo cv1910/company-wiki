@@ -95,6 +95,12 @@ import {
   InsertOhweeeDeliveryReceipt,
   ohweeeTasks,
   InsertOhweeeTask,
+  ohweeePolls,
+  InsertOhweeePoll,
+  ohweeePollOptions,
+  InsertOhweeePollOption,
+  ohweeePollVotes,
+  InsertOhweeePollVote,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -4811,4 +4817,229 @@ export async function getOverdueTasksForUser(userId: number) {
     .orderBy(asc(ohweeeTasks.dueDate));
   
   return tasks;
+}
+
+
+// ==================== OHWEEES POLLS FUNCTIONS ====================
+
+export async function createPoll(data: {
+  roomId: number;
+  ohweeeId?: number;
+  question: string;
+  options: string[];
+  allowMultiple?: boolean;
+  isAnonymous?: boolean;
+  expiresAt?: Date;
+  createdById: number;
+}): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Create poll
+  const [pollResult] = await db.insert(ohweeePolls).values({
+    roomId: data.roomId,
+    ohweeeId: data.ohweeeId,
+    question: data.question,
+    allowMultiple: data.allowMultiple ?? false,
+    isAnonymous: data.isAnonymous ?? false,
+    expiresAt: data.expiresAt,
+    createdById: data.createdById,
+  });
+
+  const pollId = pollResult.insertId;
+
+  // Create options
+  if (data.options.length > 0) {
+    await db.insert(ohweeePollOptions).values(
+      data.options.map((text, index) => ({
+        pollId,
+        text,
+        sortOrder: index,
+      }))
+    );
+  }
+
+  return pollId;
+}
+
+export async function getPollById(pollId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [poll] = await db
+    .select()
+    .from(ohweeePolls)
+    .where(eq(ohweeePolls.id, pollId))
+    .limit(1);
+
+  return poll || null;
+}
+
+export async function getPollWithOptions(pollId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [poll] = await db
+    .select()
+    .from(ohweeePolls)
+    .where(eq(ohweeePolls.id, pollId))
+    .limit(1);
+
+  if (!poll) return null;
+
+  const options = await db
+    .select()
+    .from(ohweeePollOptions)
+    .where(eq(ohweeePollOptions.pollId, pollId))
+    .orderBy(asc(ohweeePollOptions.sortOrder));
+
+  return { poll, options };
+}
+
+export async function getPollsForRoom(roomId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const polls = await db
+    .select()
+    .from(ohweeePolls)
+    .where(eq(ohweeePolls.roomId, roomId))
+    .orderBy(desc(ohweeePolls.createdAt));
+
+  return polls;
+}
+
+export async function getPollByOhweeeId(ohweeeId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [poll] = await db
+    .select()
+    .from(ohweeePolls)
+    .where(eq(ohweeePolls.ohweeeId, ohweeeId))
+    .limit(1);
+
+  return poll || null;
+}
+
+export async function votePoll(pollId: number, optionId: number, userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Check if poll allows multiple votes
+  const poll = await getPollById(pollId);
+  if (!poll) throw new Error("Poll not found");
+  if (poll.isClosed) throw new Error("Poll is closed");
+
+  // Check if already voted on this option
+  const [existingVote] = await db
+    .select()
+    .from(ohweeePollVotes)
+    .where(and(
+      eq(ohweeePollVotes.pollId, pollId),
+      eq(ohweeePollVotes.optionId, optionId),
+      eq(ohweeePollVotes.userId, userId)
+    ))
+    .limit(1);
+
+  if (existingVote) {
+    // Remove vote (toggle)
+    await db.delete(ohweeePollVotes).where(eq(ohweeePollVotes.id, existingVote.id));
+    return;
+  }
+
+  // If not allowing multiple, remove previous votes
+  if (!poll.allowMultiple) {
+    await db.delete(ohweeePollVotes).where(and(
+      eq(ohweeePollVotes.pollId, pollId),
+      eq(ohweeePollVotes.userId, userId)
+    ));
+  }
+
+  // Add new vote
+  await db.insert(ohweeePollVotes).values({
+    pollId,
+    optionId,
+    userId,
+  });
+}
+
+export async function getPollResults(pollId: number) {
+  const db = await getDb();
+  if (!db) return { options: [], totalVotes: 0, voters: [] };
+
+  // Get all votes with user info
+  const votes = await db
+    .select({
+      optionId: ohweeePollVotes.optionId,
+      userId: ohweeePollVotes.userId,
+      userName: users.name,
+      userAvatar: users.avatarUrl,
+    })
+    .from(ohweeePollVotes)
+    .innerJoin(users, eq(ohweeePollVotes.userId, users.id))
+    .where(eq(ohweeePollVotes.pollId, pollId));
+
+  // Get options
+  const options = await db
+    .select()
+    .from(ohweeePollOptions)
+    .where(eq(ohweeePollOptions.pollId, pollId))
+    .orderBy(asc(ohweeePollOptions.sortOrder));
+
+  // Count votes per option
+  const optionResults = options.map(option => ({
+    id: option.id,
+    text: option.text,
+    votes: votes.filter(v => v.optionId === option.id).length,
+    voters: votes
+      .filter(v => v.optionId === option.id)
+      .map(v => ({ userId: v.userId, name: v.userName, avatarUrl: v.userAvatar })),
+  }));
+
+  // Get unique voters
+  const uniqueVoters = Array.from(new Set(votes.map(v => v.userId)));
+
+  return {
+    options: optionResults,
+    totalVotes: votes.length,
+    voterCount: uniqueVoters.length,
+    voters: uniqueVoters,
+  };
+}
+
+export async function getUserVotesForPoll(pollId: number, userId: number): Promise<number[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const votes = await db
+    .select({ optionId: ohweeePollVotes.optionId })
+    .from(ohweeePollVotes)
+    .where(and(
+      eq(ohweeePollVotes.pollId, pollId),
+      eq(ohweeePollVotes.userId, userId)
+    ));
+
+  return votes.map(v => v.optionId);
+}
+
+export async function closePoll(pollId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(ohweeePolls)
+    .set({ isClosed: true, closedAt: new Date() })
+    .where(eq(ohweeePolls.id, pollId));
+}
+
+export async function deletePoll(pollId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Delete votes first
+  await db.delete(ohweeePollVotes).where(eq(ohweeePollVotes.pollId, pollId));
+  // Delete options
+  await db.delete(ohweeePollOptions).where(eq(ohweeePollOptions.pollId, pollId));
+  // Delete poll
+  await db.delete(ohweeePolls).where(eq(ohweeePolls.id, pollId));
 }

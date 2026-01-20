@@ -4760,6 +4760,142 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
       .query(async ({ ctx }) => {
         return await db.getOverdueTasksForUser(ctx.user.id);
       }),
+    
+    // ==================== POLLS ====================
+    
+    // Create a poll
+    createPoll: protectedProcedure
+      .input(z.object({
+        roomId: z.number(),
+        question: z.string().min(1).max(500),
+        options: z.array(z.string().min(1).max(255)).min(2).max(10),
+        allowMultiple: z.boolean().optional(),
+        isAnonymous: z.boolean().optional(),
+        expiresAt: z.date().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Check if user is participant
+        const participants = await db.getChatRoomParticipants(input.roomId);
+        const isParticipant = participants.some(p => p.participant.userId === ctx.user.id);
+        if (!isParticipant) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not a participant of this room" });
+        }
+        
+        // Create the poll message first
+        const ohweeeResult = await db.createOhweee({
+          roomId: input.roomId,
+          senderId: ctx.user.id,
+          content: `📊 Umfrage: ${input.question}`,
+        });
+        const ohweeeId = ohweeeResult.id;
+        
+        // Create the poll
+        const pollId = await db.createPoll({
+          roomId: input.roomId,
+          ohweeeId,
+          question: input.question,
+          options: input.options,
+          allowMultiple: input.allowMultiple,
+          isAnonymous: input.isAnonymous,
+          expiresAt: input.expiresAt,
+          createdById: ctx.user.id,
+        });
+        
+        return { pollId, ohweeeId };
+      }),
+    
+    // Get poll with options and results
+    getPoll: protectedProcedure
+      .input(z.object({ pollId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const pollData = await db.getPollWithOptions(input.pollId);
+        if (!pollData) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Poll not found" });
+        }
+        
+        const results = await db.getPollResults(input.pollId);
+        const userVotes = await db.getUserVotesForPoll(input.pollId, ctx.user.id);
+        
+        return {
+          ...pollData.poll,
+          options: results.options,
+          totalVotes: results.totalVotes,
+          voterCount: results.voterCount,
+          userVotes,
+        };
+      }),
+    
+    // Get poll by message ID
+    getPollByMessage: protectedProcedure
+      .input(z.object({ ohweeeId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const poll = await db.getPollByOhweeeId(input.ohweeeId);
+        if (!poll) return null;
+        
+        const results = await db.getPollResults(poll.id);
+        const userVotes = await db.getUserVotesForPoll(poll.id, ctx.user.id);
+        
+        return {
+          ...poll,
+          options: results.options,
+          totalVotes: results.totalVotes,
+          voterCount: results.voterCount,
+          userVotes,
+        };
+      }),
+    
+    // Vote on a poll
+    votePoll: protectedProcedure
+      .input(z.object({
+        pollId: z.number(),
+        optionId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.votePoll(input.pollId, input.optionId, ctx.user.id);
+        
+        // Return updated results
+        const results = await db.getPollResults(input.pollId);
+        const userVotes = await db.getUserVotesForPoll(input.pollId, ctx.user.id);
+        
+        return {
+          options: results.options,
+          totalVotes: results.totalVotes,
+          voterCount: results.voterCount,
+          userVotes,
+        };
+      }),
+    
+    // Close a poll (creator only)
+    closePoll: protectedProcedure
+      .input(z.object({ pollId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const poll = await db.getPollById(input.pollId);
+        if (!poll) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Poll not found" });
+        }
+        if (poll.createdById !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only the creator can close this poll" });
+        }
+        
+        await db.closePoll(input.pollId);
+        return { success: true };
+      }),
+    
+    // Delete a poll (creator only)
+    deletePoll: protectedProcedure
+      .input(z.object({ pollId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const poll = await db.getPollById(input.pollId);
+        if (!poll) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Poll not found" });
+        }
+        if (poll.createdById !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only the creator can delete this poll" });
+        }
+        
+        await db.deletePoll(input.pollId);
+        return { success: true };
+      }),
   }),
 });
 

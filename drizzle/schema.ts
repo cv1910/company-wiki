@@ -1081,3 +1081,58 @@ export const ohweeeTasks = mysqlTable("ohweeeTasks", {
 
 export type OhweeeTask = typeof ohweeeTasks.$inferSelect;
 export type InsertOhweeeTask = typeof ohweeeTasks.$inferInsert;
+
+
+/**
+ * Polls in Ohweees chat rooms
+ */
+export const ohweeePolls = mysqlTable("ohweee_polls", {
+  id: int("id").autoincrement().primaryKey(),
+  roomId: int("roomId").notNull(),
+  // The message this poll is attached to
+  ohweeeId: int("ohweeeId"),
+  question: varchar("question", { length: 500 }).notNull(),
+  // Allow multiple votes per user
+  allowMultiple: boolean("allowMultiple").default(false).notNull(),
+  // Anonymous voting
+  isAnonymous: boolean("isAnonymous").default(false).notNull(),
+  // Poll can be closed by creator
+  isClosed: boolean("isClosed").default(false).notNull(),
+  closedAt: timestamp("closedAt"),
+  // Optional: auto-close after date
+  expiresAt: timestamp("expiresAt"),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type OhweeePoll = typeof ohweeePolls.$inferSelect;
+export type InsertOhweeePoll = typeof ohweeePolls.$inferInsert;
+
+/**
+ * Poll options/choices
+ */
+export const ohweeePollOptions = mysqlTable("ohweee_poll_options", {
+  id: int("id").autoincrement().primaryKey(),
+  pollId: int("pollId").notNull(),
+  text: varchar("text", { length: 255 }).notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type OhweeePollOption = typeof ohweeePollOptions.$inferSelect;
+export type InsertOhweeePollOption = typeof ohweeePollOptions.$inferInsert;
+
+/**
+ * Poll votes
+ */
+export const ohweeePollVotes = mysqlTable("ohweee_poll_votes", {
+  id: int("id").autoincrement().primaryKey(),
+  pollId: int("pollId").notNull(),
+  optionId: int("optionId").notNull(),
+  userId: int("userId").notNull(),
+  votedAt: timestamp("votedAt").defaultNow().notNull(),
+});
+
+export type OhweeePollVote = typeof ohweeePollVotes.$inferSelect;
+export type InsertOhweeePollVote = typeof ohweeePollVotes.$inferInsert;

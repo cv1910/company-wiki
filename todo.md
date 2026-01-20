@@ -633,3 +633,19 @@
 - [x] Frontend: Lightbox für Vollbildansicht von Bildern
 - [x] Frontend: PDF-Vorschau mit Thumbnail
 - [x] Frontend: PDF-Viewer Dialog für größere Ansicht
+
+## Ohweees: Sprachnachrichten
+- [ ] Backend: Sprachnachrichten al## Ohweees: Sprachnachrichten
+- [x] Frontend: Mikrofon-Button im Eingabefeld
+- [x] Frontend: Audio-Aufnahme mit Wellenform-Visualisierung
+- [x] Frontend: Audio-Player für Sprachnachrichten
+- [x] Frontend: Aufnahme abbrechen/senden
+
+## Ohweees: Umfragen im Chat
+- [x] Datenbank: Tabellen für Umfragen und Abstimmungen
+- [x] Backend: API zum Erstellen von Umfragen
+- [x] Backend: API zum Abstimmen
+- [x] Backend: API zum Abrufen von Umfrage-Ergebnissen
+- [x] Frontend: Umfrage-Erstellungs-Dialog
+- [x] Frontend: Umfrage-Anzeige mit Abstimmungs-Buttons
+- [x] Frontend: Live-Ergebnis-Anzeige nach Abstimmung

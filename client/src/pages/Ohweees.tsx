@@ -56,12 +56,16 @@ import {
   Flag,
   UserPlus,
   Clock,
+  Mic,
+  BarChart3,
 } from "lucide-react";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { de } from "date-fns/locale";
 import { EmojiPicker } from "@/components/EmojiPicker";
 import { MessageContent } from "@/components/MessageContent";
 import { ImageLightbox } from "@/components/ImageLightbox";
+import { VoiceRecorder, VoiceMessagePlayer } from "@/components/VoiceRecorder";
+import { PollDisplay } from "@/components/PollDisplay";
 
 // Date separator component
 function DateSeparator({ date }: { date: Date }) {
@@ -280,6 +284,13 @@ function OhweeeMessage({
                         />
                         <p className="text-xs text-muted-foreground mt-1">{attachment.filename}</p>
                       </button>
+                    ) : attachment.mimeType.startsWith("audio/") ? (
+                      <div className={`rounded-lg overflow-hidden ${isOwn ? "bg-amber-200/50 dark:bg-amber-800/30" : "bg-muted/50"}`}>
+                        <VoiceMessagePlayer
+                          url={attachment.url}
+                          className="min-w-[250px]"
+                        />
+                      </div>
                     ) : attachment.mimeType === "application/pdf" ? (
                       <div className={`rounded-lg overflow-hidden border ${isOwn ? "border-amber-300/50" : "border-border"}`}>
                         <div className="bg-gradient-to-r from-red-500 to-red-600 p-3 flex items-center gap-3">
@@ -338,9 +349,19 @@ function OhweeeMessage({
               </div>
             )}
 
-            {message.ohweee.content && message.ohweee.content !== "[Datei]" && (
+            {message.ohweee.content && message.ohweee.content !== "[Datei]" && !message.ohweee.content.startsWith("📊 Umfrage:") && (
               <MessageContent content={message.ohweee.content} currentUserId={currentUserId} />
             )}
+            
+            {/* Poll Display */}
+            {message.ohweee.content?.startsWith("📊 Umfrage:") && (
+              <PollDisplay
+                ohweeeId={message.ohweee.id}
+                isOwn={isOwn}
+                currentUserId={currentUserId}
+              />
+            )}
+            
             {message.ohweee.isEdited && (
               <span className="text-xs text-muted-foreground ml-1">(bearbeitet)</span>
             )}
@@ -605,6 +626,16 @@ export default function OhweeesPage() {
     return saved !== null ? saved === "true" : true;
   });
   const notificationSoundRef = useRef<HTMLAudioElement | null>(null);
+  
+  // Voice recording state
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  
+  // Poll creation state
+  const [showCreatePollDialog, setShowCreatePollDialog] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
+  const [pollAllowMultiple, setPollAllowMultiple] = useState(false);
+  const [pollIsAnonymous, setPollIsAnonymous] = useState(false);
   
   // Tasks state
   const [showTasksPanel, setShowTasksPanel] = useState(false);
@@ -919,6 +950,22 @@ export default function OhweeesPage() {
     onSuccess: () => {
       utils.ohweees.getTasks.invalidate({ roomId: selectedRoomId! });
       toast.success("Aufgabe gelöscht");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+  
+  // Poll creation
+  const createPoll = trpc.ohweees.createPoll.useMutation({
+    onSuccess: () => {
+      utils.ohweees.rooms.invalidate();
+      setShowCreatePollDialog(false);
+      setPollQuestion("");
+      setPollOptions(["", ""]);
+      setPollAllowMultiple(false);
+      setPollIsAnonymous(false);
+      toast.success("Umfrage erstellt");
     },
     onError: (error) => {
       toast.error(error.message);
@@ -1630,6 +1677,46 @@ export default function OhweeesPage() {
                 </div>
               )}
 
+              {/* Voice Recorder */}
+              {isRecordingVoice && (
+                <div className="max-w-3xl mx-auto mb-2">
+                  <VoiceRecorder
+                    onRecordingComplete={async (blob, duration) => {
+                      setIsRecordingVoice(false);
+                      if (!selectedRoomId) return;
+                      
+                      // Upload the audio file
+                      const formData = new FormData();
+                      formData.append("file", blob, `voice-${Date.now()}.webm`);
+                      
+                      try {
+                        const response = await fetch("/api/upload", {
+                          method: "POST",
+                          body: formData,
+                        });
+                        
+                        if (response.ok) {
+                          const { url, filename, mimeType, size } = await response.json();
+                          
+                          // Send as message with attachment
+                          sendMessage.mutate({
+                            roomId: selectedRoomId,
+                            content: `🎙️ Sprachnachricht (${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, "0")})`,
+                            attachments: [{ url, filename, mimeType, size }],
+                          });
+                        } else {
+                          toast.error("Fehler beim Hochladen der Sprachnachricht");
+                        }
+                      } catch (error) {
+                        console.error("Upload error:", error);
+                        toast.error("Fehler beim Hochladen der Sprachnachricht");
+                      }
+                    }}
+                    onCancel={() => setIsRecordingVoice(false)}
+                  />
+                </div>
+              )}
+
               <div className="flex gap-2 items-end max-w-3xl mx-auto">
                 <input
                   ref={fileInputRef}
@@ -1637,7 +1724,7 @@ export default function OhweeesPage() {
                   multiple
                   className="hidden"
                   onChange={handleFileSelect}
-                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
+                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.webm,.mp3,.wav,.ogg"
                 />
                 <div className="flex-1 relative">
                   {/* @Mention Suggestions Popup */}
@@ -1719,6 +1806,25 @@ export default function OhweeesPage() {
                       disabled={isUploading}
                     >
                       <Paperclip className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => setIsRecordingVoice(true)}
+                      disabled={isUploading || isRecordingVoice}
+                      title="Sprachnachricht aufnehmen"
+                    >
+                      <Mic className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => setShowCreatePollDialog(true)}
+                      title="Umfrage erstellen"
+                    >
+                      <BarChart3 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -2293,6 +2399,122 @@ export default function OhweeesPage() {
               </Button>
             </DialogFooter>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Poll Dialog */}
+      <Dialog open={showCreatePollDialog} onOpenChange={setShowCreatePollDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Umfrage erstellen
+            </DialogTitle>
+            <DialogDescription>
+              Erstelle eine Umfrage für diesen Chat
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Frage</label>
+              <Input
+                placeholder="Was möchtest du fragen?"
+                value={pollQuestion}
+                onChange={(e) => setPollQuestion(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Optionen</label>
+              <div className="space-y-2 mt-1">
+                {pollOptions.map((option, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      placeholder={`Option ${index + 1}`}
+                      value={option}
+                      onChange={(e) => {
+                        const newOptions = [...pollOptions];
+                        newOptions[index] = e.target.value;
+                        setPollOptions(newOptions);
+                      }}
+                    />
+                    {pollOptions.length > 2 && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setPollOptions(pollOptions.filter((_, i) => i !== index));
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                {pollOptions.length < 10 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPollOptions([...pollOptions, ""])}
+                    className="w-full"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Option hinzufügen
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={pollAllowMultiple}
+                  onChange={(e) => setPollAllowMultiple(e.target.checked)}
+                  className="rounded"
+                />
+                Mehrfachauswahl
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={pollIsAnonymous}
+                  onChange={(e) => setPollIsAnonymous(e.target.checked)}
+                  className="rounded"
+                />
+                Anonym
+              </label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreatePollDialog(false)}>
+              Abbrechen
+            </Button>
+            <Button
+              onClick={() => {
+                if (!pollQuestion.trim()) {
+                  toast.error("Bitte gib eine Frage ein");
+                  return;
+                }
+                const validOptions = pollOptions.filter(o => o.trim());
+                if (validOptions.length < 2) {
+                  toast.error("Mindestens 2 Optionen erforderlich");
+                  return;
+                }
+                if (!selectedRoomId) return;
+                
+                createPoll.mutate({
+                  roomId: selectedRoomId,
+                  question: pollQuestion.trim(),
+                  options: validOptions,
+                  allowMultiple: pollAllowMultiple,
+                  isAnonymous: pollIsAnonymous,
+                });
+              }}
+              disabled={createPoll.isPending}
+            >
+              {createPoll.isPending ? "Erstelle..." : "Umfrage erstellen"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

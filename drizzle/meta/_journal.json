@@ -183,6 +183,13 @@
       "when": 1768933244365,
       "tag": "0025_careful_the_captain",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "5",
+      "when": 1768936359918,
+      "tag": "0026_wooden_zarek",
+      "breakpoints": true
     }
   ]
 }
