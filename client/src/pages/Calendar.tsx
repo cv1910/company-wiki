@@ -1360,6 +1360,9 @@ export default function Calendar() {
       {/* Event Dialog - Hey Calendar Style */}
       <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
         <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden">
+          <DialogTitle className="sr-only">
+            {editingEvent ? "Termin bearbeiten" : "Neuer Termin"}
+          </DialogTitle>
           {/* Header with category selector */}
           <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
             <Select value={eventType} onValueChange={setEventType}>
