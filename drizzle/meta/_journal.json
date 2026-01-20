@@ -127,6 +127,13 @@
       "when": 1768921510663,
       "tag": "0017_rainy_sersi",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1768923368420,
+      "tag": "0018_yellow_nighthawk",
+      "breakpoints": true
     }
   ]
 }

@@ -478,3 +478,12 @@
 ## Bestätigungs-E-Mail mit Google Meet-Link
 - [x] Google Meet-Link in Bestätigungs-E-Mail für Gast einfügen
 - [x] E-Mail-Benachrichtigung an Host bei neuer Buchung
+
+## Automatische Erinnerungs-E-Mails für Termine
+- [x] Datenbank-Schema für Erinnerungseinstellungen (reminderMinutes in eventTypes)
+- [x] E-Mail-Funktion für Erinnerungen erstellen
+- [x] Scheduler für periodische Prüfung anstehender Termine (alle 5 Minuten)
+- [x] Erinnerung an Gast senden (konfigurierbar: 24h und/oder 1h vorher)
+- [x] Erinnerung an Host senden
+- [x] Tracking welche Erinnerungen bereits gesendet wurden (remindersSent)
+- [x] UI für Erinnerungs-Einstellungen im Event-Typ-Dialog

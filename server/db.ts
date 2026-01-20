@@ -3135,3 +3135,44 @@ export async function isTimeSlotAvailable(
   
   return overlapping.length === 0;
 }
+
+
+// Get upcoming bookings that need reminders
+export async function getBookingsNeedingReminders() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const now = new Date();
+  // Look ahead 25 hours to catch all reminders (max 24h reminder + 1h buffer)
+  const lookAhead = new Date(now.getTime() + 25 * 60 * 60 * 1000);
+  
+  // Get confirmed bookings in the next 25 hours
+  const bookings = await db
+    .select({
+      booking: eventBookings,
+      eventType: eventTypes,
+    })
+    .from(eventBookings)
+    .innerJoin(eventTypes, eq(eventBookings.eventTypeId, eventTypes.id))
+    .where(
+      and(
+        eq(eventBookings.status, "confirmed"),
+        gte(eventBookings.startTime, now),
+        lte(eventBookings.startTime, lookAhead)
+      )
+    )
+    .orderBy(eventBookings.startTime);
+  
+  return bookings;
+}
+
+// Update booking reminders sent
+export async function updateBookingRemindersSent(bookingId: number, remindersSent: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(eventBookings)
+    .set({ remindersSent })
+    .where(eq(eventBookings.id, bookingId));
+}

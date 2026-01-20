@@ -3254,6 +3254,9 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
             bufferAfter: z.number().optional(),
             requiresConfirmation: z.boolean().optional(),
             confirmationMessage: z.string().optional(),
+            reminderMinutes: z.string().optional(),
+            sendGuestReminder: z.boolean().optional(),
+            sendHostReminder: z.boolean().optional(),
           })
         )
         .mutation(async ({ input, ctx }) => {
@@ -3284,6 +3287,9 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
             bufferAfter: z.number().optional(),
             requiresConfirmation: z.boolean().optional(),
             confirmationMessage: z.string().optional(),
+            reminderMinutes: z.string().optional(),
+            sendGuestReminder: z.boolean().optional(),
+            sendHostReminder: z.boolean().optional(),
           })
         )
         .mutation(async ({ input, ctx }) => {

@@ -1,10 +1,11 @@
 /**
- * Scheduler for automated tasks like leave carry-over
+ * Scheduler for automated tasks like leave carry-over and booking reminders
  * Uses node-cron for scheduling
  */
 
 import * as db from "./db";
 import { notifyOwner } from "./_core/notification";
+import { sendBookingReminderToGuest, sendBookingReminderToHost } from "./email";
 
 // Track if scheduler is initialized
 let isInitialized = false;
@@ -85,6 +86,16 @@ export function initializeScheduler() {
     checkAndPerformLeaveCarryOver().catch(console.error);
   }
   
+  // Check for booking reminders every 5 minutes
+  const reminderCheck = setInterval(async () => {
+    await checkAndSendBookingReminders();
+  }, 5 * 60 * 1000); // Every 5 minutes
+  
+  scheduledJobs.push({ name: "booking-reminder-check", interval: reminderCheck });
+  
+  // Run reminder check immediately on startup
+  checkAndSendBookingReminders().catch(console.error);
+  
   isInitialized = true;
   console.log("[Scheduler] Scheduler initialized with", scheduledJobs.length, "jobs");
 }
@@ -106,4 +117,96 @@ export function stopScheduler() {
  */
 export async function triggerLeaveCarryOverCheck() {
   await checkAndPerformLeaveCarryOver();
+}
+
+/**
+ * Check for upcoming bookings and send reminders
+ */
+async function checkAndSendBookingReminders() {
+  console.log("[Scheduler] Checking for booking reminders...");
+  
+  try {
+    const bookings = await db.getBookingsNeedingReminders();
+    const now = new Date();
+    
+    for (const { booking, eventType } of bookings) {
+      // Parse reminder settings from event type
+      const reminderMinutes = eventType.reminderMinutes?.split(",").map(Number).filter(n => !isNaN(n)) || [1440, 60];
+      const sendGuestReminder = eventType.sendGuestReminder !== false;
+      const sendHostReminder = eventType.sendHostReminder !== false;
+      
+      // Parse already sent reminders
+      const sentReminders = booking.remindersSent?.split(",").map(Number).filter(n => !isNaN(n)) || [];
+      
+      // Calculate minutes until event
+      const minutesUntilEvent = Math.floor((new Date(booking.startTime).getTime() - now.getTime()) / (60 * 1000));
+      
+      // Check each reminder threshold
+      const newSentReminders = [...sentReminders];
+      
+      for (const reminderMinute of reminderMinutes) {
+        // Skip if already sent
+        if (sentReminders.includes(reminderMinute)) {
+          continue;
+        }
+        
+        // Send reminder if we're within the threshold (with 10 minute buffer)
+        if (minutesUntilEvent <= reminderMinute && minutesUntilEvent > reminderMinute - 10) {
+          console.log(`[Scheduler] Sending ${reminderMinute}min reminder for booking ${booking.id}`);
+          
+          // Get host info
+          const host = await db.getUserById(eventType.hostId);
+          
+          // Send to guest
+          if (sendGuestReminder) {
+            await sendBookingReminderToGuest({
+              guestEmail: booking.guestEmail,
+              guestName: booking.guestName,
+              eventTypeName: eventType.name,
+              hostName: host?.name || "Host",
+              startTime: new Date(booking.startTime),
+              endTime: new Date(booking.endTime),
+              locationType: eventType.locationType || "google_meet",
+              locationDetails: eventType.locationDetails,
+              meetingLink: booking.meetingLink,
+              minutesUntilEvent: reminderMinute,
+            });
+          }
+          
+          // Send to host
+          if (sendHostReminder && host?.email) {
+            await sendBookingReminderToHost({
+              hostEmail: host.email,
+              hostName: host.name || "Host",
+              guestName: booking.guestName,
+              guestEmail: booking.guestEmail,
+              eventTypeName: eventType.name,
+              startTime: new Date(booking.startTime),
+              endTime: new Date(booking.endTime),
+              meetingLink: booking.meetingLink,
+              minutesUntilEvent: reminderMinute,
+            });
+          }
+          
+          newSentReminders.push(reminderMinute);
+        }
+      }
+      
+      // Update sent reminders if any were sent
+      if (newSentReminders.length > sentReminders.length) {
+        await db.updateBookingRemindersSent(booking.id, newSentReminders.join(","));
+      }
+    }
+    
+    console.log(`[Scheduler] Reminder check completed, processed ${bookings.length} bookings`);
+  } catch (error) {
+    console.error("[Scheduler] Error checking booking reminders:", error);
+  }
+}
+
+/**
+ * Manually trigger the booking reminder check (for testing)
+ */
+export async function triggerBookingReminderCheck() {
+  await checkAndSendBookingReminders();
 }

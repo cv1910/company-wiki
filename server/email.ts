@@ -536,3 +536,153 @@ Ihr Company Wiki Team
     console.error("[Email] Failed to send booking notification to host:", error);
   }
 }
+
+
+/**
+ * Send booking reminder email to guest
+ */
+export async function sendBookingReminderToGuest(params: {
+  guestEmail: string;
+  guestName: string;
+  eventTypeName: string;
+  hostName: string;
+  startTime: Date;
+  endTime: Date;
+  locationType: string;
+  locationDetails?: string | null;
+  meetingLink?: string | null;
+  minutesUntilEvent: number;
+}): Promise<void> {
+  const formatDate = (d: Date) => d.toLocaleDateString("de-DE", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+
+  const formatTime = (d: Date) => d.toLocaleTimeString("de-DE", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const locationTypeLabels: Record<string, string> = {
+    google_meet: "Google Meet Videokonferenz",
+    phone: "Telefonat",
+    in_person: "Vor Ort",
+    custom: "Benutzerdefiniert",
+  };
+
+  const locationLabel = locationTypeLabels[params.locationType] || params.locationType;
+
+  // Format time until event
+  let timeUntilText: string;
+  if (params.minutesUntilEvent >= 1440) {
+    const hours = Math.round(params.minutesUntilEvent / 60);
+    timeUntilText = hours >= 24 ? `${Math.round(hours / 24)} Tag(e)` : `${hours} Stunden`;
+  } else if (params.minutesUntilEvent >= 60) {
+    timeUntilText = `${Math.round(params.minutesUntilEvent / 60)} Stunde(n)`;
+  } else {
+    timeUntilText = `${params.minutesUntilEvent} Minuten`;
+  }
+
+  let locationSection = `📍 Ort: ${locationLabel}`;
+  if (params.locationDetails) {
+    locationSection += `\n${params.locationDetails}`;
+  }
+  if (params.meetingLink) {
+    locationSection += `\n\n🔗 Google Meet-Link:\n${params.meetingLink}\n\nKlicken Sie auf den Link, um dem Meeting beizutreten.`;
+  }
+
+  const subject = `⏰ Erinnerung: ${params.eventTypeName} in ${timeUntilText}`;
+  const content = `
+Hallo ${params.guestName},
+
+Dies ist eine Erinnerung an Ihren bevorstehenden Termin in ${timeUntilText}!
+
+📅 Termin: ${params.eventTypeName}
+👤 Mit: ${params.hostName}
+📆 Datum: ${formatDate(params.startTime)}
+🕐 Uhrzeit: ${formatTime(params.startTime)} - ${formatTime(params.endTime)}
+
+${locationSection}
+
+Wir freuen uns auf das Gespräch!
+
+Mit freundlichen Grüßen,
+Ihr Company Wiki Team
+  `.trim();
+
+  try {
+    await notifyOwner({
+      title: subject,
+      content: `An: ${params.guestEmail}\n\n${content}`,
+    });
+    console.log(`[Email] Booking reminder sent to guest ${params.guestEmail} (${params.minutesUntilEvent} min before)`);
+  } catch (error) {
+    console.error("[Email] Failed to send booking reminder to guest:", error);
+  }
+}
+
+/**
+ * Send booking reminder email to host
+ */
+export async function sendBookingReminderToHost(params: {
+  hostEmail: string;
+  hostName: string;
+  guestName: string;
+  guestEmail: string;
+  eventTypeName: string;
+  startTime: Date;
+  endTime: Date;
+  meetingLink?: string | null;
+  minutesUntilEvent: number;
+}): Promise<void> {
+  const formatDate = (d: Date) => d.toLocaleDateString("de-DE", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+
+  const formatTime = (d: Date) => d.toLocaleTimeString("de-DE", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  // Format time until event
+  let timeUntilText: string;
+  if (params.minutesUntilEvent >= 1440) {
+    const hours = Math.round(params.minutesUntilEvent / 60);
+    timeUntilText = hours >= 24 ? `${Math.round(hours / 24)} Tag(e)` : `${hours} Stunden`;
+  } else if (params.minutesUntilEvent >= 60) {
+    timeUntilText = `${Math.round(params.minutesUntilEvent / 60)} Stunde(n)`;
+  } else {
+    timeUntilText = `${params.minutesUntilEvent} Minuten`;
+  }
+
+  const subject = `⏰ Erinnerung: ${params.eventTypeName} mit ${params.guestName} in ${timeUntilText}`;
+  const content = `
+Hallo ${params.hostName},
+
+Dies ist eine Erinnerung an Ihren bevorstehenden Termin in ${timeUntilText}!
+
+📅 Termin: ${params.eventTypeName}
+👤 Gast: ${params.guestName} (${params.guestEmail})
+📆 Datum: ${formatDate(params.startTime)}
+🕐 Uhrzeit: ${formatTime(params.startTime)} - ${formatTime(params.endTime)}
+${params.meetingLink ? `\n🔗 Meeting-Link: ${params.meetingLink}` : ""}
+
+Mit freundlichen Grüßen,
+Ihr Company Wiki Team
+  `.trim();
+
+  try {
+    await notifyOwner({
+      title: subject,
+      content: `An: ${params.hostEmail}\n\n${content}`,
+    });
+    console.log(`[Email] Booking reminder sent to host ${params.hostEmail} (${params.minutesUntilEvent} min before)`);
+  } catch (error) {
+    console.error("[Email] Failed to send booking reminder to host:", error);
+  }
+}

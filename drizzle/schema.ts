@@ -757,6 +757,10 @@ export const eventTypes = mysqlTable("eventTypes", {
   // Confirmation settings
   requiresConfirmation: boolean("requiresConfirmation").default(false),
   confirmationMessage: text("confirmationMessage"),
+  // Reminder settings (comma-separated minutes before event, e.g., "1440,60" for 24h and 1h)
+  reminderMinutes: varchar("reminderMinutes", { length: 100 }).default("1440,60"),
+  sendGuestReminder: boolean("sendGuestReminder").default(true),
+  sendHostReminder: boolean("sendHostReminder").default(true),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -820,6 +824,8 @@ export const eventBookings = mysqlTable("eventBookings", {
   cancellationReason: text("cancellationReason"),
   cancelledAt: timestamp("cancelledAt"),
   cancelledById: int("cancelledById"),
+  // Reminder tracking (comma-separated minutes that have been sent, e.g., "1440,60")
+  remindersSent: varchar("remindersSent", { length: 100 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

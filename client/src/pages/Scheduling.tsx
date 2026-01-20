@@ -203,6 +203,10 @@ function CreateEventTypeDialog({ open, onOpenChange, editEventType }: {
   const [bufferBefore, setBufferBefore] = useState(editEventType?.bufferBefore?.toString() || "0");
   const [bufferAfter, setBufferAfter] = useState(editEventType?.bufferAfter?.toString() || "0");
   const [requiresConfirmation, setRequiresConfirmation] = useState(editEventType?.requiresConfirmation || false);
+  // Reminder settings
+  const [reminderMinutes, setReminderMinutes] = useState(editEventType?.reminderMinutes || "1440,60");
+  const [sendGuestReminder, setSendGuestReminder] = useState(editEventType?.sendGuestReminder !== false);
+  const [sendHostReminder, setSendHostReminder] = useState(editEventType?.sendHostReminder !== false);
   
   // Availability state
   const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
@@ -276,6 +280,9 @@ function CreateEventTypeDialog({ open, onOpenChange, editEventType }: {
     setBufferBefore("0");
     setBufferAfter("0");
     setRequiresConfirmation(false);
+    setReminderMinutes("1440,60");
+    setSendGuestReminder(true);
+    setSendHostReminder(true);
     setAvailability([]);
   };
 
@@ -292,6 +299,9 @@ function CreateEventTypeDialog({ open, onOpenChange, editEventType }: {
       bufferBefore: parseInt(bufferBefore),
       bufferAfter: parseInt(bufferAfter),
       requiresConfirmation,
+      reminderMinutes,
+      sendGuestReminder,
+      sendHostReminder,
     };
 
     if (editEventType) {
@@ -590,6 +600,64 @@ function CreateEventTypeDialog({ open, onOpenChange, editEventType }: {
                 checked={requiresConfirmation}
                 onCheckedChange={setRequiresConfirmation}
               />
+            </div>
+
+            <Separator />
+
+            {/* Reminder Settings */}
+            <div className="space-y-4">
+              <h4 className="font-medium flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Erinnerungen
+              </h4>
+              
+              {/* Reminder Times */}
+              <div className="space-y-2">
+                <Label>Erinnerungszeiten</Label>
+                <Select value={reminderMinutes} onValueChange={setReminderMinutes}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="60">1 Stunde vorher</SelectItem>
+                    <SelectItem value="1440">24 Stunden vorher</SelectItem>
+                    <SelectItem value="1440,60">24 Stunden + 1 Stunde vorher</SelectItem>
+                    <SelectItem value="2880,1440,60">48h + 24h + 1h vorher</SelectItem>
+                    <SelectItem value="">Keine Erinnerungen</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Wann sollen Erinnerungs-E-Mails gesendet werden?
+                </p>
+              </div>
+
+              {/* Send to Guest */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Gast benachrichtigen</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Erinnerung an den Gast senden
+                  </p>
+                </div>
+                <Switch
+                  checked={sendGuestReminder}
+                  onCheckedChange={setSendGuestReminder}
+                />
+              </div>
+
+              {/* Send to Host */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Gastgeber benachrichtigen</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Erinnerung an Sie selbst senden
+                  </p>
+                </div>
+                <Switch
+                  checked={sendHostReminder}
+                  onCheckedChange={setSendHostReminder}
+                />
+              </div>
             </div>
           </TabsContent>
         </Tabs>
