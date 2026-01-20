@@ -588,3 +588,17 @@
 - [x] Frontend: Emoji-Suche im Picker
 - [x] Frontend: Häufig verwendete Emojis anzeigen
 - [x] Frontend: Emoji-Kategorien (Smileys, Gesten, Herzen, etc.)
+
+## Ohweees: Nachrichtenvorschau in Raumliste
+- [x] Backend: Letzte Nachricht pro Raum in getRooms einbinden
+- [x] Frontend: Nachrichtenvorschau unter Raumnamen anzeigen
+- [x] Frontend: Zeitstempel der letzten Nachricht anzeigen
+
+## Ohweees: Emoji-Button im Eingabefeld
+- [x] Frontend: Emoji-Picker-Button neben Eingabefeld
+- [x] Frontend: Emoji in Nachricht einfügen
+
+## Ohweees: Benachrichtigungs-Sound
+- [x] Frontend: Sound-Datei für Benachrichtigungen
+- [x] Frontend: Sound abspielen bei neuen Nachrichten
+- [x] Frontend: Einstellung zum Aktivieren/Deaktivieren des Sounds

@@ -47,6 +47,8 @@ import {
   Download,
   BookmarkMinus,
   BookmarkPlus,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { de } from "date-fns/locale";
@@ -499,6 +501,27 @@ export default function OhweeesPage() {
   const [showSearchDialog, setShowSearchDialog] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  
+  // Emoji picker state for input field
+  const [showInputEmojiPicker, setShowInputEmojiPicker] = useState(false);
+  
+  // Sound notification state
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    const saved = localStorage.getItem("ohweees-sound-enabled");
+    return saved !== null ? saved === "true" : true;
+  });
+  const notificationSoundRef = useRef<HTMLAudioElement | null>(null);
+  
+  // Initialize notification sound
+  useEffect(() => {
+    notificationSoundRef.current = new Audio("/notification.mp3");
+    notificationSoundRef.current.volume = 0.5;
+  }, []);
+  
+  // Save sound preference
+  useEffect(() => {
+    localStorage.setItem("ohweees-sound-enabled", String(soundEnabled));
+  }, [soundEnabled]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -910,6 +933,17 @@ export default function OhweeesPage() {
     return null;
   };
 
+  // Format message time for room list
+  const formatMessageTime = (date: Date) => {
+    if (isToday(date)) {
+      return format(date, "HH:mm");
+    } else if (isYesterday(date)) {
+      return "Gestern";
+    } else {
+      return format(date, "dd.MM.");
+    }
+  };
+
   // Group messages by date for separators
   const groupMessagesByDate = (messages: NonNullable<typeof currentRoom>["messages"]) => {
     const groups: { date: Date; messages: typeof messages }[] = [];
@@ -953,24 +987,35 @@ export default function OhweeesPage() {
       const newMessages = currentRoom.messages.slice(prevMessagesRef.current);
       const latestMsg = newMessages[newMessages.length - 1];
       
-      if (latestMsg && latestMsg.sender.id !== user?.id && Notification.permission === "granted") {
-        const notification = new Notification(`Neues Ohweee von ${latestMsg.sender.name || "Unbekannt"}`, {
-          body: latestMsg.ohweee.content.substring(0, 100),
-          icon: latestMsg.sender.avatarUrl || "/icon-192.svg",
-          tag: `ohweee-${latestMsg.ohweee.id}`,
-        });
+      if (latestMsg && latestMsg.sender.id !== user?.id) {
+        // Play notification sound if enabled
+        if (soundEnabled && notificationSoundRef.current) {
+          notificationSoundRef.current.currentTime = 0;
+          notificationSoundRef.current.play().catch(() => {
+            // Ignore autoplay errors
+          });
+        }
         
-        notification.onclick = () => {
-          window.focus();
-          notification.close();
-        };
-        
-        // Auto-close after 5 seconds
-        setTimeout(() => notification.close(), 5000);
+        // Show browser notification if permission granted
+        if (Notification.permission === "granted") {
+          const notification = new Notification(`Neues Ohweee von ${latestMsg.sender.name || "Unbekannt"}`, {
+            body: latestMsg.ohweee.content.substring(0, 100),
+            icon: latestMsg.sender.avatarUrl || "/icon-192.svg",
+            tag: `ohweee-${latestMsg.ohweee.id}`,
+          });
+          
+          notification.onclick = () => {
+            window.focus();
+            notification.close();
+          };
+          
+          // Auto-close after 5 seconds
+          setTimeout(() => notification.close(), 5000);
+        }
       }
     }
     prevMessagesRef.current = currentCount;
-  }, [currentRoom?.messages, user?.id]);
+  }, [currentRoom?.messages, user?.id, soundEnabled]);
 
   if (roomsLoading) {
     return (
@@ -989,6 +1034,15 @@ export default function OhweeesPage() {
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-xl font-semibold">Ohweees</h1>
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                title={soundEnabled ? "Benachrichtigungston deaktivieren" : "Benachrichtigungston aktivieren"}
+              >
+                {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4 text-muted-foreground" />}
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -1083,13 +1137,34 @@ export default function OhweeesPage() {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{getRoomDisplayName(room)}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-medium truncate">{getRoomDisplayName(room)}</p>
+                    {room.lastMessage && (
+                      <span className="text-xs text-muted-foreground flex-shrink-0">
+                        {formatMessageTime(new Date(room.lastMessage.createdAt))}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground truncate">
-                    {room.type === "direct"
-                      ? "Direktnachricht"
-                      : room.type === "team"
-                      ? "Team-Chat"
-                      : `${room.participants?.length || 0} Mitglieder`}
+                    {room.lastMessage ? (
+                      <>
+                        {room.lastMessage.senderId === user?.id ? (
+                          <span className="text-muted-foreground/70">Du: </span>
+                        ) : room.type !== "direct" && (
+                          <span className="text-muted-foreground/70">{room.lastMessage.senderName?.split(" ")[0]}: </span>
+                        )}
+                        {room.lastMessage.content.replace(/@\[.*?\]\(\d+\)/g, (match: string) => {
+                          const nameMatch = match.match(/@\[(.*?)\]/);
+                          return nameMatch ? `@${nameMatch[1]}` : match;
+                        }).substring(0, 50)}
+                      </>
+                    ) : (
+                      room.type === "direct"
+                        ? "Direktnachricht"
+                        : room.type === "team"
+                        ? "Team-Chat"
+                        : `${room.participants?.length || 0} Mitglieder`
+                    )}
                   </p>
                 </div>
               </button>
@@ -1370,9 +1445,31 @@ export default function OhweeesPage() {
                     rows={1}
                   />
                   <div className="absolute right-2 bottom-2 flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                      <Smile className="h-4 w-4" />
-                    </Button>
+                    <div className="relative">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7"
+                        onClick={() => setShowInputEmojiPicker(!showInputEmojiPicker)}
+                      >
+                        <Smile className="h-4 w-4" />
+                      </Button>
+                      {showInputEmojiPicker && (
+                        <div className="absolute bottom-full right-0 mb-2 z-50">
+                          <EmojiPicker
+                            onSelect={(emoji) => {
+                              if (editingMessageId) {
+                                setEditContent(prev => prev + emoji);
+                              } else {
+                                setMessageInput(prev => prev + emoji);
+                              }
+                              textareaRef.current?.focus();
+                            }}
+                            onClose={() => setShowInputEmojiPicker(false)}
+                          />
+                        </div>
+                      )}
+                    </div>
                     <Button
                       variant="ghost"
                       size="icon"

@@ -40,6 +40,7 @@ vi.mock("./db", async () => {
     getUnreadMarkersForUser: vi.fn().mockResolvedValue([]),
     getUnreadMarkersBatch: vi.fn().mockResolvedValue(new Set([1, 3])),
     getRoomsWithUnreadMarkers: vi.fn().mockResolvedValue(new Map([[1, 2], [3, 1]])),
+    getLastMessagesForRooms: vi.fn().mockResolvedValue(new Map()),
     setTypingStatus: vi.fn().mockResolvedValue(undefined),
     clearTypingStatus: vi.fn().mockResolvedValue(undefined),
     getTypingUsersInRoom: vi.fn().mockResolvedValue([
@@ -134,6 +135,24 @@ describe("Ohweees: Typing Indicators API", () => {
     expect(result.length).toBe(1);
     expect(result[0].userName).toBe("Anna");
     expect(db.getTypingUsersInRoom).toHaveBeenCalledWith(1, ctx.user!.id);
+  });
+});
+
+describe("Ohweees: Last Messages for Rooms API", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should get last messages for rooms in batch", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    // The rooms query now includes lastMessage
+    const result = await caller.ohweees.rooms();
+    
+    expect(Array.isArray(result)).toBe(true);
+    // getLastMessagesForRooms is called with room IDs
+    expect(db.getLastMessagesForRooms).toHaveBeenCalled();
   });
 });
 

@@ -4012,16 +4012,28 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
     rooms: protectedProcedure.query(async ({ ctx }) => {
       const rooms = await db.getChatRoomsForUser(ctx.user.id);
       
-      // Add unread count and participants info
+      // Get last messages for all rooms in batch
+      const roomIds = rooms.map(r => r.room.id);
+      const lastMessages = await db.getLastMessagesForRooms(roomIds);
+      
+      // Add unread count, participants info, and last message
       const roomsWithDetails = await Promise.all(
         rooms.map(async ({ room, participant }) => {
           const unreadCount = await db.getUnreadCountForRoom(room.id, ctx.user.id);
           const participants = await db.getChatRoomParticipants(room.id);
+          const lastMessage = lastMessages.get(room.id);
+          
           return {
             ...room,
             unreadCount,
             participants: participants.map((p) => p.user),
             lastReadAt: participant.lastReadAt,
+            lastMessage: lastMessage ? {
+              content: lastMessage.ohweee.content,
+              createdAt: lastMessage.ohweee.createdAt,
+              senderName: lastMessage.sender.name,
+              senderId: lastMessage.sender.id,
+            } : null,
           };
         })
       );

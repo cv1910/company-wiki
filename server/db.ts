@@ -4375,3 +4375,58 @@ export async function getRoomsWithUnreadMarkers(userId: number): Promise<Map<num
   }
   return map;
 }
+
+
+// Get last message for a room
+export async function getLastMessageForRoom(roomId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [lastMessage] = await db
+    .select({
+      ohweee: ohweees,
+      sender: {
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(ohweees)
+    .innerJoin(users, eq(ohweees.senderId, users.id))
+    .where(and(eq(ohweees.roomId, roomId), eq(ohweees.isDeleted, false)))
+    .orderBy(desc(ohweees.createdAt))
+    .limit(1);
+  
+  return lastMessage || null;
+}
+
+// Get last messages for multiple rooms (batch)
+export async function getLastMessagesForRooms(roomIds: number[]) {
+  const db = await getDb();
+  if (!db || roomIds.length === 0) return new Map();
+  
+  // Get all messages for these rooms, ordered by createdAt desc
+  const messages = await db
+    .select({
+      ohweee: ohweees,
+      sender: {
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(ohweees)
+    .innerJoin(users, eq(ohweees.senderId, users.id))
+    .where(and(inArray(ohweees.roomId, roomIds), eq(ohweees.isDeleted, false)))
+    .orderBy(desc(ohweees.createdAt));
+  
+  // Group by roomId and take the first (most recent) for each
+  const lastMessages = new Map<number, typeof messages[0]>();
+  for (const msg of messages) {
+    if (!lastMessages.has(msg.ohweee.roomId)) {
+      lastMessages.set(msg.ohweee.roomId, msg);
+    }
+  }
+  
+  return lastMessages;
+}
