@@ -4370,6 +4370,99 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
       
       return sortedUsers;
     }),
+
+    // Add reaction to ohweee
+    addReaction: protectedProcedure
+      .input(
+        z.object({
+          ohweeeId: z.number(),
+          emoji: z.string().min(1).max(32),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        await db.addOhweeeReaction(input.ohweeeId, ctx.user.id, input.emoji);
+        return { success: true };
+      }),
+
+    // Remove reaction from ohweee
+    removeReaction: protectedProcedure
+      .input(
+        z.object({
+          ohweeeId: z.number(),
+          emoji: z.string().min(1).max(32),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        await db.removeOhweeeReaction(input.ohweeeId, ctx.user.id, input.emoji);
+        return { success: true };
+      }),
+
+    // Get reactions for ohweee
+    getReactions: protectedProcedure
+      .input(z.object({ ohweeeId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getOhweeeReactions(input.ohweeeId);
+      }),
+
+    // Get reactions for multiple ohweees (batch)
+    getReactionsBatch: protectedProcedure
+      .input(z.object({ ohweeeIds: z.array(z.number()) }))
+      .query(async ({ input }) => {
+        const reactions = await db.getOhweeeReactionsBatch(input.ohweeeIds);
+        // Group by ohweeeId
+        const grouped: Record<number, typeof reactions> = {};
+        for (const r of reactions) {
+          const id = r.reaction.ohweeeId;
+          if (!grouped[id]) grouped[id] = [];
+          grouped[id].push(r);
+        }
+        return grouped;
+      }),
+
+    // Get reply counts for multiple ohweees (batch)
+    getReplyCountsBatch: protectedProcedure
+      .input(z.object({ ohweeeIds: z.array(z.number()) }))
+      .query(async ({ input }) => {
+        return db.getOhweeeReplyCountsBatch(input.ohweeeIds);
+      }),
+
+    // Poll for new messages since timestamp
+    pollMessages: protectedProcedure
+      .input(
+        z.object({
+          roomId: z.number(),
+          sinceTimestamp: z.string(), // ISO string
+        })
+      )
+      .query(async ({ input, ctx }) => {
+        // Verify access
+        const participants = await db.getChatRoomParticipants(input.roomId);
+        if (!participants.some((p) => p.user.id === ctx.user.id)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Kein Zugriff" });
+        }
+        
+        const since = new Date(input.sinceTimestamp);
+        const messages = await db.getOhweeesSince(input.roomId, since);
+        
+        // Get reactions and reply counts for new messages
+        const ohweeeIds = messages.map((m) => m.ohweee.id);
+        const reactions = ohweeeIds.length > 0 ? await db.getOhweeeReactionsBatch(ohweeeIds) : [];
+        const replyCounts = ohweeeIds.length > 0 ? await db.getOhweeeReplyCountsBatch(ohweeeIds) : {};
+        
+        // Group reactions by ohweeeId
+        const reactionsGrouped: Record<number, typeof reactions> = {};
+        for (const r of reactions) {
+          const id = r.reaction.ohweeeId;
+          if (!reactionsGrouped[id]) reactionsGrouped[id] = [];
+          reactionsGrouped[id].push(r);
+        }
+        
+        return {
+          messages,
+          reactions: reactionsGrouped,
+          replyCounts,
+        };
+      }),
   }),
 });
 

@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `ohweeeReactions` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`ohweeeId` int NOT NULL,\n\t`userId` int NOT NULL,\n\t`emoji` varchar(32) NOT NULL,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `ohweeeReactions_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute CREATE TABLE `ohweeeReactions` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`ohweeeId` int NOT NULL,\n\t`userId` int NOT NULL,\n\t`emoji` varchar(32) NOT NULL,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `ohweeeReactions_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 208
+}

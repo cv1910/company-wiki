@@ -538,3 +538,24 @@
 - [ ] Frontend: Bild-Vorschau in Nachrichten
 - [ ] Frontend: Dokument-Download-Links in Nachrichten
 - [ ] Frontend: Upload-Fortschrittsanzeige
+
+## Ohweees: Threads, Reaktionen & Echtzeit
+
+### Threads/Antworten
+- [ ] Backend: Thread-Antworten abrufen (parentId-basiert)
+- [ ] Frontend: Antwort-Button bei Nachrichten
+- [ ] Frontend: Thread-Ansicht mit eingeklappten Antworten
+- [ ] Frontend: Thread-Zähler bei Nachrichten mit Antworten
+
+### Emoji-Reaktionen
+- [ ] Datenbank-Schema für Reaktionen (ohweeeReactions)
+- [ ] Backend: Reaktion hinzufügen/entfernen API
+- [ ] Frontend: Reaktions-Picker (Standard-Emojis: 👍 ❤️ 😄 😮 😢 🎉)
+- [ ] Frontend: Reaktionen unter Nachrichten anzeigen
+- [ ] Frontend: Eigene Reaktionen hervorheben
+
+### Echtzeit-Updates
+- [ ] Backend: Polling-Endpunkt für neue Nachrichten seit Zeitstempel
+- [ ] Frontend: Auto-Refresh alle 3 Sekunden
+- [ ] Frontend: Neue Nachrichten sanft einblenden
+- [ ] Frontend: "Neue Nachrichten"-Indikator wenn gescrollt

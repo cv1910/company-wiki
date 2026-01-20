@@ -979,3 +979,17 @@ export const ohweeeReadReceipts = mysqlTable("ohweeeReadReceipts", {
 
 export type OhweeeReadReceipt = typeof ohweeeReadReceipts.$inferSelect;
 export type InsertOhweeeReadReceipt = typeof ohweeeReadReceipts.$inferInsert;
+
+/**
+ * Emoji reactions for ohweees - like Slack reactions.
+ */
+export const ohweeeReactions = mysqlTable("ohweeeReactions", {
+  id: int("id").autoincrement().primaryKey(),
+  ohweeeId: int("ohweeeId").notNull(),
+  userId: int("userId").notNull(),
+  emoji: varchar("emoji", { length: 32 }).notNull(), // e.g., "👍", "❤️", "😄"
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type OhweeeReaction = typeof ohweeeReactions.$inferSelect;
+export type InsertOhweeeReaction = typeof ohweeeReactions.$inferInsert;

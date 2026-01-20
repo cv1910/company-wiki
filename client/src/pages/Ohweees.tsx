@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -68,6 +68,14 @@ function DateSeparator({ date }: { date: Date }) {
 }
 
 // Message component (Basecamp style)
+// Standard emoji reactions
+const REACTION_EMOJIS = ["👍", "❤️", "😄", "😮", "😢", "🎉"];
+
+type ReactionData = {
+  reaction: { id: number; ohweeeId: number; userId: number; emoji: string };
+  user: { id: number; name: string | null; avatarUrl: string | null };
+};
+
 function OhweeeMessage({
   message,
   isOwn,
@@ -75,7 +83,14 @@ function OhweeeMessage({
   onEdit,
   onDelete,
   onTogglePin,
+  onShowThread,
+  onAddReaction,
+  onRemoveReaction,
   currentUserId,
+  reactions,
+  replyCount,
+  showReactionPicker,
+  onToggleReactionPicker,
 }: {
   message: {
     ohweee: {
@@ -99,7 +114,14 @@ function OhweeeMessage({
   onEdit: () => void;
   onDelete: () => void;
   onTogglePin: () => void;
+  onShowThread: () => void;
+  onAddReaction: (emoji: string) => void;
+  onRemoveReaction: (emoji: string) => void;
   currentUserId: number;
+  reactions: ReactionData[];
+  replyCount: number;
+  showReactionPicker: boolean;
+  onToggleReactionPicker: () => void;
 }) {
   const getInitials = (name: string) => {
     return name
@@ -261,8 +283,18 @@ function OhweeeMessage({
           <div
             className={`absolute top-0 ${
               isOwn ? "left-0 -translate-x-full pr-2" : "right-0 translate-x-full pl-2"
-            } opacity-0 group-hover:opacity-100 transition-opacity`}
+            } opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1`}
           >
+            {/* Reaction button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={onToggleReactionPicker}
+            >
+              <Smile className="h-4 w-4" />
+            </Button>
+            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -274,6 +306,12 @@ function OhweeeMessage({
                   <Reply className="h-4 w-4 mr-2" />
                   Antworten
                 </DropdownMenuItem>
+                {replyCount > 0 && (
+                  <DropdownMenuItem onClick={onShowThread}>
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Thread anzeigen ({replyCount})
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={onTogglePin}>
                   <Pin className="h-4 w-4 mr-2" />
                   {message.ohweee.isPinned ? "Lösen" : "Anpinnen"}
@@ -293,7 +331,76 @@ function OhweeeMessage({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+
+          {/* Reaction picker popup */}
+          {showReactionPicker && (
+            <div
+              className={`absolute top-full mt-1 ${
+                isOwn ? "right-0" : "left-0"
+              } bg-popover border rounded-lg shadow-lg p-2 flex gap-1 z-50`}
+            >
+              {REACTION_EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => onAddReaction(emoji)}
+                  className="hover:bg-muted p-1.5 rounded transition-colors text-lg"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+
+        {/* Reactions display */}
+        {reactions.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {Object.entries(
+              reactions.reduce((acc, r) => {
+                if (!acc[r.reaction.emoji]) {
+                  acc[r.reaction.emoji] = { count: 0, users: [], hasOwn: false };
+                }
+                acc[r.reaction.emoji].count++;
+                acc[r.reaction.emoji].users.push(r.user.name || "Unbekannt");
+                if (r.user.id === currentUserId) {
+                  acc[r.reaction.emoji].hasOwn = true;
+                }
+                return acc;
+              }, {} as Record<string, { count: number; users: string[]; hasOwn: boolean }>)
+            ).map(([emoji, data]) => (
+              <button
+                key={emoji}
+                onClick={() => {
+                  if (data.hasOwn) {
+                    onRemoveReaction(emoji);
+                  } else {
+                    onAddReaction(emoji);
+                  }
+                }}
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-sm transition-colors ${
+                  data.hasOwn
+                    ? "bg-primary/20 text-primary border border-primary/30"
+                    : "bg-muted hover:bg-muted/80"
+                }`}
+                title={data.users.join(", ")}
+              >
+                <span>{emoji}</span>
+                <span className="text-xs font-medium">{data.count}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Reply count indicator */}
+        {replyCount > 0 && (
+          <button
+            onClick={onShowThread}
+            className="flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+          >
+            <MessageCircle className="h-3 w-3" />
+            {replyCount} {replyCount === 1 ? "Antwort" : "Antworten"}
+          </button>
+        )}
 
         {isOwn && (
           <span className="text-xs text-muted-foreground mt-1">{time}</span>
@@ -339,20 +446,33 @@ export default function OhweeesPage() {
   const [mentionQuery, setMentionQuery] = useState("");
   const [mentionStartIndex, setMentionStartIndex] = useState(-1);
   const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
+  
+  // Thread state
+  const [replyingToId, setReplyingToId] = useState<number | null>(null);
+  const [showThreadDialog, setShowThreadDialog] = useState(false);
+  const [threadParentId, setThreadParentId] = useState<number | null>(null);
+  
+  // Reaction picker state
+  const [showReactionPicker, setShowReactionPicker] = useState<number | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Queries
-  const { data: rooms, isLoading: roomsLoading } = trpc.ohweees.rooms.useQuery();
+  // Queries with real-time polling
+  const { data: rooms, isLoading: roomsLoading } = trpc.ohweees.rooms.useQuery(undefined, {
+    refetchInterval: 5000, // Refresh room list every 5 seconds
+  });
   const { data: currentRoom } = trpc.ohweees.getRoom.useQuery(
     { id: selectedRoomId! },
-    { enabled: !!selectedRoomId, refetchInterval: 3000 }
+    { 
+      enabled: !!selectedRoomId, 
+      refetchInterval: 2000, // Refresh messages every 2 seconds for near real-time
+    }
   );
   const { data: allUsers } = trpc.ohweees.getUsers.useQuery();
   const { data: unreadCount } = trpc.ohweees.unreadCount.useQuery(undefined, {
-    refetchInterval: 10000,
+    refetchInterval: 5000, // Refresh unread count every 5 seconds
   });
 
   // Mutations
@@ -433,6 +553,40 @@ export default function OhweeesPage() {
       toast.error(error.message);
     },
   });
+
+  // Reaction mutations
+  const addReaction = trpc.ohweees.addReaction.useMutation({
+    onSuccess: () => {
+      utils.ohweees.getRoom.invalidate({ id: selectedRoomId! });
+      setShowReactionPicker(null);
+    },
+  });
+
+  const removeReaction = trpc.ohweees.removeReaction.useMutation({
+    onSuccess: () => {
+      utils.ohweees.getRoom.invalidate({ id: selectedRoomId! });
+    },
+  });
+
+  // Thread queries
+  const { data: threadReplies } = trpc.ohweees.getReplies.useQuery(
+    { parentId: threadParentId! },
+    { enabled: !!threadParentId && showThreadDialog }
+  );
+
+  // Batch queries for reactions and reply counts
+  const messageIds = useMemo(
+    () => currentRoom?.messages?.map((m) => m.ohweee.id) || [],
+    [currentRoom?.messages]
+  );
+  const { data: reactionsData } = trpc.ohweees.getReactionsBatch.useQuery(
+    { ohweeeIds: messageIds },
+    { enabled: messageIds.length > 0 }
+  );
+  const { data: replyCountsData } = trpc.ohweees.getReplyCountsBatch.useQuery(
+    { ohweeeIds: messageIds },
+    { enabled: messageIds.length > 0 }
+  );
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -836,30 +990,51 @@ export default function OhweeesPage() {
                   <div key={groupIndex}>
                     <DateSeparator date={group.date} />
                     <div className="space-y-3">
-                      {group.messages.map((message) => (
-                        <OhweeeMessage
-                          key={message.ohweee.id}
-                          message={message}
-                          isOwn={message.sender.id === user?.id}
-                          currentUserId={user?.id || 0}
-                          onReply={() => {
-                            // TODO: Implement reply
-                            toast.info("Antworten kommt bald!");
-                          }}
-                          onEdit={() => {
-                            setEditingMessageId(message.ohweee.id);
-                            setEditContent(message.ohweee.content);
-                          }}
-                          onDelete={() => {
-                            if (confirm("Nachricht wirklich löschen?")) {
-                              deleteMessage.mutate({ id: message.ohweee.id });
-                            }
-                          }}
-                          onTogglePin={() => {
-                            togglePin.mutate({ id: message.ohweee.id });
-                          }}
-                        />
-                      ))}
+                      {group.messages.map((message) => {
+                        const msgReactions = reactionsData?.[message.ohweee.id] || [];
+                        const msgReplyCount = replyCountsData?.[message.ohweee.id] || 0;
+                        return (
+                          <OhweeeMessage
+                            key={message.ohweee.id}
+                            message={message}
+                            isOwn={message.sender.id === user?.id}
+                            currentUserId={user?.id || 0}
+                            reactions={msgReactions}
+                            replyCount={msgReplyCount}
+                            showReactionPicker={showReactionPicker === message.ohweee.id}
+                            onToggleReactionPicker={() => {
+                              setShowReactionPicker(
+                                showReactionPicker === message.ohweee.id ? null : message.ohweee.id
+                              );
+                            }}
+                            onAddReaction={(emoji) => {
+                              addReaction.mutate({ ohweeeId: message.ohweee.id, emoji });
+                            }}
+                            onRemoveReaction={(emoji) => {
+                              removeReaction.mutate({ ohweeeId: message.ohweee.id, emoji });
+                            }}
+                            onReply={() => {
+                              setReplyingToId(message.ohweee.id);
+                            }}
+                            onShowThread={() => {
+                              setThreadParentId(message.ohweee.id);
+                              setShowThreadDialog(true);
+                            }}
+                            onEdit={() => {
+                              setEditingMessageId(message.ohweee.id);
+                              setEditContent(message.ohweee.content);
+                            }}
+                            onDelete={() => {
+                              if (confirm("Nachricht wirklich löschen?")) {
+                                deleteMessage.mutate({ id: message.ohweee.id });
+                              }
+                            }}
+                            onTogglePin={() => {
+                              togglePin.mutate({ id: message.ohweee.id });
+                            }}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
@@ -1156,6 +1331,142 @@ export default function OhweeesPage() {
               {createGroup.isPending ? "Erstelle..." : "Gruppe erstellen"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Thread Dialog */}
+      <Dialog open={showThreadDialog} onOpenChange={setShowThreadDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Thread</DialogTitle>
+            <DialogDescription>
+              Antworten auf diese Nachricht
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto py-4 space-y-4">
+            {/* Parent message */}
+            {threadParentId && currentRoom?.messages && (() => {
+              const parentMsg = currentRoom.messages.find(
+                (m) => m.ohweee.id === threadParentId
+              );
+              if (!parentMsg) return null;
+              return (
+                <div className="p-4 bg-muted/50 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={parentMsg.sender.avatarUrl || undefined} />
+                      <AvatarFallback>
+                        {getInitials(parentMsg.sender.name || parentMsg.sender.email || "")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium text-sm">{parentMsg.sender.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {format(new Date(parentMsg.ohweee.createdAt), "dd.MM.yyyy HH:mm")}
+                    </span>
+                  </div>
+                  <p className="text-sm whitespace-pre-wrap">{parentMsg.ohweee.content}</p>
+                </div>
+              );
+            })()}
+
+            <Separator />
+
+            {/* Replies */}
+            <div className="space-y-3">
+              {threadReplies?.map((reply) => (
+                <div
+                  key={reply.ohweee.id}
+                  className={`flex gap-3 ${reply.sender.id === user?.id ? "flex-row-reverse" : ""}`}
+                >
+                  <Avatar className="h-8 w-8 shrink-0">
+                    <AvatarImage src={reply.sender.avatarUrl || undefined} />
+                    <AvatarFallback>
+                      {getInitials(reply.sender.name || reply.sender.email || "")}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className={`flex flex-col ${reply.sender.id === user?.id ? "items-end" : "items-start"}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-sm">{reply.sender.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(reply.ohweee.createdAt), "HH:mm")}
+                      </span>
+                    </div>
+                    <div
+                      className={`px-3 py-2 rounded-2xl max-w-[80%] ${
+                        reply.sender.id === user?.id
+                          ? "bg-amber-100 dark:bg-amber-900/30 rounded-br-md"
+                          : "bg-muted rounded-bl-md"
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{reply.ohweee.content}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {(!threadReplies || threadReplies.length === 0) && (
+                <p className="text-center text-muted-foreground text-sm py-8">
+                  Noch keine Antworten. Sei der Erste!
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Reply input */}
+          <div className="border-t pt-4">
+            <div className="flex gap-2">
+              <Textarea
+                placeholder="Antwort schreiben..."
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                className="min-h-[60px] resize-none"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (messageInput.trim() && threadParentId) {
+                      sendMessage.mutate(
+                        {
+                          roomId: selectedRoomId!,
+                          content: messageInput.trim(),
+                          parentId: threadParentId,
+                        },
+                        {
+                          onSuccess: () => {
+                            setMessageInput("");
+                            utils.ohweees.getReplies.invalidate({ parentId: threadParentId });
+                            utils.ohweees.getReplyCountsBatch.invalidate();
+                          },
+                        }
+                      );
+                    }
+                  }
+                }}
+              />
+              <Button
+                onClick={() => {
+                  if (messageInput.trim() && threadParentId) {
+                    sendMessage.mutate(
+                      {
+                        roomId: selectedRoomId!,
+                        content: messageInput.trim(),
+                        parentId: threadParentId,
+                      },
+                      {
+                        onSuccess: () => {
+                          setMessageInput("");
+                          utils.ohweees.getReplies.invalidate({ parentId: threadParentId });
+                          utils.ohweees.getReplyCountsBatch.invalidate();
+                        },
+                      }
+                    );
+                  }
+                }}
+                disabled={!messageInput.trim() || sendMessage.isPending}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

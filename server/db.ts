@@ -48,6 +48,8 @@ import {
   leaveRequests,
   InsertLeaveRequest,
   leaveBalances,
+  ohweeeReactions,
+  InsertOhweeeReaction,
   // Teams and Ohweees
   teams,
   InsertTeam,
@@ -3908,4 +3910,157 @@ export async function searchOhweees(userId: number, query: string, limit = 20) {
     )
     .orderBy(desc(ohweees.createdAt))
     .limit(limit);
+}
+
+
+// ==================== OHWEEE REACTIONS FUNCTIONS ====================
+
+// Add reaction to ohweee
+export async function addOhweeeReaction(ohweeeId: number, userId: number, emoji: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Check if user already reacted with this emoji
+  const existing = await db
+    .select()
+    .from(ohweeeReactions)
+    .where(
+      and(
+        eq(ohweeeReactions.ohweeeId, ohweeeId),
+        eq(ohweeeReactions.userId, userId),
+        eq(ohweeeReactions.emoji, emoji)
+      )
+    )
+    .limit(1);
+  
+  if (existing.length > 0) {
+    return existing[0];
+  }
+  
+  const [result] = await db.insert(ohweeeReactions).values({
+    ohweeeId,
+    userId,
+    emoji,
+  });
+  
+  return { id: result.insertId, ohweeeId, userId, emoji };
+}
+
+// Remove reaction from ohweee
+export async function removeOhweeeReaction(ohweeeId: number, userId: number, emoji: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .delete(ohweeeReactions)
+    .where(
+      and(
+        eq(ohweeeReactions.ohweeeId, ohweeeId),
+        eq(ohweeeReactions.userId, userId),
+        eq(ohweeeReactions.emoji, emoji)
+      )
+    );
+}
+
+// Get reactions for ohweee
+export async function getOhweeeReactions(ohweeeId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select({
+      reaction: ohweeeReactions,
+      user: {
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(ohweeeReactions)
+    .innerJoin(users, eq(ohweeeReactions.userId, users.id))
+    .where(eq(ohweeeReactions.ohweeeId, ohweeeId))
+    .orderBy(ohweeeReactions.createdAt);
+}
+
+// Get reactions for multiple ohweees (batch)
+export async function getOhweeeReactionsBatch(ohweeeIds: number[]) {
+  const db = await getDb();
+  if (!db || ohweeeIds.length === 0) return [];
+  
+  return db
+    .select({
+      reaction: ohweeeReactions,
+      user: {
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(ohweeeReactions)
+    .innerJoin(users, eq(ohweeeReactions.userId, users.id))
+    .where(inArray(ohweeeReactions.ohweeeId, ohweeeIds))
+    .orderBy(ohweeeReactions.createdAt);
+}
+
+// Get ohweees since timestamp (for polling)
+export async function getOhweeesSince(roomId: number, sinceTimestamp: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select({
+      ohweee: ohweees,
+      sender: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(ohweees)
+    .innerJoin(users, eq(ohweees.senderId, users.id))
+    .where(
+      and(
+        eq(ohweees.roomId, roomId),
+        eq(ohweees.isDeleted, false),
+        sql`${ohweees.createdAt} > ${sinceTimestamp}`
+      )
+    )
+    .orderBy(ohweees.createdAt);
+}
+
+// Get reply count for ohweee
+export async function getOhweeeReplyCount(ohweeeId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  
+  const [result] = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(ohweees)
+    .where(and(eq(ohweees.parentId, ohweeeId), eq(ohweees.isDeleted, false)));
+  
+  return result?.count || 0;
+}
+
+// Get reply counts for multiple ohweees (batch)
+export async function getOhweeeReplyCountsBatch(ohweeeIds: number[]) {
+  const db = await getDb();
+  if (!db || ohweeeIds.length === 0) return {};
+  
+  const results = await db
+    .select({
+      parentId: ohweees.parentId,
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(ohweees)
+    .where(and(inArray(ohweees.parentId, ohweeeIds), eq(ohweees.isDeleted, false)))
+    .groupBy(ohweees.parentId);
+  
+  const counts: Record<number, number> = {};
+  for (const r of results) {
+    if (r.parentId) {
+      counts[r.parentId] = r.count;
+    }
+  }
+  return counts;
 }
