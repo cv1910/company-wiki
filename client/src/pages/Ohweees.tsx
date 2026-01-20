@@ -61,6 +61,7 @@ import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { de } from "date-fns/locale";
 import { EmojiPicker } from "@/components/EmojiPicker";
 import { MessageContent } from "@/components/MessageContent";
+import { ImageLightbox } from "@/components/ImageLightbox";
 
 // Date separator component
 function DateSeparator({ date }: { date: Date }) {
@@ -206,6 +207,13 @@ function OhweeeMessage({
 
   // Parse attachments
   const attachments = (message.ohweee.attachments as { url: string; filename: string; mimeType: string; size: number }[] | null) || [];
+  
+  // Lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  
+  // Get all images from attachments
+  const imageAttachments = attachments.filter(a => a.mimeType.startsWith("image/"));
 
   const getFileIcon = (mimeType: string) => {
     if (mimeType.startsWith("image/")) return FileImage;
@@ -257,18 +265,50 @@ function OhweeeMessage({
                 {attachments.map((attachment, index) => (
                   <div key={index}>
                     {attachment.mimeType.startsWith("image/") ? (
-                      <a
-                        href={attachment.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block"
+                      <button
+                        onClick={() => {
+                          const imgIndex = imageAttachments.findIndex(a => a.url === attachment.url);
+                          setLightboxIndex(imgIndex >= 0 ? imgIndex : 0);
+                          setLightboxOpen(true);
+                        }}
+                        className="block text-left"
                       >
                         <img
                           src={attachment.url}
                           alt={attachment.filename}
-                          className="max-w-full max-h-64 rounded-lg object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                          className="max-w-full max-h-64 rounded-lg object-contain cursor-zoom-in hover:opacity-90 transition-opacity"
                         />
-                      </a>
+                        <p className="text-xs text-muted-foreground mt-1">{attachment.filename}</p>
+                      </button>
+                    ) : attachment.mimeType === "application/pdf" ? (
+                      <div className={`rounded-lg overflow-hidden border ${isOwn ? "border-amber-300/50" : "border-border"}`}>
+                        <div className="bg-gradient-to-r from-red-500 to-red-600 p-3 flex items-center gap-3">
+                          <FileText className="h-8 w-8 text-white" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm text-white truncate">{attachment.filename}</p>
+                            <p className="text-xs text-white/80">
+                              PDF · {formatFileSize(attachment.size)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="p-2 bg-muted/30 flex gap-2">
+                          <a
+                            href={attachment.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 text-center py-2 px-3 rounded bg-background hover:bg-muted text-sm font-medium transition-colors"
+                          >
+                            Öffnen
+                          </a>
+                          <a
+                            href={attachment.url}
+                            download={attachment.filename}
+                            className="flex items-center justify-center py-2 px-3 rounded bg-background hover:bg-muted transition-colors"
+                          >
+                            <Download className="h-4 w-4" />
+                          </a>
+                        </div>
+                      </div>
                     ) : (
                       <a
                         href={attachment.url}
@@ -499,6 +539,15 @@ function OhweeeMessage({
           </AvatarFallback>
         </Avatar>
       )}
+      
+      {/* Image Lightbox */}
+      {lightboxOpen && imageAttachments.length > 0 && (
+        <ImageLightbox
+          images={imageAttachments}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -577,6 +626,58 @@ export default function OhweeesPage() {
   useEffect(() => {
     localStorage.setItem("ohweees-sound-enabled", String(soundEnabled));
   }, [soundEnabled]);
+  
+  // Query for due tasks (today and overdue)
+  const { data: dueTasks } = trpc.ohweees.getDueTasks.useQuery(undefined, {
+    refetchInterval: 60000, // Check every minute
+  });
+  
+  // Show notification for due tasks on initial load
+  const [hasShownDueTasksNotification, setHasShownDueTasksNotification] = useState(false);
+  
+  useEffect(() => {
+    if (dueTasks && dueTasks.length > 0 && !hasShownDueTasksNotification) {
+      setHasShownDueTasksNotification(true);
+      
+      // Count overdue vs today
+      const today = new Date();
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const overdueTasks = dueTasks.filter(t => t.task.dueDate && new Date(t.task.dueDate) < startOfDay);
+      const todayTasks = dueTasks.filter(t => t.task.dueDate && new Date(t.task.dueDate) >= startOfDay);
+      
+      // Show toast notification
+      if (overdueTasks.length > 0) {
+        toast.warning(
+          `${overdueTasks.length} überfällige Aufgabe${overdueTasks.length > 1 ? "n" : ""}!`,
+          {
+            description: "Klicke auf das Aufgaben-Icon um sie anzuzeigen.",
+            duration: 8000,
+          }
+        );
+      } else if (todayTasks.length > 0) {
+        toast.info(
+          `${todayTasks.length} Aufgabe${todayTasks.length > 1 ? "n" : ""} heute fällig`,
+          {
+            description: "Klicke auf das Aufgaben-Icon um sie anzuzeigen.",
+            duration: 5000,
+          }
+        );
+      }
+      
+      // Show browser notification if permission granted
+      if (Notification.permission === "granted" && overdueTasks.length > 0) {
+        const notification = new Notification("⚠️ Überfällige Aufgaben", {
+          body: `Du hast ${overdueTasks.length} überfällige Aufgabe${overdueTasks.length > 1 ? "n" : ""}.`,
+          icon: "/favicon.ico",
+        });
+        notification.onclick = () => {
+          window.focus();
+          setShowTasksPanel(true);
+        };
+        setTimeout(() => notification.close(), 10000);
+      }
+    }
+  }, [dueTasks, hasShownDueTasksNotification]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1163,14 +1264,14 @@ export default function OhweeesPage() {
                 size="icon"
                 className="h-8 w-8 relative"
                 onClick={() => setShowTasksPanel(true)}
-                title="Aufgaben anzeigen"
+                title={dueTasks && dueTasks.length > 0 ? `${dueTasks.length} fällige Aufgabe${dueTasks.length > 1 ? "n" : ""}` : "Aufgaben anzeigen"}
               >
-                <ListTodo className="h-4 w-4" />
-                {tasks && tasks.filter(t => !t.task.isCompleted).length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                    {tasks.filter(t => !t.task.isCompleted).length}
+                <ListTodo className={`h-4 w-4 ${dueTasks && dueTasks.length > 0 ? "text-red-500" : ""}`} />
+                {(tasks && tasks.filter(t => !t.task.isCompleted).length > 0) || (dueTasks && dueTasks.length > 0) ? (
+                  <span className={`absolute -top-1 -right-1 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center ${dueTasks && dueTasks.length > 0 ? "bg-red-500 animate-pulse" : "bg-amber-500"}`}>
+                    {dueTasks && dueTasks.length > 0 ? dueTasks.length : tasks?.filter(t => !t.task.isCompleted).length}
                   </span>
-                )}
+                ) : null}
               </Button>
               <Button
                 variant="ghost"

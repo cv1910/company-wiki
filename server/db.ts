@@ -1,4 +1,4 @@
-import { eq, desc, and, like, or, sql, inArray, lte, gte } from "drizzle-orm";
+import { eq, desc, and, like, or, sql, inArray, lte, gte, lt, asc, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -4687,4 +4687,128 @@ export async function getOpenTasksCountForRooms(roomIds: number[]) {
   }
   
   return countMap;
+}
+
+// Get due tasks for a user (tasks assigned to them or created by them that are due today or overdue)
+export async function getDueTasksForUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  
+  const tasks = await db
+    .select({
+      task: ohweeeTasks,
+      room: {
+        id: chatRooms.id,
+        name: chatRooms.name,
+        type: chatRooms.type,
+      },
+      creator: {
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(ohweeeTasks)
+    .innerJoin(chatRooms, eq(ohweeeTasks.roomId, chatRooms.id))
+    .innerJoin(users, eq(ohweeeTasks.createdById, users.id))
+    .where(and(
+      eq(ohweeeTasks.isCompleted, false),
+      isNotNull(ohweeeTasks.dueDate),
+      lte(ohweeeTasks.dueDate, today),
+      or(
+        eq(ohweeeTasks.assigneeId, userId),
+        eq(ohweeeTasks.createdById, userId)
+      )
+    ))
+    .orderBy(asc(ohweeeTasks.dueDate));
+  
+  // Get assignee info separately
+  const tasksWithAssignees = await Promise.all(tasks.map(async (t) => {
+    let assignee = null;
+    if (t.task.assigneeId) {
+      const [assigneeUser] = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          avatarUrl: users.avatarUrl,
+        })
+        .from(users)
+        .where(eq(users.id, t.task.assigneeId));
+      assignee = assigneeUser || null;
+    }
+    return { ...t, assignee };
+  }));
+  
+  return tasksWithAssignees;
+}
+
+// Get tasks due today for a user
+export async function getTasksDueTodayForUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const today = new Date();
+  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+  
+  const tasks = await db
+    .select({
+      task: ohweeeTasks,
+      room: {
+        id: chatRooms.id,
+        name: chatRooms.name,
+        type: chatRooms.type,
+      },
+    })
+    .from(ohweeeTasks)
+    .innerJoin(chatRooms, eq(ohweeeTasks.roomId, chatRooms.id))
+    .where(and(
+      eq(ohweeeTasks.isCompleted, false),
+      isNotNull(ohweeeTasks.dueDate),
+      gte(ohweeeTasks.dueDate, startOfDay),
+      lte(ohweeeTasks.dueDate, endOfDay),
+      or(
+        eq(ohweeeTasks.assigneeId, userId),
+        eq(ohweeeTasks.createdById, userId)
+      )
+    ))
+    .orderBy(asc(ohweeeTasks.dueDate));
+  
+  return tasks;
+}
+
+// Get overdue tasks for a user
+export async function getOverdueTasksForUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const today = new Date();
+  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  
+  const tasks = await db
+    .select({
+      task: ohweeeTasks,
+      room: {
+        id: chatRooms.id,
+        name: chatRooms.name,
+        type: chatRooms.type,
+      },
+    })
+    .from(ohweeeTasks)
+    .innerJoin(chatRooms, eq(ohweeeTasks.roomId, chatRooms.id))
+    .where(and(
+      eq(ohweeeTasks.isCompleted, false),
+      isNotNull(ohweeeTasks.dueDate),
+      lt(ohweeeTasks.dueDate, startOfDay),
+      or(
+        eq(ohweeeTasks.assigneeId, userId),
+        eq(ohweeeTasks.createdById, userId)
+      )
+    ))
+    .orderBy(asc(ohweeeTasks.dueDate));
+  
+  return tasks;
 }

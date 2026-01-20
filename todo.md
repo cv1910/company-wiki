@@ -621,3 +621,15 @@
 - [x] Frontend: Aufgabe aus Nachricht erstellen
 - [x] Frontend: Aufgabenliste im Chat anzeigen
 - [x] Frontend: Aufgaben abhaken
+
+## Ohweees: Aufgaben-Erinnerungen
+- [x] Backend: API für fällige Aufgaben abrufen
+- [x] Frontend: Prüfung auf fällige Aufgaben beim Laden
+- [x] Frontend: Browser-Benachrichtigung für fällige Aufgaben
+- [x] Frontend: Toast-Benachrichtigung für heute fällige Aufgaben
+
+## Ohweees: Dateivorschau im Chat
+- [x] Frontend: Bildvorschau inline anzeigen (statt nur Download)
+- [x] Frontend: Lightbox für Vollbildansicht von Bildern
+- [x] Frontend: PDF-Vorschau mit Thumbnail
+- [x] Frontend: PDF-Viewer Dialog für größere Ansicht

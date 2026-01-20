@@ -4742,6 +4742,24 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         const countsMap = await db.getOpenTasksCountForRooms(input.roomIds);
         return Array.from(countsMap.entries()).map(([roomId, count]) => ({ roomId, count }));
       }),
+    
+    // Get due tasks for the current user (today and overdue)
+    getDueTasks: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await db.getDueTasksForUser(ctx.user.id);
+      }),
+    
+    // Get tasks due today for the current user
+    getTasksDueToday: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await db.getTasksDueTodayForUser(ctx.user.id);
+      }),
+    
+    // Get overdue tasks for the current user
+    getOverdueTasks: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await db.getOverdueTasksForUser(ctx.user.id);
+      }),
   }),
 });
 

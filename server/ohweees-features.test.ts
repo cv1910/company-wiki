@@ -61,6 +61,10 @@ vi.mock("./db", async () => {
     toggleTaskCompletion: vi.fn().mockResolvedValue(null),
     deleteChatTask: vi.fn().mockResolvedValue(undefined),
     updateChatTask: vi.fn().mockResolvedValue(undefined),
+    // Due Tasks
+    getDueTasksForUser: vi.fn().mockResolvedValue([]),
+    getTasksDueTodayForUser: vi.fn().mockResolvedValue([]),
+    getOverdueTasksForUser: vi.fn().mockResolvedValue([]),
   };
 });
 
@@ -362,6 +366,42 @@ describe("Ohweees: Chat Tasks API", () => {
     const caller = appRouter.createCaller(ctx);
     
     await expect(caller.ohweees.deleteTask({ taskId: 1 })).rejects.toThrow();
+  });
+});
+
+describe("Ohweees: Due Tasks API", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should get due tasks for user", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    const result = await caller.ohweees.getDueTasks();
+    
+    expect(Array.isArray(result)).toBe(true);
+    expect(db.getDueTasksForUser).toHaveBeenCalledWith(ctx.user!.id);
+  });
+
+  it("should get tasks due today for user", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    const result = await caller.ohweees.getTasksDueToday();
+    
+    expect(Array.isArray(result)).toBe(true);
+    expect(db.getTasksDueTodayForUser).toHaveBeenCalledWith(ctx.user!.id);
+  });
+
+  it("should get overdue tasks for user", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    const result = await caller.ohweees.getOverdueTasks();
+    
+    expect(Array.isArray(result)).toBe(true);
+    expect(db.getOverdueTasksForUser).toHaveBeenCalledWith(ctx.user!.id);
   });
 });
 
