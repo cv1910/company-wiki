@@ -3633,6 +3633,41 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
             googleEventId,
           });
 
+          // Send confirmation email to guest
+          const host = await db.getUserById(eventType.hostId);
+          const { sendBookingConfirmationEmail, sendBookingNotificationToHost } = await import("./email");
+          
+          // Email to guest
+          sendBookingConfirmationEmail({
+            guestEmail: input.guestEmail,
+            guestName: input.guestName,
+            eventTypeName: eventType.name,
+            hostName: host?.name || "Host",
+            startTime,
+            endTime,
+            locationType: eventType.locationType || "google_meet",
+            locationDetails: eventType.locationDetails,
+            meetingLink,
+            guestNotes: input.guestNotes,
+          });
+
+          // Email to host
+          if (host?.email) {
+            sendBookingNotificationToHost({
+              hostId: eventType.hostId,
+              hostEmail: host.email,
+              hostName: host.name || "Host",
+              guestName: input.guestName,
+              guestEmail: input.guestEmail,
+              eventTypeName: eventType.name,
+              startTime,
+              endTime,
+              locationType: eventType.locationType || "google_meet",
+              meetingLink,
+              guestNotes: input.guestNotes,
+            });
+          }
+
           return booking;
         }),
 

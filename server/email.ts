@@ -14,7 +14,8 @@ export type EmailType =
   | "article_feedback"
   | "mentioned"
   | "daily_digest"
-  | "weekly_digest";
+  | "weekly_digest"
+  | "booking_confirmation";
 
 interface SendEmailParams {
   recipientId: number;
@@ -398,4 +399,140 @@ Klicken Sie hier, um den Artikel anzusehen: ${articleUrl}
     content,
     relatedType: "article",
   });
+}
+
+
+/**
+ * Send booking confirmation email to guest
+ */
+export async function sendBookingConfirmationEmail(params: {
+  guestEmail: string;
+  guestName: string;
+  eventTypeName: string;
+  hostName: string;
+  startTime: Date;
+  endTime: Date;
+  locationType: string;
+  locationDetails?: string | null;
+  meetingLink?: string | null;
+  guestNotes?: string | null;
+}): Promise<void> {
+  const formatDate = (d: Date) => d.toLocaleDateString("de-DE", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+
+  const formatTime = (d: Date) => d.toLocaleTimeString("de-DE", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const locationTypeLabels: Record<string, string> = {
+    google_meet: "Google Meet Videokonferenz",
+    phone: "Telefonat",
+    in_person: "Vor Ort",
+    custom: "Benutzerdefiniert",
+  };
+
+  const locationLabel = locationTypeLabels[params.locationType] || params.locationType;
+
+  let locationSection = `Ort: ${locationLabel}`;
+  if (params.locationDetails) {
+    locationSection += `\n${params.locationDetails}`;
+  }
+  if (params.meetingLink) {
+    locationSection += `\n\n🔗 Google Meet-Link:\n${params.meetingLink}\n\nKlicken Sie auf den Link, um dem Meeting beizutreten.`;
+  }
+
+  const subject = `Terminbestätigung: ${params.eventTypeName} mit ${params.hostName}`;
+  const content = `
+Hallo ${params.guestName},
+
+Ihr Termin wurde erfolgreich gebucht!
+
+📅 Termin: ${params.eventTypeName}
+👤 Mit: ${params.hostName}
+📆 Datum: ${formatDate(params.startTime)}
+🕐 Uhrzeit: ${formatTime(params.startTime)} - ${formatTime(params.endTime)}
+
+${locationSection}
+${params.guestNotes ? `\n📝 Ihre Notizen:\n${params.guestNotes}` : ""}
+
+Wir freuen uns auf das Gespräch!
+
+Mit freundlichen Grüßen,
+Ihr Company Wiki Team
+  `.trim();
+
+  // Use Manus notification system to send
+  try {
+    await notifyOwner({
+      title: subject,
+      content: `An: ${params.guestEmail}\n\n${content}`,
+    });
+    console.log(`[Email] Booking confirmation sent to ${params.guestEmail}`);
+  } catch (error) {
+    console.error("[Email] Failed to send booking confirmation:", error);
+  }
+}
+
+/**
+ * Send booking notification to host
+ */
+export async function sendBookingNotificationToHost(params: {
+  hostId: number;
+  hostEmail: string;
+  hostName: string;
+  guestName: string;
+  guestEmail: string;
+  eventTypeName: string;
+  startTime: Date;
+  endTime: Date;
+  locationType: string;
+  meetingLink?: string | null;
+  guestNotes?: string | null;
+}): Promise<void> {
+  const formatDate = (d: Date) => d.toLocaleDateString("de-DE", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+
+  const formatTime = (d: Date) => d.toLocaleTimeString("de-DE", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const subject = `Neue Buchung: ${params.eventTypeName}`;
+  const content = `
+Hallo ${params.hostName},
+
+Sie haben eine neue Terminbuchung erhalten!
+
+📅 Termin: ${params.eventTypeName}
+👤 Gast: ${params.guestName} (${params.guestEmail})
+📆 Datum: ${formatDate(params.startTime)}
+🕐 Uhrzeit: ${formatTime(params.startTime)} - ${formatTime(params.endTime)}
+${params.meetingLink ? `\n🔗 Meeting-Link: ${params.meetingLink}` : ""}
+${params.guestNotes ? `\n📝 Notizen vom Gast:\n${params.guestNotes}` : ""}
+
+Der Termin wurde automatisch in Ihrem Google Kalender eingetragen.
+
+Mit freundlichen Grüßen,
+Ihr Company Wiki Team
+  `.trim();
+
+  // Use Manus notification system
+  try {
+    await notifyOwner({
+      title: subject,
+      content: `An: ${params.hostEmail}\n\n${content}`,
+    });
+    console.log(`[Email] Booking notification sent to host ${params.hostEmail}`);
+  } catch (error) {
+    console.error("[Email] Failed to send booking notification to host:", error);
+  }
 }

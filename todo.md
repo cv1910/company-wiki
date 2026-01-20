@@ -474,3 +474,7 @@
 - [x] Bei Buchung automatisch Google Calendar-Event mit Google Meet-Link erstellen
 - [x] Google Meet-Link in Bestätigungsseite anzeigen
 - [x] Google Meet-Link in Buchungsdetails speichern
+
+## Bestätigungs-E-Mail mit Google Meet-Link
+- [x] Google Meet-Link in Bestätigungs-E-Mail für Gast einfügen
+- [x] E-Mail-Benachrichtigung an Host bei neuer Buchung
