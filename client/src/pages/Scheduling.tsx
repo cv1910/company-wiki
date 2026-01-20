@@ -1037,17 +1037,18 @@ function BookingCard({ booking, onCancel, onConfirm, showConfirm, isPast }: {
 function SchedulesList() {
   const [editSchedule, setEditSchedule] = useState<any>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const utils = trpc.useUtils();
   
   const { data: schedules, isLoading } = trpc.scheduling.schedules.list.useQuery();
   const ensureDefaultMutation = trpc.scheduling.schedules.ensureDefault.useMutation({
     onSuccess: () => {
-      trpc.useUtils().scheduling.schedules.list.invalidate();
+      utils.scheduling.schedules.list.invalidate();
     },
   });
   const deleteMutation = trpc.scheduling.schedules.delete.useMutation({
     onSuccess: () => {
       toast.success("Schedule gelöscht!");
-      trpc.useUtils().scheduling.schedules.list.invalidate();
+      utils.scheduling.schedules.list.invalidate();
     },
     onError: (error) => {
       toast.error(error.message);
