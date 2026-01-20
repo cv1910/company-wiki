@@ -1,4 +1,4 @@
-import { eq, desc, and, like, or, sql, inArray, lte, gte, lt, asc, isNotNull } from "drizzle-orm";
+import { eq, desc, and, like, or, sql, inArray, lte, gte, lt, asc, isNotNull, isNull, aliasedTable } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -5042,4 +5042,109 @@ export async function deletePoll(pollId: number): Promise<void> {
   await db.delete(ohweeePollOptions).where(eq(ohweeePollOptions.pollId, pollId));
   // Delete poll
   await db.delete(ohweeePolls).where(eq(ohweeePolls.id, pollId));
+}
+
+
+// ============ Ohweees: Message Search ============
+
+export async function searchMessagesInRoom(
+  roomId: number,
+  query: string,
+  limit: number = 50
+): Promise<{
+  id: number;
+  content: string;
+  createdAt: Date;
+  senderId: number;
+  senderName: string | null;
+  senderAvatar: string | null;
+}[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const searchPattern = `%${query}%`;
+  
+  const results = await db
+    .select({
+      id: ohweees.id,
+      content: ohweees.content,
+      createdAt: ohweees.createdAt,
+      senderId: ohweees.senderId,
+      senderName: users.name,
+      senderAvatar: users.avatarUrl,
+    })
+    .from(ohweees)
+    .innerJoin(users, eq(ohweees.senderId, users.id))
+    .where(
+      and(
+        eq(ohweees.roomId, roomId),
+        like(ohweees.content, searchPattern),
+        isNull(ohweees.deletedAt)
+      )
+    )
+    .orderBy(desc(ohweees.createdAt))
+    .limit(limit);
+
+  return results;
+}
+
+// ============ Ohweees: Pinned Messages ============
+
+export async function pinMessage(ohweeeId: number, userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(ohweees)
+    .set({ 
+      isPinned: true, 
+      pinnedAt: new Date(),
+      pinnedById: userId 
+    })
+    .where(eq(ohweees.id, ohweeeId));
+}
+
+export async function unpinMessage(ohweeeId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(ohweees)
+    .set({ 
+      isPinned: false, 
+      pinnedAt: null,
+      pinnedById: null 
+    })
+    .where(eq(ohweees.id, ohweeeId));
+}
+
+export async function getPinnedMessagesForRoom(roomId: number): Promise<{
+  ohweee: typeof ohweees.$inferSelect;
+  sender: typeof users.$inferSelect;
+  pinnedBy: typeof users.$inferSelect | null;
+}[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const pinnedBy = aliasedTable(users, "pinnedBy");
+
+  const results = await db
+    .select({
+      ohweee: ohweees,
+      sender: users,
+      pinnedBy: pinnedBy,
+    })
+    .from(ohweees)
+    .innerJoin(users, eq(ohweees.senderId, users.id))
+    .leftJoin(pinnedBy, eq(ohweees.pinnedById, pinnedBy.id))
+    .where(
+      and(
+        eq(ohweees.roomId, roomId),
+        eq(ohweees.isPinned, true),
+        isNull(ohweees.deletedAt)
+      )
+    )
+    .orderBy(desc(ohweees.pinnedAt));
+
+  return results;
 }

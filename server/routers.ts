@@ -4896,6 +4896,82 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         await db.deletePoll(input.pollId);
         return { success: true };
       }),
+    
+    // ============ Message Search ============
+    
+    // Search messages in a room
+    searchMessages: protectedProcedure
+      .input(z.object({
+        roomId: z.number(),
+        query: z.string().min(1).max(100),
+        limit: z.number().min(1).max(100).optional().default(50),
+      }))
+      .query(async ({ ctx, input }) => {
+        // Verify user is participant
+        const participants = await db.getChatRoomParticipants(input.roomId);
+        const isParticipant = participants.some(p => p.user.id === ctx.user.id);
+        if (!isParticipant) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not a participant" });
+        }
+        
+        return db.searchMessagesInRoom(input.roomId, input.query, input.limit);
+      }),
+    
+    // ============ Pinned Messages ============
+    
+    // Pin a message
+    pinMessage: protectedProcedure
+      .input(z.object({ ohweeeId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const message = await db.getOhweeeById(input.ohweeeId);
+        if (!message) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
+        }
+        
+        // Verify user is participant
+        const participants = await db.getChatRoomParticipants(message.roomId);
+        const isParticipant = participants.some(p => p.user.id === ctx.user.id);
+        if (!isParticipant) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not a participant" });
+        }
+        
+        await db.pinMessage(input.ohweeeId, ctx.user.id);
+        return { success: true };
+      }),
+    
+    // Unpin a message
+    unpinMessage: protectedProcedure
+      .input(z.object({ ohweeeId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const message = await db.getOhweeeById(input.ohweeeId);
+        if (!message) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
+        }
+        
+        // Verify user is participant
+        const participants = await db.getChatRoomParticipants(message.roomId);
+        const isParticipant = participants.some(p => p.user.id === ctx.user.id);
+        if (!isParticipant) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not a participant" });
+        }
+        
+        await db.unpinMessage(input.ohweeeId);
+        return { success: true };
+      }),
+    
+    // Get pinned messages for a room
+    getPinnedMessages: protectedProcedure
+      .input(z.object({ roomId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        // Verify user is participant
+        const participants = await db.getChatRoomParticipants(input.roomId);
+        const isParticipant = participants.some(p => p.user.id === ctx.user.id);
+        if (!isParticipant) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not a participant" });
+        }
+        
+        return db.getPinnedMessagesForRoom(input.roomId);
+      }),
   }),
 });
 

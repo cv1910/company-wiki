@@ -117,6 +117,9 @@ function OhweeeMessage({
   roomParticipantCount,
   onShowReadDetails,
   onCreateTask,
+  onPin,
+  onUnpin,
+  isHighlighted,
 }: {
   message: {
     ohweee: {
@@ -156,6 +159,9 @@ function OhweeeMessage({
   roomParticipantCount?: number;
   onShowReadDetails?: () => void;
   onCreateTask?: () => void;
+  onPin?: () => void;
+  onUnpin?: () => void;
+  isHighlighted?: boolean;
 }) {
   const getInitials = (name: string) => {
     return name
@@ -233,7 +239,10 @@ function OhweeeMessage({
   };
 
   return (
-    <div className={`flex gap-3 group ${isOwn ? "flex-row-reverse" : ""}`}>
+    <div 
+      id={`message-${message.ohweee.id}`}
+      className={`flex gap-3 group ${isOwn ? "flex-row-reverse" : ""} ${isHighlighted ? "animate-pulse bg-amber-100/50 dark:bg-amber-900/20 -mx-2 px-2 py-1 rounded-lg" : ""}`}
+    >
       {!isOwn && (
         <Avatar className="h-10 w-10 shrink-0">
           <AvatarImage src={message.sender.avatarUrl || undefined} />
@@ -425,10 +434,17 @@ function OhweeeMessage({
                     Thread anzeigen ({replyCount})
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={onTogglePin}>
-                  <Pin className="h-4 w-4 mr-2" />
-                  {message.ohweee.isPinned ? "Lösen" : "Anpinnen"}
-                </DropdownMenuItem>
+                {message.ohweee.isPinned ? (
+                  <DropdownMenuItem onClick={onUnpin}>
+                    <Pin className="h-4 w-4 mr-2" />
+                    Loslösen
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onClick={onPin}>
+                    <Pin className="h-4 w-4 mr-2" />
+                    Anpinnen
+                  </DropdownMenuItem>
+                )}
                 {isMarkedUnread ? (
                   <DropdownMenuItem onClick={onRemoveUnreadMarker}>
                     <BookmarkMinus className="h-4 w-4 mr-2" />
@@ -630,6 +646,14 @@ export default function OhweeesPage() {
   // Voice recording state
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   
+  // Room-specific search state
+  const [showRoomSearchDialog, setShowRoomSearchDialog] = useState(false);
+  const [roomSearchInput, setRoomSearchInput] = useState("");
+  const [highlightedMessageId, setHighlightedMessageId] = useState<number | null>(null);
+  
+  // Pinned messages state
+  const [showPinnedMessages, setShowPinnedMessages] = useState(false);
+  
   // Poll creation state
   const [showCreatePollDialog, setShowCreatePollDialog] = useState(false);
   const [pollQuestion, setPollQuestion] = useState("");
@@ -742,6 +766,46 @@ export default function OhweeesPage() {
     await searchRefetch();
     setIsSearching(false);
   };
+  
+  // Room-specific search query
+  const { data: roomSearchResults, refetch: roomSearchRefetch, isFetching: isRoomSearching } = trpc.ohweees.searchMessages.useQuery(
+    { roomId: selectedRoomId!, query: roomSearchInput },
+    { enabled: false }
+  );
+  
+  const handleRoomSearch = async () => {
+    if (!roomSearchInput.trim() || !selectedRoomId) return;
+    await roomSearchRefetch();
+  };
+  
+  // Pinned messages query
+  const { data: pinnedMessages, refetch: refetchPinnedMessages } = trpc.ohweees.getPinnedMessages.useQuery(
+    { roomId: selectedRoomId! },
+    { enabled: !!selectedRoomId }
+  );
+  
+  // Pin/Unpin mutations
+  const pinMessage = trpc.ohweees.pinMessage.useMutation({
+    onSuccess: () => {
+      refetchPinnedMessages();
+      utils.ohweees.getRoom.invalidate({ id: selectedRoomId! });
+      toast.success("Nachricht angepinnt");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+  
+  const unpinMessage = trpc.ohweees.unpinMessage.useMutation({
+    onSuccess: () => {
+      refetchPinnedMessages();
+      utils.ohweees.getRoom.invalidate({ id: selectedRoomId! });
+      toast.success("Nachricht losgelöst");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
 
   // Mutations
   const sendMessage = trpc.ohweees.send.useMutation({
@@ -1505,13 +1569,34 @@ export default function OhweeesPage() {
                 </div>
               </div>
 
-              {/* Pinned Messages */}
-              {currentRoom.pinnedMessages && currentRoom.pinnedMessages.length > 0 && (
-                <Badge variant="outline" className="gap-1">
-                  <Pin className="h-3 w-3" />
-                  {currentRoom.pinnedMessages.length} angepinnt
-                </Badge>
-              )}
+              <div className="flex items-center gap-2">
+                {/* Room Search */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setShowRoomSearchDialog(true)}
+                  title="In diesem Chat suchen"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+                
+                {/* Pinned Messages */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 relative"
+                  onClick={() => setShowPinnedMessages(true)}
+                  title="Angepinnte Nachrichten"
+                >
+                  <Pin className="h-4 w-4" />
+                  {pinnedMessages && pinnedMessages.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                      {pinnedMessages.length}
+                    </span>
+                  )}
+                </Button>
+              </div>
             </div>
 
             {/* Messages */}
@@ -1565,6 +1650,13 @@ export default function OhweeesPage() {
                             onTogglePin={() => {
                               togglePin.mutate({ id: message.ohweee.id });
                             }}
+                            onPin={() => {
+                              pinMessage.mutate({ ohweeeId: message.ohweee.id });
+                            }}
+                            onUnpin={() => {
+                              unpinMessage.mutate({ ohweeeId: message.ohweee.id });
+                            }}
+                            isHighlighted={highlightedMessageId === message.ohweee.id}
                             isMarkedUnread={unreadMarkers?.includes(message.ohweee.id)}
                             onMarkAsUnread={() => {
                               markAsUnread.mutate({ ohweeeId: message.ohweee.id });
@@ -2515,6 +2607,184 @@ export default function OhweeesPage() {
               {createPoll.isPending ? "Erstelle..." : "Umfrage erstellen"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Room Search Dialog */}
+      <Dialog open={showRoomSearchDialog} onOpenChange={(open) => {
+        setShowRoomSearchDialog(open);
+        if (!open) {
+          setRoomSearchInput("");
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>In diesem Chat suchen</DialogTitle>
+            <DialogDescription>
+              Suche nach Nachrichten in diesem Raum
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <div className="flex gap-2 mb-4">
+              <Input
+                placeholder="Suchbegriff eingeben..."
+                value={roomSearchInput}
+                onChange={(e) => setRoomSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleRoomSearch();
+                }}
+              />
+              <Button onClick={handleRoomSearch} disabled={isRoomSearching || !roomSearchInput.trim()}>
+                {isRoomSearching ? "Suche..." : "Suchen"}
+              </Button>
+            </div>
+
+            <ScrollArea className="h-[400px]">
+              {roomSearchResults && roomSearchResults.length > 0 ? (
+                <div className="space-y-3">
+                  {roomSearchResults.map((result) => (
+                    <button
+                      key={result.id}
+                      className="w-full text-left p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                      onClick={() => {
+                        setShowRoomSearchDialog(false);
+                        setRoomSearchInput("");
+                        setHighlightedMessageId(result.id);
+                        // Scroll to message
+                        setTimeout(() => {
+                          const element = document.getElementById(`message-${result.id}`);
+                          if (element) {
+                            element.scrollIntoView({ behavior: "smooth", block: "center" });
+                          }
+                          // Remove highlight after 3 seconds
+                          setTimeout(() => setHighlightedMessageId(null), 3000);
+                        }, 100);
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={result.senderAvatar || undefined} />
+                          <AvatarFallback className="text-xs">
+                            {(result.senderName || "?")[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium text-sm">{result.senderName}</span>
+                        <span className="text-xs text-muted-foreground ml-auto">
+                          {format(new Date(result.createdAt), "dd.MM.yyyy HH:mm")}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {result.content.split(new RegExp(`(${roomSearchInput})`, 'gi')).map((part, i) => 
+                          part.toLowerCase() === roomSearchInput.toLowerCase() 
+                            ? <mark key={i} className="bg-amber-200 dark:bg-amber-800 px-0.5 rounded">{part}</mark>
+                            : part
+                        )}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              ) : roomSearchResults && roomSearchResults.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Search className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                  <p>Keine Ergebnisse für "{roomSearchInput}"</p>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Search className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                  <p>Gib einen Suchbegriff ein</p>
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pinned Messages Dialog */}
+      <Dialog open={showPinnedMessages} onOpenChange={setShowPinnedMessages}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pin className="h-5 w-5" />
+              Angepinnte Nachrichten
+            </DialogTitle>
+            <DialogDescription>
+              {pinnedMessages?.length || 0} Nachricht{pinnedMessages?.length !== 1 ? "en" : ""} angepinnt
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea className="h-[400px] py-4">
+            {pinnedMessages && pinnedMessages.length > 0 ? (
+              <div className="space-y-3">
+                {pinnedMessages.map((pinned) => (
+                  <div
+                    key={pinned.ohweee.id}
+                    className="p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={pinned.sender.avatarUrl || undefined} />
+                          <AvatarFallback className="text-xs">
+                            {(pinned.sender.name || "?")[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium text-sm">{pinned.sender.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(pinned.ohweee.createdAt), "dd.MM.yyyy HH:mm")}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setShowPinnedMessages(false);
+                            setHighlightedMessageId(pinned.ohweee.id);
+                            setTimeout(() => {
+                              const element = document.getElementById(`message-${pinned.ohweee.id}`);
+                              if (element) {
+                                element.scrollIntoView({ behavior: "smooth", block: "center" });
+                              }
+                              setTimeout(() => setHighlightedMessageId(null), 3000);
+                            }, 100);
+                          }}
+                        >
+                          Zur Nachricht
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            unpinMessage.mutate({ ohweeeId: pinned.ohweee.id });
+                          }}
+                          title="Loslösen"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-3">
+                      {pinned.ohweee.content}
+                    </p>
+                    {pinned.pinnedBy && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Angepinnt von {pinned.pinnedBy.name}
+                        {pinned.ohweee.pinnedAt && ` am ${format(new Date(pinned.ohweee.pinnedAt), "dd.MM.yyyy")}`}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Pin className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                <p>Keine angepinnten Nachrichten</p>
+                <p className="text-xs mt-1">Klicke auf das Menü einer Nachricht um sie anzupinnen</p>
+              </div>
+            )}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>

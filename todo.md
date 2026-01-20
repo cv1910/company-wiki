@@ -649,3 +649,16 @@
 - [x] Frontend: Umfrage-Erstellungs-Dialog
 - [x] Frontend: Umfrage-Anzeige mit Abstimmungs-Buttons
 - [x] Frontend: Live-Ergebnis-Anzeige nach Abstimmung
+
+## Ohweees: Nachrichtensuche im Chat
+- [x] Backend: API für Volltextsuche in Nachrichten
+- [x] Frontend: Suchfeld im Chat-Header
+- [x] Frontend: Suchergebnisse mit Hervorhebung anzeigen
+- [x] Frontend: Zu Nachricht springen bei Klick auf Ergebnis
+
+## Ohweees: Pinned Messages
+- [x] Datenbank: Feld für gepinnte Nachrichten
+- [x] Backend: API zum Anheften/Lösen von Nachrichten
+- [x] Backend: API zum Abrufen gepinnter Nachrichten
+- [x] Frontend: Pin-Option im Nachrichten-Menü
+- [x] Frontend: Gepinnte Nachrichten oben im Chat anzeigen

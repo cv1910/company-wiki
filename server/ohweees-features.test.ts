@@ -79,6 +79,13 @@ vi.mock("./db", async () => {
     votePoll: vi.fn().mockResolvedValue(undefined),
     closePoll: vi.fn().mockResolvedValue(undefined),
     deletePoll: vi.fn().mockResolvedValue(undefined),
+    // Message Search
+    searchMessagesInRoom: vi.fn().mockResolvedValue([]),
+    // Pinned Messages
+    pinMessage: vi.fn().mockResolvedValue(undefined),
+    unpinMessage: vi.fn().mockResolvedValue(undefined),
+    getPinnedMessagesForRoom: vi.fn().mockResolvedValue([]),
+    getOhweeeById: vi.fn().mockResolvedValue({ id: 1, roomId: 1, content: "Test", senderId: 1 }),
   };
 });
 
@@ -584,5 +591,110 @@ describe("Ohweees: Polls API", () => {
     
     expect(result.success).toBe(true);
     expect(db.deletePoll).toHaveBeenCalledWith(1);
+  });
+});
+
+
+describe("Ohweees: Message Search API", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should search messages in a room", async () => {
+    const ctx = createAuthContext();
+    vi.mocked(db.getChatRoomParticipants).mockResolvedValue([
+      { user: { id: ctx.user!.id, name: "Test", email: null, avatarUrl: null, role: "user", openId: "test", createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date(), loginMethod: "google" }, role: "member", joinedAt: new Date() }
+    ]);
+    vi.mocked(db.searchMessagesInRoom).mockResolvedValue([
+      { id: 1, content: "Test message", createdAt: new Date(), senderId: 1, senderName: "Test", senderAvatar: null }
+    ]);
+    
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.ohweees.searchMessages({ roomId: 1, query: "test" });
+    
+    expect(result).toHaveLength(1);
+    expect(db.searchMessagesInRoom).toHaveBeenCalledWith(1, "test", 50);
+  });
+
+  it("should reject search for non-participants", async () => {
+    const ctx = createAuthContext();
+    vi.mocked(db.getChatRoomParticipants).mockResolvedValue([]);
+    
+    const caller = appRouter.createCaller(ctx);
+    
+    await expect(caller.ohweees.searchMessages({ roomId: 1, query: "test" })).rejects.toThrow("Not a participant");
+  });
+});
+
+describe("Ohweees: Pinned Messages API", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should pin a message", async () => {
+    const ctx = createAuthContext();
+    vi.mocked(db.getOhweeeById).mockResolvedValue({ id: 1, roomId: 1, content: "Test", senderId: 1, createdAt: new Date(), updatedAt: new Date(), isPinned: false, pinnedById: null, pinnedAt: null, isEdited: false, editedAt: null, isDeleted: false, deletedAt: null, deletedById: null, parentId: null, attachments: null });
+    vi.mocked(db.getChatRoomParticipants).mockResolvedValue([
+      { user: { id: ctx.user!.id, name: "Test", email: null, avatarUrl: null, role: "user", openId: "test", createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date(), loginMethod: "google" }, role: "member", joinedAt: new Date() }
+    ]);
+    
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.ohweees.pinMessage({ ohweeeId: 1 });
+    
+    expect(result.success).toBe(true);
+    expect(db.pinMessage).toHaveBeenCalledWith(1, ctx.user!.id);
+  });
+
+  it("should unpin a message", async () => {
+    const ctx = createAuthContext();
+    vi.mocked(db.getOhweeeById).mockResolvedValue({ id: 1, roomId: 1, content: "Test", senderId: 1, createdAt: new Date(), updatedAt: new Date(), isPinned: true, pinnedById: 1, pinnedAt: new Date(), isEdited: false, editedAt: null, isDeleted: false, deletedAt: null, deletedById: null, parentId: null, attachments: null });
+    vi.mocked(db.getChatRoomParticipants).mockResolvedValue([
+      { user: { id: ctx.user!.id, name: "Test", email: null, avatarUrl: null, role: "user", openId: "test", createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date(), loginMethod: "google" }, role: "member", joinedAt: new Date() }
+    ]);
+    
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.ohweees.unpinMessage({ ohweeeId: 1 });
+    
+    expect(result.success).toBe(true);
+    expect(db.unpinMessage).toHaveBeenCalledWith(1);
+  });
+
+  it("should get pinned messages for a room", async () => {
+    const ctx = createAuthContext();
+    vi.mocked(db.getChatRoomParticipants).mockResolvedValue([
+      { user: { id: ctx.user!.id, name: "Test", email: null, avatarUrl: null, role: "user", openId: "test", createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date(), loginMethod: "google" }, role: "member", joinedAt: new Date() }
+    ]);
+    vi.mocked(db.getPinnedMessagesForRoom).mockResolvedValue([
+      { 
+        ohweee: { id: 1, roomId: 1, content: "Pinned message", senderId: 1, createdAt: new Date(), updatedAt: new Date(), isPinned: true, pinnedById: 1, pinnedAt: new Date(), isEdited: false, editedAt: null, isDeleted: false, deletedAt: null, deletedById: null, parentId: null, attachments: null },
+        sender: { id: 1, name: "Test", email: null, avatarUrl: null, role: "user", openId: "test", createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date(), loginMethod: "google" },
+        pinnedBy: { id: 1, name: "Test", email: null, avatarUrl: null, role: "user", openId: "test", createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date(), loginMethod: "google" }
+      }
+    ]);
+    
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.ohweees.getPinnedMessages({ roomId: 1 });
+    
+    expect(result).toHaveLength(1);
+    expect(result[0].ohweee.content).toBe("Pinned message");
+  });
+
+  it("should reject pin for non-participants", async () => {
+    const ctx = createAuthContext();
+    vi.mocked(db.getOhweeeById).mockResolvedValue({ id: 1, roomId: 1, content: "Test", senderId: 1, createdAt: new Date(), updatedAt: new Date(), isPinned: false, pinnedById: null, pinnedAt: null, isEdited: false, editedAt: null, isDeleted: false, deletedAt: null, deletedById: null, parentId: null, attachments: null });
+    vi.mocked(db.getChatRoomParticipants).mockResolvedValue([]);
+    
+    const caller = appRouter.createCaller(ctx);
+    
+    await expect(caller.ohweees.pinMessage({ ohweeeId: 1 })).rejects.toThrow("Not a participant");
+  });
+
+  it("should reject pin for non-existent message", async () => {
+    const ctx = createAuthContext();
+    vi.mocked(db.getOhweeeById).mockResolvedValue(null);
+    
+    const caller = appRouter.createCaller(ctx);
+    
+    await expect(caller.ohweees.pinMessage({ ohweeeId: 999 })).rejects.toThrow("Message not found");
   });
 });
