@@ -683,3 +683,46 @@ export const calendarEvents = mysqlTable("calendarEvents", {
 
 export type CalendarEvent = typeof calendarEvents.$inferSelect;
 export type InsertCalendarEvent = typeof calendarEvents.$inferInsert;
+
+/**
+ * Google Calendar connections for each user.
+ * Stores OAuth tokens and sync state.
+ */
+export const googleCalendarConnections = mysqlTable("googleCalendarConnections", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  googleEmail: varchar("googleEmail", { length: 320 }),
+  accessToken: text("accessToken").notNull(),
+  refreshToken: text("refreshToken").notNull(),
+  tokenExpiresAt: timestamp("tokenExpiresAt").notNull(),
+  calendarId: varchar("calendarId", { length: 255 }).default("primary"),
+  syncEnabled: boolean("syncEnabled").default(true).notNull(),
+  lastSyncAt: timestamp("lastSyncAt"),
+  lastSyncStatus: mysqlEnum("lastSyncStatus", ["success", "error", "pending"]).default("pending"),
+  lastSyncError: text("lastSyncError"),
+  syncToken: text("syncToken"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type GoogleCalendarConnection = typeof googleCalendarConnections.$inferSelect;
+export type InsertGoogleCalendarConnection = typeof googleCalendarConnections.$inferInsert;
+
+/**
+ * Mapping between local calendar events and Google Calendar events.
+ * Used for two-way sync to track which events are linked.
+ */
+export const calendarEventSyncMap = mysqlTable("calendarEventSyncMap", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  localEventId: int("localEventId"),
+  googleEventId: varchar("googleEventId", { length: 255 }).notNull(),
+  googleCalendarId: varchar("googleCalendarId", { length: 255 }).notNull(),
+  lastSyncedAt: timestamp("lastSyncedAt").defaultNow().notNull(),
+  syncDirection: mysqlEnum("syncDirection", ["import", "export", "both"]).default("both"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CalendarEventSyncMap = typeof calendarEventSyncMap.$inferSelect;
+export type InsertCalendarEventSyncMap = typeof calendarEventSyncMap.$inferInsert;

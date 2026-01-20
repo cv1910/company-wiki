@@ -9,6 +9,7 @@ import * as db from "./db";
 import { nanoid } from "nanoid";
 import * as embeddings from "./embeddings";
 import DiffMatchPatch from "diff-match-patch";
+import * as googleCalendarService from "./googleCalendar";
 
 // Initialize diff-match-patch
 const dmp = new DiffMatchPatch();
@@ -3067,6 +3068,136 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           errors: errors.length > 0 ? errors : undefined,
         };
       }),
+  }),
+
+  // ==================== GOOGLE CALENDAR ====================
+  googleCalendar: router({
+    // Check if Google Calendar is configured
+    isConfigured: publicProcedure.query(() => {
+      return { configured: googleCalendarService.isGoogleCalendarConfigured() };
+    }),
+
+    // Get connection status for current user
+    getConnection: protectedProcedure.query(async ({ ctx }) => {
+      const connection = await db.getGoogleCalendarConnection(ctx.user.id);
+      if (!connection) {
+        return null;
+      }
+      return {
+        id: connection.id,
+        googleEmail: connection.googleEmail,
+        syncEnabled: connection.syncEnabled,
+        lastSyncAt: connection.lastSyncAt,
+        lastSyncStatus: connection.lastSyncStatus,
+        lastSyncError: connection.lastSyncError,
+        calendarId: connection.calendarId,
+      };
+    }),
+
+    // Get OAuth authorization URL
+    getAuthUrl: protectedProcedure.query(({ ctx }) => {
+      if (!googleCalendarService.isGoogleCalendarConfigured()) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Google Calendar ist nicht konfiguriert. Bitte API-Zugangsdaten hinzufügen.",
+        });
+      }
+      // Use user ID as state for security
+      const state = Buffer.from(JSON.stringify({ userId: ctx.user.id, timestamp: Date.now() })).toString("base64");
+      return { url: googleCalendarService.getGoogleAuthUrl(state) };
+    }),
+
+    // Handle OAuth callback
+    handleCallback: protectedProcedure
+      .input(
+        z.object({
+          code: z.string(),
+          state: z.string(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        // Verify state
+        try {
+          const stateData = JSON.parse(Buffer.from(input.state, "base64").toString());
+          if (stateData.userId !== ctx.user.id) {
+            throw new TRPCError({ code: "UNAUTHORIZED", message: "Ungültiger State-Parameter" });
+          }
+          // Check if state is not too old (5 minutes)
+          if (Date.now() - stateData.timestamp > 5 * 60 * 1000) {
+            throw new TRPCError({ code: "UNAUTHORIZED", message: "State ist abgelaufen" });
+          }
+        } catch (e) {
+          if (e instanceof TRPCError) throw e;
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Ungültiger State-Parameter" });
+        }
+
+        // Exchange code for tokens
+        const tokens = await googleCalendarService.exchangeCodeForTokens(input.code);
+
+        // Save connection
+        await db.upsertGoogleCalendarConnection({
+          userId: ctx.user.id,
+          googleEmail: tokens.email,
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          tokenExpiresAt: tokens.expiresAt,
+          calendarId: "primary",
+          syncEnabled: true,
+        });
+
+        return { success: true, email: tokens.email };
+      }),
+
+    // Disconnect Google Calendar
+    disconnect: protectedProcedure.mutation(async ({ ctx }) => {
+      await db.deleteGoogleCalendarConnection(ctx.user.id);
+      return { success: true };
+    }),
+
+    // Toggle sync enabled
+    toggleSync: protectedProcedure
+      .input(z.object({ enabled: z.boolean() }))
+      .mutation(async ({ ctx, input }) => {
+        const connection = await db.getGoogleCalendarConnection(ctx.user.id);
+        if (!connection) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Keine Google Calendar-Verbindung gefunden" });
+        }
+        await db.upsertGoogleCalendarConnection({
+          ...connection,
+          syncEnabled: input.enabled,
+        });
+        return { success: true };
+      }),
+
+    // Manual sync from Google
+    syncFromGoogle: protectedProcedure.mutation(async ({ ctx }) => {
+      const connection = await db.getGoogleCalendarConnection(ctx.user.id);
+      if (!connection) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Keine Google Calendar-Verbindung gefunden" });
+      }
+      const result = await googleCalendarService.syncGoogleToLocal(ctx.user.id);
+      return result;
+    }),
+
+    // Manual sync to Google
+    syncToGoogle: protectedProcedure.mutation(async ({ ctx }) => {
+      const connection = await db.getGoogleCalendarConnection(ctx.user.id);
+      if (!connection) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Keine Google Calendar-Verbindung gefunden" });
+      }
+      const result = await googleCalendarService.syncLocalToGoogle(ctx.user.id);
+      return result;
+    }),
+
+    // Full two-way sync
+    fullSync: protectedProcedure.mutation(async ({ ctx }) => {
+      const connection = await db.getGoogleCalendarConnection(ctx.user.id);
+      if (!connection) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Keine Google Calendar-Verbindung gefunden" });
+      }
+      const result = await googleCalendarService.fullSync(ctx.user.id);
+      return result;
+    }),
   }),
 });
 

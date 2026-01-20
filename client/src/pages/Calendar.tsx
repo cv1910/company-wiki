@@ -20,6 +20,7 @@ import {
   Upload,
   FileDown,
   FileUp,
+  Settings,
 } from "lucide-react";
 import {
   format,
@@ -71,8 +72,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -141,6 +144,7 @@ function getDotColorClass(color: string): string {
 
 export default function Calendar() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -853,6 +857,11 @@ export default function Calendar() {
                 <DropdownMenuItem onClick={() => setShowImportDialog(true)}>
                   <Upload className="h-4 w-4 mr-2" />
                   iCal importieren
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setLocation("/calendar/settings")}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Google Calendar verbinden
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

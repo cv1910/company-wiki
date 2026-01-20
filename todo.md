@@ -341,3 +341,14 @@
 - [x] Frontend: Import-Dialog für iCal-Dateien
 - [ ] Unterstützung für wiederkehrende Termine beim Import
 - [x] Tests für Import/Export-Funktionalität
+
+## Google Calendar-Integration
+- [x] Datenbank-Schema für Google-Verbindungen (googleCalendarConnections)
+- [x] Google OAuth-Flow implementieren (Verbinden/Trennen)
+- [x] Token-Management (Access Token, Refresh Token)
+- [x] Import: Google-Termine abrufen und synchronisieren
+- [x] Export: Lokale Termine zu Google synchronisieren
+- [x] Zwei-Wege-Sync mit Konfliktbehandlung
+- [x] Frontend: Verbindungs-UI in Kalender-Einstellungen
+- [x] Frontend: Sync-Status und letzte Synchronisation anzeigen
+- [x] Tests für Google Calendar-Integration

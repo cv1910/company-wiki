@@ -62,6 +62,10 @@ import {
   InsertUserDashboardSetting,
   calendarEvents,
   InsertCalendarEvent,
+  googleCalendarConnections,
+  InsertGoogleCalendarConnection,
+  calendarEventSyncMap,
+  InsertCalendarEventSyncMap,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -2588,4 +2592,206 @@ export async function getTeamLeavesAsCalendarEvents(startDate: Date, endDate: Da
     createdAt: new Date(),
     updatedAt: new Date(),
   }));
+}
+
+
+// ==================== Google Calendar Connection Functions ====================
+
+// Get Google Calendar connection for a user
+export async function getGoogleCalendarConnection(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [connection] = await db
+    .select()
+    .from(googleCalendarConnections)
+    .where(eq(googleCalendarConnections.userId, userId))
+    .limit(1);
+  
+  return connection || null;
+}
+
+// Create or update Google Calendar connection
+export async function upsertGoogleCalendarConnection(
+  data: InsertGoogleCalendarConnection
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const existing = await getGoogleCalendarConnection(data.userId);
+  
+  if (existing) {
+    await db
+      .update(googleCalendarConnections)
+      .set({
+        googleEmail: data.googleEmail,
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        tokenExpiresAt: data.tokenExpiresAt,
+        calendarId: data.calendarId,
+        syncEnabled: data.syncEnabled,
+        updatedAt: new Date(),
+      })
+      .where(eq(googleCalendarConnections.userId, data.userId));
+    
+    return { ...existing, ...data };
+  } else {
+    const [result] = await db
+      .insert(googleCalendarConnections)
+      .values(data);
+    
+    return { id: result.insertId, ...data };
+  }
+}
+
+// Update Google Calendar tokens
+export async function updateGoogleCalendarTokens(
+  userId: number,
+  accessToken: string,
+  refreshToken: string,
+  tokenExpiresAt: Date
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(googleCalendarConnections)
+    .set({
+      accessToken,
+      refreshToken,
+      tokenExpiresAt,
+      updatedAt: new Date(),
+    })
+    .where(eq(googleCalendarConnections.userId, userId));
+}
+
+// Update sync status
+export async function updateGoogleCalendarSyncStatus(
+  userId: number,
+  status: "success" | "error" | "pending",
+  error?: string,
+  syncToken?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(googleCalendarConnections)
+    .set({
+      lastSyncAt: new Date(),
+      lastSyncStatus: status,
+      lastSyncError: error || null,
+      syncToken: syncToken,
+      updatedAt: new Date(),
+    })
+    .where(eq(googleCalendarConnections.userId, userId));
+}
+
+// Delete Google Calendar connection
+export async function deleteGoogleCalendarConnection(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Delete sync mappings first
+  await db
+    .delete(calendarEventSyncMap)
+    .where(eq(calendarEventSyncMap.userId, userId));
+  
+  // Delete connection
+  await db
+    .delete(googleCalendarConnections)
+    .where(eq(googleCalendarConnections.userId, userId));
+  
+  return { success: true };
+}
+
+// ==================== Calendar Event Sync Map Functions ====================
+
+// Get sync mapping by local event ID
+export async function getSyncMapByLocalEventId(userId: number, localEventId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [mapping] = await db
+    .select()
+    .from(calendarEventSyncMap)
+    .where(
+      and(
+        eq(calendarEventSyncMap.userId, userId),
+        eq(calendarEventSyncMap.localEventId, localEventId)
+      )
+    )
+    .limit(1);
+  
+  return mapping || null;
+}
+
+// Get sync mapping by Google event ID
+export async function getSyncMapByGoogleEventId(userId: number, googleEventId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [mapping] = await db
+    .select()
+    .from(calendarEventSyncMap)
+    .where(
+      and(
+        eq(calendarEventSyncMap.userId, userId),
+        eq(calendarEventSyncMap.googleEventId, googleEventId)
+      )
+    )
+    .limit(1);
+  
+  return mapping || null;
+}
+
+// Create sync mapping
+export async function createSyncMapping(data: InsertCalendarEventSyncMap) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [result] = await db
+    .insert(calendarEventSyncMap)
+    .values(data);
+  
+  return { id: result.insertId, ...data };
+}
+
+// Update sync mapping
+export async function updateSyncMapping(
+  id: number,
+  data: Partial<InsertCalendarEventSyncMap>
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(calendarEventSyncMap)
+    .set({
+      ...data,
+      lastSyncedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(calendarEventSyncMap.id, id));
+}
+
+// Delete sync mapping
+export async function deleteSyncMapping(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .delete(calendarEventSyncMap)
+    .where(eq(calendarEventSyncMap.id, id));
+}
+
+// Get all sync mappings for a user
+export async function getUserSyncMappings(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select()
+    .from(calendarEventSyncMap)
+    .where(eq(calendarEventSyncMap.userId, userId));
 }

@@ -46,6 +46,7 @@ import Onboarding from "./pages/Onboarding";
 
 // Calendar
 import Calendar from "./pages/Calendar";
+import CalendarSettings from "./pages/CalendarSettings";
 
 function Router() {
   return (
@@ -77,6 +78,7 @@ function Router() {
         
         {/* Calendar */}
         <Route path="/calendar" component={Calendar} />
+        <Route path="/calendar/settings" component={CalendarSettings} />
         
         {/* Settings & Mentions */}
         <Route path="/settings/email" component={EmailSettings} />
