@@ -380,3 +380,8 @@
 - [x] Wochentage in Großbuchstaben, klein und grau
 - [x] Monatswechsel mit farbigem Label (z.B. "JAN", "FEB")
 - [x] Horizontales Scroll-Layout mit Tagen als Spalten
+
+## Jahreskalender Layout-Korrektur v2
+- [x] Wochen als horizontale Zeilen (nicht alle Tage in einer Zeile)
+- [x] Jede Woche = eine Zeile mit MON bis SUN
+- [x] Vertikales Scrollen durch die Wochen des Jahres
