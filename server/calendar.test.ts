@@ -256,4 +256,129 @@ describe("Calendar API", () => {
       ).rejects.toThrow();
     });
   });
+
+  describe("calendar.exportIcal", () => {
+    it("should export events as iCal format", async () => {
+      const result = await caller.calendar.exportIcal({});
+
+      expect(result).toBeDefined();
+      expect(result.content).toBeDefined();
+      expect(result.content).toContain("BEGIN:VCALENDAR");
+      expect(result.content).toContain("VERSION:2.0");
+      expect(result.content).toContain("END:VCALENDAR");
+      expect(result.filename).toMatch(/company-wiki-calendar-.*\.ics/);
+      expect(typeof result.eventCount).toBe("number");
+    });
+
+    it("should export events for a specific date range", async () => {
+      const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - 1);
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + 1);
+
+      const result = await caller.calendar.exportIcal({
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+      });
+
+      expect(result).toBeDefined();
+      expect(result.content).toContain("BEGIN:VCALENDAR");
+    });
+  });
+
+  describe("calendar.importIcal", () => {
+    it("should import events from iCal content", async () => {
+      const icalContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Test//Test//EN
+BEGIN:VEVENT
+UID:test-import-1@test
+DTSTART:20260201T100000
+DTEND:20260201T110000
+SUMMARY:Imported Test Event
+DESCRIPTION:This is an imported event
+LOCATION:Test Location
+END:VEVENT
+END:VCALENDAR`;
+
+      const result = await caller.calendar.importIcal({
+        content: icalContent,
+        overwriteExisting: false,
+      });
+
+      expect(result).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.imported).toBeGreaterThanOrEqual(0);
+      expect(result.total).toBe(1);
+    });
+
+    it("should import all-day events", async () => {
+      const icalContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Test//Test//EN
+BEGIN:VEVENT
+UID:test-import-allday@test
+DTSTART;VALUE=DATE:20260215
+DTEND;VALUE=DATE:20260216
+SUMMARY:All Day Import Test
+END:VEVENT
+END:VCALENDAR`;
+
+      const result = await caller.calendar.importIcal({
+        content: icalContent,
+        overwriteExisting: false,
+      });
+
+      expect(result).toBeDefined();
+      expect(result.success).toBe(true);
+    });
+
+    it("should skip duplicate events when overwrite is false", async () => {
+      const uniqueTitle = `Duplicate Test ${Date.now()}`;
+      const icalContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Test//Test//EN
+BEGIN:VEVENT
+UID:test-duplicate@test
+DTSTART:20260301T140000
+DTEND:20260301T150000
+SUMMARY:${uniqueTitle}
+END:VEVENT
+END:VCALENDAR`;
+
+      // First import
+      const firstResult = await caller.calendar.importIcal({
+        content: icalContent,
+        overwriteExisting: false,
+      });
+
+      expect(firstResult.imported).toBe(1);
+
+      // Second import should skip
+      const secondResult = await caller.calendar.importIcal({
+        content: icalContent,
+        overwriteExisting: false,
+      });
+
+      expect(secondResult.skipped).toBe(1);
+      expect(secondResult.imported).toBe(0);
+    });
+
+    it("should handle empty iCal content", async () => {
+      const icalContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Test//Test//EN
+END:VCALENDAR`;
+
+      const result = await caller.calendar.importIcal({
+        content: icalContent,
+        overwriteExisting: false,
+      });
+
+      expect(result).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.imported).toBe(0);
+      expect(result.total).toBe(0);
+    });
+  });
 });

@@ -16,6 +16,10 @@ import {
   List,
   Columns,
   LayoutGrid,
+  Download,
+  Upload,
+  FileDown,
+  FileUp,
 } from "lucide-react";
 import {
   format,
@@ -143,6 +147,9 @@ export default function Calendar() {
   const [showEventDialog, setShowEventDialog] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [showTeamLeaves, setShowTeamLeaves] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importOverwrite, setImportOverwrite] = useState(false);
 
   // Form state
   const [eventTitle, setEventTitle] = useState("");
@@ -227,6 +234,59 @@ export default function Calendar() {
       toast.error("Fehler beim Löschen: " + error.message);
     },
   });
+
+  // Export mutation
+  const exportIcal = trpc.calendar.exportIcal.useMutation({
+    onSuccess: (data) => {
+      // Create blob and download
+      const blob = new Blob([data.content], { type: "text/calendar;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = data.filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(`${data.eventCount} Termine exportiert`);
+    },
+    onError: (error) => {
+      toast.error("Fehler beim Export: " + error.message);
+    },
+  });
+
+  // Import mutation
+  const importIcal = trpc.calendar.importIcal.useMutation({
+    onSuccess: (data) => {
+      utils.calendar.getEvents.invalidate();
+      setShowImportDialog(false);
+      setImportFile(null);
+      setImportOverwrite(false);
+      if (data.errors && data.errors.length > 0) {
+        toast.warning(`${data.imported} importiert, ${data.skipped} übersprungen, ${data.errors.length} Fehler`);
+      } else {
+        toast.success(`${data.imported} Termine importiert, ${data.skipped} übersprungen`);
+      }
+    },
+    onError: (error) => {
+      toast.error("Fehler beim Import: " + error.message);
+    },
+  });
+
+  // Handle export
+  const handleExport = () => {
+    exportIcal.mutate({});
+  };
+
+  // Handle import
+  const handleImport = async () => {
+    if (!importFile) {
+      toast.error("Bitte wähle eine Datei aus");
+      return;
+    }
+    const content = await importFile.text();
+    importIcal.mutate({ content, overwriteExisting: importOverwrite });
+  };
 
   // Combine all events
   const allEvents = useMemo(() => {
@@ -778,10 +838,29 @@ export default function Calendar() {
             </Button>
           </div>
 
-          <Button onClick={() => openNewEventDialog()}>
-            <Plus className="h-4 w-4 mr-1" />
-            Neuer Termin
-          </Button>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExport} disabled={exportIcal.isPending}>
+                  <Download className="h-4 w-4 mr-2" />
+                  {exportIcal.isPending ? "Exportiere..." : "Als iCal exportieren"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowImportDialog(true)}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  iCal importieren
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button onClick={() => openNewEventDialog()}>
+              <Plus className="h-4 w-4 mr-1" />
+              Neuer Termin
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -929,6 +1008,75 @@ export default function Calendar() {
                 {editingEvent ? "Speichern" : "Erstellen"}
               </Button>
             </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle>
+              <Upload className="h-5 w-5 inline mr-2" />
+              iCal importieren
+            </DialogTitle>
+            <DialogDescription>
+              Importiere Termine aus einer iCal-Datei (.ics) von Outlook, Google Calendar oder anderen Kalender-Apps.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="import-file">iCal-Datei auswählen</Label>
+              <Input
+                id="import-file"
+                type="file"
+                accept=".ics,text/calendar"
+                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                className="cursor-pointer"
+              />
+              {importFile && (
+                <p className="text-sm text-muted-foreground">
+                  Ausgewählt: {importFile.name} ({(importFile.size / 1024).toFixed(1)} KB)
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="import-overwrite"
+                checked={importOverwrite}
+                onCheckedChange={setImportOverwrite}
+              />
+              <Label htmlFor="import-overwrite" className="text-sm">
+                Bestehende Termine überschreiben (bei gleichem Titel und Datum)
+              </Label>
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground">
+              <p className="font-medium mb-1">Hinweis:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Unterstützt werden Standard-iCal-Dateien (.ics)</li>
+                <li>Wiederkehrende Termine werden als einzelne Termine importiert</li>
+                <li>Bereits vorhandene Termine werden übersprungen</li>
+              </ul>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowImportDialog(false);
+              setImportFile(null);
+              setImportOverwrite(false);
+            }}>
+              Abbrechen
+            </Button>
+            <Button
+              onClick={handleImport}
+              disabled={!importFile || importIcal.isPending}
+            >
+              {importIcal.isPending ? "Importiere..." : "Importieren"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

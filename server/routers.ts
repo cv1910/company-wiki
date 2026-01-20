@@ -39,6 +39,131 @@ const editorProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
+// iCal Helper Functions
+function formatDateIcal(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}${month}${day}`;
+}
+
+function formatDateTimeIcal(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${year}${month}${day}T${hours}${minutes}${seconds}`;
+}
+
+function escapeIcalText(text: string): string {
+  return text
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\n/g, "\\n");
+}
+
+interface ParsedIcalEvent {
+  title: string;
+  description?: string;
+  startDate: Date;
+  endDate: Date;
+  isAllDay: boolean;
+  location?: string;
+  categories?: string[];
+  uid?: string;
+}
+
+function parseIcalContent(content: string): ParsedIcalEvent[] {
+  const events: ParsedIcalEvent[] = [];
+  const lines = content.replace(/\r\n /g, "").split(/\r?\n/);
+  
+  let currentEvent: Partial<ParsedIcalEvent> | null = null;
+  
+  for (const line of lines) {
+    if (line === "BEGIN:VEVENT") {
+      currentEvent = {};
+    } else if (line === "END:VEVENT" && currentEvent) {
+      if (currentEvent.title && currentEvent.startDate && currentEvent.endDate) {
+        events.push({
+          title: currentEvent.title,
+          description: currentEvent.description,
+          startDate: currentEvent.startDate,
+          endDate: currentEvent.endDate,
+          isAllDay: currentEvent.isAllDay || false,
+          location: currentEvent.location,
+          categories: currentEvent.categories,
+          uid: currentEvent.uid,
+        });
+      }
+      currentEvent = null;
+    } else if (currentEvent) {
+      const colonIndex = line.indexOf(":");
+      if (colonIndex === -1) continue;
+      
+      const key = line.substring(0, colonIndex);
+      const value = line.substring(colonIndex + 1);
+      
+      if (key === "SUMMARY") {
+        currentEvent.title = unescapeIcalText(value);
+      } else if (key === "DESCRIPTION") {
+        currentEvent.description = unescapeIcalText(value);
+      } else if (key === "LOCATION") {
+        currentEvent.location = unescapeIcalText(value);
+      } else if (key === "UID") {
+        currentEvent.uid = value;
+      } else if (key === "CATEGORIES") {
+        currentEvent.categories = value.split(",").map(c => c.trim());
+      } else if (key.startsWith("DTSTART")) {
+        if (key.includes("VALUE=DATE")) {
+          currentEvent.isAllDay = true;
+          currentEvent.startDate = parseIcalDate(value);
+        } else {
+          currentEvent.isAllDay = false;
+          currentEvent.startDate = parseIcalDateTime(value);
+        }
+      } else if (key.startsWith("DTEND")) {
+        if (key.includes("VALUE=DATE")) {
+          currentEvent.endDate = parseIcalDate(value);
+        } else {
+          currentEvent.endDate = parseIcalDateTime(value);
+        }
+      }
+    }
+  }
+  
+  return events;
+}
+
+function unescapeIcalText(text: string): string {
+  return text
+    .replace(/\\n/g, "\n")
+    .replace(/\\,/g, ",")
+    .replace(/\\;/g, ";")
+    .replace(/\\\\/g, "\\");
+}
+
+function parseIcalDate(value: string): Date {
+  const year = parseInt(value.substring(0, 4), 10);
+  const month = parseInt(value.substring(4, 6), 10) - 1;
+  const day = parseInt(value.substring(6, 8), 10);
+  return new Date(year, month, day);
+}
+
+function parseIcalDateTime(value: string): Date {
+  // Remove timezone suffix if present
+  const cleanValue = value.replace(/Z$/, "");
+  const year = parseInt(cleanValue.substring(0, 4), 10);
+  const month = parseInt(cleanValue.substring(4, 6), 10) - 1;
+  const day = parseInt(cleanValue.substring(6, 8), 10);
+  const hours = parseInt(cleanValue.substring(9, 11), 10) || 0;
+  const minutes = parseInt(cleanValue.substring(11, 13), 10) || 0;
+  const seconds = parseInt(cleanValue.substring(13, 15), 10) || 0;
+  return new Date(year, month, day, hours, minutes, seconds);
+}
+
 export const appRouter = router({
   system: systemRouter,
 
@@ -2791,6 +2916,156 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           });
         }
         return event;
+      }),
+
+    // Export events as iCal
+    exportIcal: protectedProcedure
+      .input(
+        z.object({
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        // Get all events for the user (optionally filtered by date range)
+        let events;
+        if (input.startDate && input.endDate) {
+          const result = await db.getCalendarEventsByDateRange(
+            ctx.user.id,
+            new Date(input.startDate),
+            new Date(input.endDate)
+          );
+          events = result;
+        } else {
+          // Get all events for the current year
+          const now = new Date();
+          const startOfYear = new Date(now.getFullYear(), 0, 1);
+          const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+          events = await db.getCalendarEventsByDateRange(ctx.user.id, startOfYear, endOfYear);
+        }
+
+        // Generate iCal content
+        const icalLines: string[] = [
+          "BEGIN:VCALENDAR",
+          "VERSION:2.0",
+          "PRODID:-//Company Wiki//Calendar//DE",
+          "CALSCALE:GREGORIAN",
+          "METHOD:PUBLISH",
+          "X-WR-CALNAME:Company Wiki Kalender",
+        ];
+
+        for (const event of events) {
+          const uid = `event-${event.id}@companywiki`;
+          const dtstart = event.isAllDay
+            ? formatDateIcal(event.startDate)
+            : formatDateTimeIcal(event.startDate);
+          const dtend = event.isAllDay
+            ? formatDateIcal(event.endDate)
+            : formatDateTimeIcal(event.endDate);
+
+          icalLines.push("BEGIN:VEVENT");
+          icalLines.push(`UID:${uid}`);
+          icalLines.push(`DTSTAMP:${formatDateTimeIcal(new Date())}`);
+          if (event.isAllDay) {
+            icalLines.push(`DTSTART;VALUE=DATE:${dtstart}`);
+            icalLines.push(`DTEND;VALUE=DATE:${dtend}`);
+          } else {
+            icalLines.push(`DTSTART:${dtstart}`);
+            icalLines.push(`DTEND:${dtend}`);
+          }
+          icalLines.push(`SUMMARY:${escapeIcalText(event.title)}`);
+          if (event.description) {
+            icalLines.push(`DESCRIPTION:${escapeIcalText(event.description)}`);
+          }
+          if (event.location) {
+            icalLines.push(`LOCATION:${escapeIcalText(event.location)}`);
+          }
+          icalLines.push(`CATEGORIES:${event.eventType || "personal"}`);
+          icalLines.push("END:VEVENT");
+        }
+
+        icalLines.push("END:VCALENDAR");
+
+        return {
+          content: icalLines.join("\r\n"),
+          filename: `company-wiki-calendar-${new Date().toISOString().split("T")[0]}.ics`,
+          eventCount: events.length,
+        };
+      }),
+
+    // Import events from iCal
+    importIcal: protectedProcedure
+      .input(
+        z.object({
+          content: z.string(),
+          overwriteExisting: z.boolean().default(false),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const { content, overwriteExisting } = input;
+        
+        // Parse iCal content
+        const events = parseIcalContent(content);
+        
+        let imported = 0;
+        let skipped = 0;
+        let errors: string[] = [];
+
+        for (const event of events) {
+          try {
+            // Check if event with same UID already exists
+            const existingEvents = await db.getCalendarEventsByDateRange(
+              ctx.user.id,
+              event.startDate,
+              event.endDate
+            );
+            
+            const duplicate = existingEvents?.find(
+              (e: { title: string; startDate: Date }) => e.title === event.title && 
+                     e.startDate.getTime() === event.startDate.getTime()
+            );
+
+            if (duplicate && !overwriteExisting) {
+              skipped++;
+              continue;
+            }
+
+            if (duplicate && overwriteExisting) {
+              await db.updateCalendarEvent(duplicate.id, ctx.user.id, {
+                title: event.title,
+                description: event.description,
+                startDate: event.startDate,
+                endDate: event.endDate,
+                isAllDay: event.isAllDay,
+                location: event.location,
+              });
+            } else {
+              await db.createCalendarEvent({
+                userId: ctx.user.id,
+                title: event.title,
+                description: event.description || null,
+                startDate: event.startDate,
+                endDate: event.endDate,
+                isAllDay: event.isAllDay,
+                color: "blue",
+                eventType: (event.categories?.[0] as "personal" | "meeting" | "reminder" | "vacation" | "other") || "personal",
+                location: event.location || null,
+                notes: null,
+              });
+            }
+            imported++;
+          } catch (err) {
+            errors.push(`Fehler bei "${event.title}": ${err instanceof Error ? err.message : "Unbekannter Fehler"}`);
+          }
+        }
+
+        return {
+          success: true,
+          imported,
+          skipped,
+          total: events.length,
+          errors: errors.length > 0 ? errors : undefined,
+        };
       }),
   }),
 });

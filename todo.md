@@ -332,3 +332,12 @@
 - [x] Urlaubs-Integration (genehmigte Urlaube anzeigen)
 - [x] Kalender in Sidebar-Navigation hinzufügen
 - [x] Tests für Kalender-Funktionalität
+
+## Kalender Import/Export (iCal)
+- [x] iCal-Bibliothek (ical.js) installieren
+- [x] Backend: Export-Endpunkt für iCal-Dateien
+- [x] Backend: Import-Endpunkt für iCal-Dateien
+- [x] Frontend: Export-Button im Kalender
+- [x] Frontend: Import-Dialog für iCal-Dateien
+- [ ] Unterstützung für wiederkehrende Termine beim Import
+- [x] Tests für Import/Export-Funktionalität
