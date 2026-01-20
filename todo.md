@@ -373,3 +373,10 @@
 - [x] Drag & Drop in Tagesansicht (Termine verschieben)
 - [ ] Resize-Funktion für Termin-Dauer (Anfang/Ende anpassen) - spätere Erweiterung
 - [x] Visuelles Feedback beim Ziehen (Ghost-Element, Drop-Zone Highlight)
+
+## Jahreskalender Hey-Style Korrektur
+- [x] Layout exakt wie Hey: Jede Zelle zeigt "WOC TAG" (z.B. "MON 26", "TUE 27")
+- [x] Fette Tageszahlen
+- [x] Wochentage in Großbuchstaben, klein und grau
+- [x] Monatswechsel mit farbigem Label (z.B. "JAN", "FEB")
+- [x] Horizontales Scroll-Layout mit Tagen als Spalten
