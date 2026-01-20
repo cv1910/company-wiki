@@ -191,13 +191,10 @@ export function YearCalendarView({
     return bars;
   };
 
-  // Hey Calendar cell height - compact for 14 rows
-  const CELL_HEIGHT = 48;
-
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-950 overflow-hidden">
       {/* Compact header - Hey style */}
-      <div className="flex-shrink-0 flex items-center justify-between px-6 py-3">
+      <div className="flex-shrink-0 flex items-center justify-between px-6 py-3 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-4">
           <button
             onClick={() => window.history.back()}
@@ -217,8 +214,8 @@ export function YearCalendarView({
         </button>
       </div>
       
-      {/* Calendar grid - Hey style with 28 days per row */}
-      <div className="flex-1 overflow-auto">
+      {/* Calendar grid - Hey style with exact proportions */}
+      <div className="flex-1 overflow-auto px-2">
         <div className="min-w-full">
           {rows.map((row, rowIdx) => {
             const rowEvents = getEventsForRow(row);
@@ -230,7 +227,8 @@ export function YearCalendarView({
                 className="grid relative"
                 style={{ 
                   gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))`,
-                  height: `${CELL_HEIGHT}px` 
+                  // Hey Calendar exact height: ~50-55px per row
+                  height: '52px'
                 }}
               >
                 {row.map((day, dayIdx) => {
@@ -245,38 +243,40 @@ export function YearCalendarView({
                     <div
                       key={dayIdx}
                       className={cn(
-                        "relative cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors",
-                        "flex items-center gap-1 px-1",
+                        "relative cursor-pointer transition-colors",
+                        "flex items-start gap-0.5 pl-1 pt-1",
                         !isCurrentYear && "opacity-30",
-                        // Border around EVERY cell - Hey style
-                        "border border-gray-200 dark:border-gray-700",
-                        // Weekend (SAT, SUN) gray background
-                        isWeekendDay && "bg-gray-50 dark:bg-gray-900/50"
+                        // Weekend (SAT, SUN) gray background - Hey style
+                        isWeekendDay && "bg-gray-50 dark:bg-gray-900/30",
+                        // Hover effect
+                        "hover:bg-gray-100 dark:hover:bg-gray-800/50",
+                        // Border - subtle like Hey
+                        "border-r border-b border-gray-100 dark:border-gray-800/50"
                       )}
                       onClick={() => onDayClick(day)}
                       title={format(day, "EEEE, d. MMMM yyyy", { locale: de })}
                     >
-                      {/* Weekday abbreviation - small, gray like Hey */}
-                      <span className="text-[9px] font-medium text-gray-400 dark:text-gray-500 uppercase flex-shrink-0">
+                      {/* Weekday abbreviation - Hey style: very small, gray, uppercase */}
+                      <span className="text-[9px] font-medium text-gray-400 dark:text-gray-500 uppercase leading-none mt-0.5">
                         {WEEKDAY_ABBREVS[dayOfWeek]}
                       </span>
                       
-                      {/* Day number - Hey style */}
+                      {/* Day number - Hey style: larger, bold */}
                       {dayIsToday ? (
-                        <span className="text-xs font-bold text-white bg-red-500 rounded-full min-w-[18px] h-[18px] flex items-center justify-center flex-shrink-0">
+                        <span className="text-[13px] font-bold text-white bg-red-500 rounded-full min-w-[20px] h-[20px] flex items-center justify-center leading-none">
                           {day.getDate()}
                         </span>
                       ) : (
-                        <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 flex-shrink-0">
+                        <span className="text-[13px] font-bold text-gray-800 dark:text-gray-200 leading-none">
                           {day.getDate()}
                         </span>
                       )}
                       
-                      {/* Month label - Hey style colored badge */}
+                      {/* Month label - Hey style: small colored badge */}
                       {isFirstOfMonth && (
                         <span 
                           className={cn(
-                            "text-[8px] font-bold text-white px-1 py-0.5 rounded flex-shrink-0",
+                            "text-[8px] font-bold text-white px-1 py-0.5 rounded leading-none",
                             MONTH_COLORS[monthIdx]
                           )}
                         >
@@ -293,19 +293,19 @@ export function YearCalendarView({
                     {eventBars.map((bar, idx) => {
                       const leftPercent = (bar.startDay / row.length) * 100;
                       const widthPercent = ((bar.endDay - bar.startDay + 1) / row.length) * 100;
-                      const topOffset = bar.rowNum === 0 ? 'calc(100% - 12px)' : 'calc(100% - 22px)';
+                      const topOffset = bar.rowNum === 0 ? 'calc(100% - 14px)' : 'calc(100% - 26px)';
                       
                       return (
                         <div
                           key={idx}
                           className={cn(
-                            "absolute h-[10px] rounded text-[8px] text-white px-1 truncate pointer-events-auto cursor-pointer hover:opacity-80 flex items-center",
+                            "absolute h-[11px] rounded text-[9px] text-white px-1 truncate pointer-events-auto cursor-pointer hover:opacity-80 flex items-center",
                             getEventBgColor(bar.event.color)
                           )}
                           style={{
                             top: topOffset,
-                            left: `calc(${leftPercent}% + 1px)`,
-                            width: `calc(${widthPercent}% - 2px)`,
+                            left: `calc(${leftPercent}% + 2px)`,
+                            width: `calc(${widthPercent}% - 4px)`,
                           }}
                           onClick={(e) => {
                             e.stopPropagation();
