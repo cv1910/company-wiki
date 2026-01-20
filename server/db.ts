@@ -91,6 +91,10 @@ import {
   InsertOhweeeUnreadMarker,
   ohweeeTypingIndicators,
   InsertOhweeeTypingIndicator,
+  ohweeeDeliveryReceipts,
+  InsertOhweeeDeliveryReceipt,
+  ohweeeTasks,
+  InsertOhweeeTask,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -4429,4 +4433,258 @@ export async function getLastMessagesForRooms(roomIds: number[]) {
   }
   
   return lastMessages;
+}
+
+// ==================== DELIVERY RECEIPTS ====================
+
+// Mark messages as delivered for a user
+export async function markMessagesAsDelivered(ohweeeIds: number[], userId: number) {
+  const db = await getDb();
+  if (!db || ohweeeIds.length === 0) return;
+  
+  // Get existing delivery receipts to avoid duplicates
+  const existing = await db
+    .select({ ohweeeId: ohweeeDeliveryReceipts.ohweeeId })
+    .from(ohweeeDeliveryReceipts)
+    .where(and(
+      inArray(ohweeeDeliveryReceipts.ohweeeId, ohweeeIds),
+      eq(ohweeeDeliveryReceipts.userId, userId)
+    ));
+  
+  const existingIds = new Set(existing.map(e => e.ohweeeId));
+  const newIds = ohweeeIds.filter(id => !existingIds.has(id));
+  
+  if (newIds.length > 0) {
+    await db.insert(ohweeeDeliveryReceipts).values(
+      newIds.map(ohweeeId => ({ ohweeeId, userId }))
+    );
+  }
+}
+
+// Get delivery status for messages
+export async function getDeliveryStatusForMessages(ohweeeIds: number[]) {
+  const db = await getDb();
+  if (!db || ohweeeIds.length === 0) return new Map<number, number[]>();
+  
+  const receipts = await db
+    .select({
+      ohweeeId: ohweeeDeliveryReceipts.ohweeeId,
+      userId: ohweeeDeliveryReceipts.userId,
+    })
+    .from(ohweeeDeliveryReceipts)
+    .where(inArray(ohweeeDeliveryReceipts.ohweeeId, ohweeeIds));
+  
+  const deliveryMap = new Map<number, number[]>();
+  for (const receipt of receipts) {
+    const users = deliveryMap.get(receipt.ohweeeId) || [];
+    users.push(receipt.userId);
+    deliveryMap.set(receipt.ohweeeId, users);
+  }
+  
+  return deliveryMap;
+}
+
+// Get read status for messages (from existing read receipts)
+export async function getReadStatusForMessages(ohweeeIds: number[]) {
+  const db = await getDb();
+  if (!db || ohweeeIds.length === 0) return new Map<number, number[]>();
+  
+  const receipts = await db
+    .select({
+      ohweeeId: ohweeeReadReceipts.ohweeeId,
+      userId: ohweeeReadReceipts.userId,
+    })
+    .from(ohweeeReadReceipts)
+    .where(inArray(ohweeeReadReceipts.ohweeeId, ohweeeIds));
+  
+  const readMap = new Map<number, number[]>();
+  for (const receipt of receipts) {
+    const users = readMap.get(receipt.ohweeeId) || [];
+    users.push(receipt.userId);
+    readMap.set(receipt.ohweeeId, users);
+  }
+  
+  return readMap;
+}
+
+// Mark message as read
+export async function markMessageAsRead(ohweeeId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  // Check if already read
+  const existing = await db
+    .select()
+    .from(ohweeeReadReceipts)
+    .where(and(
+      eq(ohweeeReadReceipts.ohweeeId, ohweeeId),
+      eq(ohweeeReadReceipts.userId, userId)
+    ))
+    .limit(1);
+  
+  if (existing.length === 0) {
+    await db.insert(ohweeeReadReceipts).values({ ohweeeId, userId });
+  }
+}
+
+// Get detailed read info for a message (who read it and when)
+export async function getMessageReadDetails(ohweeeId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const receipts = await db
+    .select({
+      userId: ohweeeReadReceipts.userId,
+      userName: users.name,
+      userAvatar: users.avatarUrl,
+      readAt: ohweeeReadReceipts.readAt,
+    })
+    .from(ohweeeReadReceipts)
+    .innerJoin(users, eq(ohweeeReadReceipts.userId, users.id))
+    .where(eq(ohweeeReadReceipts.ohweeeId, ohweeeId))
+    .orderBy(ohweeeReadReceipts.readAt);
+  
+  return receipts;
+}
+
+// ==================== CHAT TASKS ====================
+
+// Create a task from a chat message
+export async function createChatTask(task: InsertOhweeeTask) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [result] = await db.insert(ohweeeTasks).values(task);
+  return result.insertId;
+}
+
+// Get tasks for a room
+export async function getTasksForRoom(roomId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const tasks = await db
+    .select({
+      task: ohweeeTasks,
+      creator: {
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(ohweeeTasks)
+    .innerJoin(users, eq(ohweeeTasks.createdById, users.id))
+    .where(eq(ohweeeTasks.roomId, roomId))
+    .orderBy(desc(ohweeeTasks.createdAt));
+  
+  // Get assignee info separately
+  const tasksWithAssignees = await Promise.all(tasks.map(async (t) => {
+    let assignee = null;
+    if (t.task.assigneeId) {
+      const [assigneeUser] = await db
+        .select({ id: users.id, name: users.name, avatarUrl: users.avatarUrl })
+        .from(users)
+        .where(eq(users.id, t.task.assigneeId))
+        .limit(1);
+      assignee = assigneeUser || null;
+    }
+    
+    let completedBy = null;
+    if (t.task.completedById) {
+      const [completedByUser] = await db
+        .select({ id: users.id, name: users.name, avatarUrl: users.avatarUrl })
+        .from(users)
+        .where(eq(users.id, t.task.completedById))
+        .limit(1);
+      completedBy = completedByUser || null;
+    }
+    
+    return { ...t, assignee, completedBy };
+  }));
+  
+  return tasksWithAssignees;
+}
+
+// Update a task
+export async function updateChatTask(taskId: number, updates: Partial<InsertOhweeeTask>) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db
+    .update(ohweeeTasks)
+    .set(updates)
+    .where(eq(ohweeeTasks.id, taskId));
+}
+
+// Toggle task completion
+export async function toggleTaskCompletion(taskId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [task] = await db
+    .select()
+    .from(ohweeeTasks)
+    .where(eq(ohweeeTasks.id, taskId))
+    .limit(1);
+  
+  if (!task) return null;
+  
+  const newCompleted = !task.isCompleted;
+  await db
+    .update(ohweeeTasks)
+    .set({
+      isCompleted: newCompleted,
+      completedAt: newCompleted ? new Date() : null,
+      completedById: newCompleted ? userId : null,
+    })
+    .where(eq(ohweeeTasks.id, taskId));
+  
+  return { ...task, isCompleted: newCompleted };
+}
+
+// Delete a task
+export async function deleteChatTask(taskId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.delete(ohweeeTasks).where(eq(ohweeeTasks.id, taskId));
+}
+
+// Get task by ID
+export async function getChatTaskById(taskId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [task] = await db
+    .select()
+    .from(ohweeeTasks)
+    .where(eq(ohweeeTasks.id, taskId))
+    .limit(1);
+  
+  return task || null;
+}
+
+// Get open tasks count for rooms
+export async function getOpenTasksCountForRooms(roomIds: number[]) {
+  const db = await getDb();
+  if (!db || roomIds.length === 0) return new Map<number, number>();
+  
+  const counts = await db
+    .select({
+      roomId: ohweeeTasks.roomId,
+      count: sql<number>`count(*)`,
+    })
+    .from(ohweeeTasks)
+    .where(and(
+      inArray(ohweeeTasks.roomId, roomIds),
+      eq(ohweeeTasks.isCompleted, false)
+    ))
+    .groupBy(ohweeeTasks.roomId);
+  
+  const countMap = new Map<number, number>();
+  for (const c of counts) {
+    countMap.set(c.roomId, c.count);
+  }
+  
+  return countMap;
 }

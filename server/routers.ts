@@ -4582,6 +4582,166 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
       .query(async ({ input, ctx }) => {
         return db.getTypingUsersInRoom(input.roomId, ctx.user.id);
       }),
+
+    // ==================== DELIVERY & READ RECEIPTS ====================
+    
+    // Mark messages as delivered (called when messages are fetched)
+    markDelivered: protectedProcedure
+      .input(z.object({ ohweeeIds: z.array(z.number()) }))
+      .mutation(async ({ input, ctx }) => {
+        await db.markMessagesAsDelivered(input.ohweeeIds, ctx.user.id);
+        return { success: true };
+      }),
+
+    // Mark a single message as read (for read receipts)
+    markMessageRead: protectedProcedure
+      .input(z.object({ ohweeeId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.markMessageAsRead(input.ohweeeId, ctx.user.id);
+        return { success: true };
+      }),
+
+    // Get delivery and read status for messages
+    getMessageStatus: protectedProcedure
+      .input(z.object({ ohweeeIds: z.array(z.number()) }))
+      .query(async ({ input, ctx }) => {
+        const [deliveryMap, readMap] = await Promise.all([
+          db.getDeliveryStatusForMessages(input.ohweeeIds),
+          db.getReadStatusForMessages(input.ohweeeIds),
+        ]);
+        
+        return input.ohweeeIds.map(id => ({
+          ohweeeId: id,
+          deliveredTo: deliveryMap.get(id) || [],
+          readBy: readMap.get(id) || [],
+        }));
+      }),
+
+    // Get detailed read info for a message (who read it and when)
+    getReadDetails: protectedProcedure
+      .input(z.object({ ohweeeId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getMessageReadDetails(input.ohweeeId);
+      }),
+
+    // ==================== CHAT TASKS ====================
+    
+    // Create a task from a message or standalone
+    createTask: protectedProcedure
+      .input(z.object({
+        roomId: z.number(),
+        title: z.string().min(1),
+        description: z.string().optional(),
+        sourceOhweeeId: z.number().optional(),
+        dueDate: z.date().optional(),
+        priority: z.enum(["low", "medium", "high"]).optional(),
+        assigneeId: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Verify user has access to the room
+        const participants = await db.getChatRoomParticipants(input.roomId);
+        if (!participants.some(p => p.user.id === ctx.user.id)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Kein Zugriff auf diesen Chat" });
+        }
+        
+        const taskId = await db.createChatTask({
+          roomId: input.roomId,
+          title: input.title,
+          description: input.description || null,
+          sourceOhweeeId: input.sourceOhweeeId || null,
+          dueDate: input.dueDate || null,
+          priority: input.priority || "medium",
+          assigneeId: input.assigneeId || null,
+          createdById: ctx.user.id,
+        });
+        
+        return { taskId };
+      }),
+
+    // Get tasks for a room
+    getTasks: protectedProcedure
+      .input(z.object({ roomId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        // Verify access
+        const participants = await db.getChatRoomParticipants(input.roomId);
+        if (!participants.some(p => p.user.id === ctx.user.id)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Kein Zugriff" });
+        }
+        
+        return db.getTasksForRoom(input.roomId);
+      }),
+
+    // Toggle task completion
+    toggleTask: protectedProcedure
+      .input(z.object({ taskId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const task = await db.getChatTaskById(input.taskId);
+        if (!task) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Aufgabe nicht gefunden" });
+        }
+        
+        // Verify access to the room
+        const participants = await db.getChatRoomParticipants(task.roomId);
+        if (!participants.some(p => p.user.id === ctx.user.id)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Kein Zugriff" });
+        }
+        
+        const result = await db.toggleTaskCompletion(input.taskId, ctx.user.id);
+        return result;
+      }),
+
+    // Update a task
+    updateTask: protectedProcedure
+      .input(z.object({
+        taskId: z.number(),
+        title: z.string().min(1).optional(),
+        description: z.string().optional(),
+        dueDate: z.date().nullable().optional(),
+        priority: z.enum(["low", "medium", "high"]).optional(),
+        assigneeId: z.number().nullable().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const task = await db.getChatTaskById(input.taskId);
+        if (!task) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Aufgabe nicht gefunden" });
+        }
+        
+        // Verify access
+        const participants = await db.getChatRoomParticipants(task.roomId);
+        if (!participants.some(p => p.user.id === ctx.user.id)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Kein Zugriff" });
+        }
+        
+        const { taskId, ...updates } = input;
+        await db.updateChatTask(taskId, updates);
+        return { success: true };
+      }),
+
+    // Delete a task
+    deleteTask: protectedProcedure
+      .input(z.object({ taskId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const task = await db.getChatTaskById(input.taskId);
+        if (!task) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Aufgabe nicht gefunden" });
+        }
+        
+        // Only creator can delete
+        if (task.createdById !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Nur der Ersteller kann löschen" });
+        }
+        
+        await db.deleteChatTask(input.taskId);
+        return { success: true };
+      }),
+
+    // Get open tasks count for rooms
+    getOpenTasksCounts: protectedProcedure
+      .input(z.object({ roomIds: z.array(z.number()) }))
+      .query(async ({ input }) => {
+        const countsMap = await db.getOpenTasksCountForRooms(input.roomIds);
+        return Array.from(countsMap.entries()).map(([roomId, count]) => ({ roomId, count }));
+      }),
   }),
 });
 

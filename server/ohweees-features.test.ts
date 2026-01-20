@@ -47,6 +47,20 @@ vi.mock("./db", async () => {
       { userId: 2, userName: "Anna", userAvatar: null, lastTypingAt: new Date() }
     ]),
     cleanupOldTypingIndicators: vi.fn().mockResolvedValue(undefined),
+    // Delivery & Read Receipts
+    markMessagesAsDelivered: vi.fn().mockResolvedValue(undefined),
+    markMessageAsRead: vi.fn().mockResolvedValue(undefined),
+    getDeliveryStatusForMessages: vi.fn().mockResolvedValue(new Map([[1, [2, 3]]])),
+    getReadStatusForMessages: vi.fn().mockResolvedValue(new Map([[1, [2]]])),
+    getMessageReadDetails: vi.fn().mockResolvedValue([]),
+    // Chat Tasks
+    getChatRoomParticipants: vi.fn().mockResolvedValue([]),
+    createChatTask: vi.fn().mockResolvedValue(1),
+    getTasksForRoom: vi.fn().mockResolvedValue([]),
+    getChatTaskById: vi.fn().mockResolvedValue(null),
+    toggleTaskCompletion: vi.fn().mockResolvedValue(null),
+    deleteChatTask: vi.fn().mockResolvedValue(undefined),
+    updateChatTask: vi.fn().mockResolvedValue(undefined),
   };
 });
 
@@ -169,6 +183,185 @@ describe("Ohweees: Rooms with Unread Markers API", () => {
     
     expect(Array.isArray(result)).toBe(true);
     expect(db.getRoomsWithUnreadMarkers).toHaveBeenCalledWith(ctx.user!.id);
+  });
+});
+
+describe("Ohweees: Delivery & Read Receipts API", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should mark messages as delivered", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    const result = await caller.ohweees.markDelivered({ ohweeeIds: [1, 2, 3] });
+    
+    expect(result.success).toBe(true);
+    expect(db.markMessagesAsDelivered).toHaveBeenCalledWith([1, 2, 3], ctx.user!.id);
+  });
+
+  it("should mark a message as read", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    const result = await caller.ohweees.markMessageRead({ ohweeeId: 1 });
+    
+    expect(result.success).toBe(true);
+    expect(db.markMessageAsRead).toHaveBeenCalledWith(1, ctx.user!.id);
+  });
+
+  it("should get message status", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    const result = await caller.ohweees.getMessageStatus({ ohweeeIds: [1] });
+    
+    expect(Array.isArray(result)).toBe(true);
+    expect(result[0].ohweeeId).toBe(1);
+    expect(result[0].deliveredTo).toContain(2);
+    expect(result[0].deliveredTo).toContain(3);
+    expect(result[0].readBy).toContain(2);
+  });
+
+  it("should get read details for a message", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    
+    const result = await caller.ohweees.getReadDetails({ ohweeeId: 1 });
+    
+    expect(Array.isArray(result)).toBe(true);
+    expect(db.getMessageReadDetails).toHaveBeenCalledWith(1);
+  });
+});
+
+describe("Ohweees: Chat Tasks API", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should create a task when user is participant", async () => {
+    const ctx = createAuthContext();
+    vi.mocked(db.getChatRoomParticipants).mockResolvedValue([
+      { participant: { id: 1, roomId: 1, userId: ctx.user!.id, joinedAt: new Date(), lastReadAt: new Date() }, user: ctx.user as any }
+    ]);
+    vi.mocked(db.createChatTask).mockResolvedValue(42);
+    
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.ohweees.createTask({
+      roomId: 1,
+      title: "Test Task",
+      priority: "high",
+    });
+    
+    expect(result.taskId).toBe(42);
+    expect(db.createChatTask).toHaveBeenCalled();
+  });
+
+  it("should reject task creation when user is not participant", async () => {
+    const ctx = createAuthContext();
+    vi.mocked(db.getChatRoomParticipants).mockResolvedValue([]);
+    
+    const caller = appRouter.createCaller(ctx);
+    
+    await expect(caller.ohweees.createTask({
+      roomId: 1,
+      title: "Test Task",
+    })).rejects.toThrow();
+  });
+
+  it("should get tasks for a room", async () => {
+    const ctx = createAuthContext();
+    vi.mocked(db.getChatRoomParticipants).mockResolvedValue([
+      { participant: { id: 1, roomId: 1, userId: ctx.user!.id, joinedAt: new Date(), lastReadAt: new Date() }, user: ctx.user as any }
+    ]);
+    vi.mocked(db.getTasksForRoom).mockResolvedValue([]);
+    
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.ohweees.getTasks({ roomId: 1 });
+    
+    expect(Array.isArray(result)).toBe(true);
+    expect(db.getTasksForRoom).toHaveBeenCalledWith(1);
+  });
+
+  it("should toggle task completion", async () => {
+    const ctx = createAuthContext();
+    vi.mocked(db.getChatTaskById).mockResolvedValue({
+      id: 1,
+      roomId: 1,
+      title: "Test",
+      isCompleted: false,
+      createdById: ctx.user!.id,
+      priority: "medium",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      sourceOhweeeId: null,
+      description: null,
+      completedAt: null,
+      completedById: null,
+      dueDate: null,
+      assigneeId: null,
+    });
+    vi.mocked(db.getChatRoomParticipants).mockResolvedValue([
+      { participant: { id: 1, roomId: 1, userId: ctx.user!.id, joinedAt: new Date(), lastReadAt: new Date() }, user: ctx.user as any }
+    ]);
+    vi.mocked(db.toggleTaskCompletion).mockResolvedValue({ id: 1, isCompleted: true } as any);
+    
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.ohweees.toggleTask({ taskId: 1 });
+    
+    expect(result?.isCompleted).toBe(true);
+    expect(db.toggleTaskCompletion).toHaveBeenCalledWith(1, ctx.user!.id);
+  });
+
+  it("should delete a task when user is creator", async () => {
+    const ctx = createAuthContext();
+    vi.mocked(db.getChatTaskById).mockResolvedValue({
+      id: 1,
+      roomId: 1,
+      title: "Test",
+      isCompleted: false,
+      createdById: ctx.user!.id,
+      priority: "medium",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      sourceOhweeeId: null,
+      description: null,
+      completedAt: null,
+      completedById: null,
+      dueDate: null,
+      assigneeId: null,
+    });
+    
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.ohweees.deleteTask({ taskId: 1 });
+    
+    expect(result.success).toBe(true);
+    expect(db.deleteChatTask).toHaveBeenCalledWith(1);
+  });
+
+  it("should reject task deletion when user is not creator", async () => {
+    const ctx = createAuthContext();
+    vi.mocked(db.getChatTaskById).mockResolvedValue({
+      id: 1,
+      roomId: 1,
+      title: "Test",
+      isCompleted: false,
+      createdById: 999, // Different user
+      priority: "medium",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      sourceOhweeeId: null,
+      description: null,
+      completedAt: null,
+      completedById: null,
+      dueDate: null,
+      assigneeId: null,
+    });
+    
+    const caller = appRouter.createCaller(ctx);
+    
+    await expect(caller.ohweees.deleteTask({ taskId: 1 })).rejects.toThrow();
   });
 });
 

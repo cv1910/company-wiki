@@ -49,10 +49,18 @@ import {
   BookmarkPlus,
   Volume2,
   VolumeX,
+  CheckSquare,
+  Square,
+  ListTodo,
+  Calendar,
+  Flag,
+  UserPlus,
+  Clock,
 } from "lucide-react";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { de } from "date-fns/locale";
 import { EmojiPicker } from "@/components/EmojiPicker";
+import { MessageContent } from "@/components/MessageContent";
 
 // Date separator component
 function DateSeparator({ date }: { date: Date }) {
@@ -100,6 +108,10 @@ function OhweeeMessage({
   onToggleReactionPicker,
   readReceipts,
   isMarkedUnread,
+  deliveryStatus,
+  roomParticipantCount,
+  onShowReadDetails,
+  onCreateTask,
 }: {
   message: {
     ohweee: {
@@ -135,6 +147,10 @@ function OhweeeMessage({
   isMarkedUnread?: boolean;
   onMarkAsUnread: () => void;
   onRemoveUnreadMarker: () => void;
+  deliveryStatus?: { deliveredTo: number[]; readBy: number[] };
+  roomParticipantCount?: number;
+  onShowReadDetails?: () => void;
+  onCreateTask?: () => void;
 }) {
   const getInitials = (name: string) => {
     return name
@@ -283,12 +299,35 @@ function OhweeeMessage({
             )}
 
             {message.ohweee.content && message.ohweee.content !== "[Datei]" && (
-              <p className="whitespace-pre-wrap break-words">
-                {renderContentWithMentions(message.ohweee.content)}
-              </p>
+              <MessageContent content={message.ohweee.content} currentUserId={currentUserId} />
             )}
             {message.ohweee.isEdited && (
               <span className="text-xs text-muted-foreground ml-1">(bearbeitet)</span>
+            )}
+            
+            {/* Delivery/Read status for own messages */}
+            {isOwn && deliveryStatus && (
+              <div 
+                className="flex items-center justify-end gap-1 mt-1 cursor-pointer"
+                onClick={onShowReadDetails}
+                title="Klicken für Details"
+              >
+                {deliveryStatus.readBy.length > 0 ? (
+                  // All read - double blue check
+                  <span className="text-blue-500 text-xs font-medium">✓✓</span>
+                ) : deliveryStatus.deliveredTo.length > 0 ? (
+                  // Delivered but not read - double gray check
+                  <span className="text-muted-foreground text-xs">✓✓</span>
+                ) : (
+                  // Sent but not delivered - single gray check
+                  <span className="text-muted-foreground text-xs">✓</span>
+                )}
+                {roomParticipantCount && roomParticipantCount > 2 && deliveryStatus.readBy.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {deliveryStatus.readBy.length}/{roomParticipantCount - 1}
+                  </span>
+                )}
+              </div>
             )}
           </div>
 
@@ -338,6 +377,12 @@ function OhweeeMessage({
                   <DropdownMenuItem onClick={onMarkAsUnread}>
                     <BookmarkPlus className="h-4 w-4 mr-2" />
                     Als ungelesen markieren
+                  </DropdownMenuItem>
+                )}
+                {onCreateTask && (
+                  <DropdownMenuItem onClick={onCreateTask}>
+                    <ListTodo className="h-4 w-4 mr-2" />
+                    Aufgabe erstellen
                   </DropdownMenuItem>
                 )}
                 {isOwn && (
@@ -512,6 +557,16 @@ export default function OhweeesPage() {
   });
   const notificationSoundRef = useRef<HTMLAudioElement | null>(null);
   
+  // Tasks state
+  const [showTasksPanel, setShowTasksPanel] = useState(false);
+  const [showCreateTaskDialog, setShowCreateTaskDialog] = useState(false);
+  const [taskFromMessageId, setTaskFromMessageId] = useState<number | null>(null);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskDescription, setNewTaskDescription] = useState("");
+  const [newTaskPriority, setNewTaskPriority] = useState<"low" | "medium" | "high">("medium");
+  const [newTaskDueDate, setNewTaskDueDate] = useState<string>("");
+  const [newTaskAssigneeId, setNewTaskAssigneeId] = useState<number | null>(null);
+  
   // Initialize notification sound
   useEffect(() => {
     notificationSoundRef.current = new Audio("/notification.mp3");
@@ -672,6 +727,24 @@ export default function OhweeesPage() {
     { ohweeeIds: messageIds },
     { enabled: messageIds.length > 0 }
   );
+  
+  // Message status query (delivery/read receipts)
+  const { data: messageStatusData } = trpc.ohweees.getMessageStatus.useQuery(
+    { ohweeeIds: messageIds },
+    { 
+      enabled: messageIds.length > 0,
+      refetchInterval: 5000,
+    }
+  );
+  
+  // Convert to lookup object
+  const messageStatusMap = useMemo(() => {
+    const map: Record<number, { deliveredTo: number[]; readBy: number[] }> = {};
+    messageStatusData?.forEach(status => {
+      map[status.ohweeeId] = { deliveredTo: status.deliveredTo, readBy: status.readBy };
+    });
+    return map;
+  }, [messageStatusData]);
 
   // Mark messages as read when viewing
   const markAsRead = trpc.ohweees.markAsRead.useMutation();
@@ -703,6 +776,48 @@ export default function OhweeesPage() {
       utils.ohweees.getUnreadMarkersBatch.invalidate();
       utils.ohweees.getRoomsWithUnreadMarkers.invalidate();
       toast.success("Markierung entfernt");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+  
+  // Tasks
+  const { data: tasks } = trpc.ohweees.getTasks.useQuery(
+    { roomId: selectedRoomId! },
+    { enabled: !!selectedRoomId }
+  );
+  
+  const createTask = trpc.ohweees.createTask.useMutation({
+    onSuccess: () => {
+      utils.ohweees.getTasks.invalidate({ roomId: selectedRoomId! });
+      setShowCreateTaskDialog(false);
+      setNewTaskTitle("");
+      setNewTaskDescription("");
+      setNewTaskPriority("medium");
+      setNewTaskDueDate("");
+      setNewTaskAssigneeId(null);
+      setTaskFromMessageId(null);
+      toast.success("Aufgabe erstellt");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+  
+  const toggleTask = trpc.ohweees.toggleTask.useMutation({
+    onSuccess: () => {
+      utils.ohweees.getTasks.invalidate({ roomId: selectedRoomId! });
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+  
+  const deleteTask = trpc.ohweees.deleteTask.useMutation({
+    onSuccess: () => {
+      utils.ohweees.getTasks.invalidate({ roomId: selectedRoomId! });
+      toast.success("Aufgabe gelöscht");
     },
     onError: (error) => {
       toast.error(error.message);
@@ -1046,6 +1161,20 @@ export default function OhweeesPage() {
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-8 w-8 relative"
+                onClick={() => setShowTasksPanel(true)}
+                title="Aufgaben anzeigen"
+              >
+                <ListTodo className="h-4 w-4" />
+                {tasks && tasks.filter(t => !t.task.isCompleted).length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                    {tasks.filter(t => !t.task.isCompleted).length}
+                  </span>
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 className="h-8 w-8"
                 onClick={() => setShowSearchDialog(true)}
                 title="Nachrichten durchsuchen"
@@ -1294,6 +1423,17 @@ export default function OhweeesPage() {
                             }}
                             onRemoveUnreadMarker={() => {
                               removeUnreadMarker.mutate({ ohweeeId: message.ohweee.id });
+                            }}
+                            deliveryStatus={messageStatusMap[message.ohweee.id]}
+                            roomParticipantCount={currentRoom?.participants?.length}
+                            onShowReadDetails={() => {
+                              // Could open a dialog showing who read the message
+                              toast.info("Lesedetails werden geladen...");
+                            }}
+                            onCreateTask={() => {
+                              setTaskFromMessageId(message.ohweee.id);
+                              setNewTaskTitle(message.ohweee.content.slice(0, 100));
+                              setShowCreateTaskDialog(true);
                             }}
                           />
                         );
@@ -1848,6 +1988,210 @@ export default function OhweeesPage() {
               )}
             </ScrollArea>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Task Dialog */}
+      <Dialog open={showCreateTaskDialog} onOpenChange={setShowCreateTaskDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Aufgabe erstellen</DialogTitle>
+            <DialogDescription>
+              Erstelle eine Aufgabe für diesen Chat.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Titel</label>
+              <Input
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                placeholder="Was soll erledigt werden?"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Beschreibung (optional)</label>
+              <Textarea
+                value={newTaskDescription}
+                onChange={(e) => setNewTaskDescription(e.target.value)}
+                placeholder="Weitere Details..."
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Priorität</label>
+                <select
+                  value={newTaskPriority}
+                  onChange={(e) => setNewTaskPriority(e.target.value as "low" | "medium" | "high")}
+                  className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="low">Niedrig</option>
+                  <option value="medium">Mittel</option>
+                  <option value="high">Hoch</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Fällig am (optional)</label>
+                <Input
+                  type="date"
+                  value={newTaskDueDate}
+                  onChange={(e) => setNewTaskDueDate(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Zuweisen an (optional)</label>
+              <select
+                value={newTaskAssigneeId || ""}
+                onChange={(e) => setNewTaskAssigneeId(e.target.value ? parseInt(e.target.value) : null)}
+                className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Niemand</option>
+                {currentRoom?.participants?.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name || p.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateTaskDialog(false)}>
+              Abbrechen
+            </Button>
+            <Button
+              onClick={() => {
+                if (!newTaskTitle.trim() || !selectedRoomId) return;
+                createTask.mutate({
+                  roomId: selectedRoomId,
+                  title: newTaskTitle.trim(),
+                  description: newTaskDescription.trim() || undefined,
+                  priority: newTaskPriority,
+                  dueDate: newTaskDueDate ? new Date(newTaskDueDate) : undefined,
+                  assigneeId: newTaskAssigneeId || undefined,
+                  sourceOhweeeId: taskFromMessageId || undefined,
+                });
+              }}
+              disabled={!newTaskTitle.trim() || createTask.isPending}
+            >
+              {createTask.isPending ? "Erstelle..." : "Erstellen"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tasks Panel Dialog */}
+      <Dialog open={showTasksPanel} onOpenChange={setShowTasksPanel}>
+        <DialogContent className="max-w-lg max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ListTodo className="h-5 w-5" />
+              Aufgaben
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-2">
+              {tasks && tasks.length > 0 ? (
+                tasks.map((t) => (
+                  <div
+                    key={t.task.id}
+                    className={`p-3 rounded-lg border ${t.task.isCompleted ? "bg-muted/50" : "bg-card"}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <button
+                        onClick={() => toggleTask.mutate({ taskId: t.task.id })}
+                        className="mt-0.5 shrink-0"
+                      >
+                        {t.task.isCompleted ? (
+                          <CheckSquare className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <Square className="h-5 w-5 text-muted-foreground hover:text-foreground" />
+                        )}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-medium ${t.task.isCompleted ? "line-through text-muted-foreground" : ""}`}>
+                          {t.task.title}
+                        </p>
+                        {t.task.description && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {t.task.description}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
+                          {t.task.priority !== "medium" && (
+                            <Badge variant={t.task.priority === "high" ? "destructive" : "secondary"}>
+                              <Flag className="h-3 w-3 mr-1" />
+                              {t.task.priority === "high" ? "Hoch" : "Niedrig"}
+                            </Badge>
+                          )}
+                          {t.task.dueDate && (
+                            <Badge variant="outline">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {format(new Date(t.task.dueDate), "dd.MM.yyyy")}
+                            </Badge>
+                          )}
+                          {t.assignee && (
+                            <Badge variant="outline">
+                              <User className="h-3 w-3 mr-1" />
+                              {t.assignee.name}
+                            </Badge>
+                          )}
+                          <span className="text-muted-foreground">
+                            von {t.creator.name}
+                          </span>
+                        </div>
+                      </div>
+                      {t.task.createdById === user?.id && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0"
+                          onClick={() => {
+                            if (confirm("Aufgabe wirklich löschen?")) {
+                              deleteTask.mutate({ taskId: t.task.id });
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <ListTodo className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                  <p>Keine Aufgaben in diesem Chat</p>
+                  <Button
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => {
+                      setShowTasksPanel(false);
+                      setShowCreateTaskDialog(true);
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Aufgabe erstellen
+                  </Button>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+          {tasks && tasks.length > 0 && (
+            <DialogFooter>
+              <Button
+                onClick={() => {
+                  setShowTasksPanel(false);
+                  setShowCreateTaskDialog(true);
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Neue Aufgabe
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
     </div>

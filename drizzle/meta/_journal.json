@@ -176,6 +176,13 @@
       "when": 1768931101300,
       "tag": "0024_curly_peter_parker",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1768933244365,
+      "tag": "0025_careful_the_captain",
+      "breakpoints": true
     }
   ]
 }

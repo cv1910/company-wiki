@@ -602,3 +602,22 @@
 - [x] Frontend: Sound-Datei für Benachrichtigungen
 - [x] Frontend: Sound abspielen bei neuen Nachrichten
 - [x] Frontend: Einstellung zum Aktivieren/Deaktivieren des Sounds
+
+## Ohweees: Markdown-Unterstützung
+- [x] Frontend: Markdown-Parser für Nachrichten (fett, kursiv, Listen, Code)
+- [ ] Frontend: Formatierungs-Toolbar oder Shortcuts (optional)
+- [ ] Frontend: Markdown-Vorschau beim Tippen (optional)
+
+## Ohweees: Erweiterte Lesebestätigungen
+- [x] Backend: Zugestellt-Status tracken
+- [x] Backend: Gelesen-Status pro Nachricht
+- [x] Frontend: Häkchen-Icons (✓ zugestellt, ✓✓ gelesen)
+- [x] Frontend: Detailansicht wer gelesen hat
+
+## Ohweees: Aufgaben in Chats
+- [x] Datenbank: Tabelle für Chat-Aufgaben
+- [x] Backend: API zum Erstellen/Bearbeiten/Löschen von Aufgaben
+- [x] Backend: API zum Abhaken von Aufgaben
+- [x] Frontend: Aufgabe aus Nachricht erstellen
+- [x] Frontend: Aufgabenliste im Chat anzeigen
+- [x] Frontend: Aufgaben abhaken

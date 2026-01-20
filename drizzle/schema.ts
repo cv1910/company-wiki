@@ -1037,3 +1037,47 @@ export const ohweeeTypingIndicators = mysqlTable("ohweeeTypingIndicators", {
 
 export type OhweeeTypingIndicator = typeof ohweeeTypingIndicators.$inferSelect;
 export type InsertOhweeeTypingIndicator = typeof ohweeeTypingIndicators.$inferInsert;
+
+/**
+ * Delivery receipts - tracks when messages were delivered to each user.
+ * A message is "delivered" when the user's client fetches it.
+ */
+export const ohweeeDeliveryReceipts = mysqlTable("ohweeeDeliveryReceipts", {
+  id: int("id").autoincrement().primaryKey(),
+  ohweeeId: int("ohweeeId").notNull(),
+  userId: int("userId").notNull(),
+  deliveredAt: timestamp("deliveredAt").defaultNow().notNull(),
+});
+
+export type OhweeeDeliveryReceipt = typeof ohweeeDeliveryReceipts.$inferSelect;
+export type InsertOhweeeDeliveryReceipt = typeof ohweeeDeliveryReceipts.$inferInsert;
+
+/**
+ * Chat tasks - tasks created from chat messages.
+ * Allows users to create actionable items from conversations.
+ */
+export const ohweeeTasks = mysqlTable("ohweeeTasks", {
+  id: int("id").autoincrement().primaryKey(),
+  roomId: int("roomId").notNull(),
+  // Optional link to the message that spawned this task
+  sourceOhweeeId: int("sourceOhweeeId"),
+  title: varchar("title", { length: 500 }).notNull(),
+  description: text("description"),
+  // Task status
+  isCompleted: boolean("isCompleted").default(false).notNull(),
+  completedAt: timestamp("completedAt"),
+  completedById: int("completedById"),
+  // Due date (optional)
+  dueDate: timestamp("dueDate"),
+  // Priority: low, medium, high
+  priority: mysqlEnum("priority", ["low", "medium", "high"]).default("medium").notNull(),
+  // Assignee (optional)
+  assigneeId: int("assigneeId"),
+  // Creator
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type OhweeeTask = typeof ohweeeTasks.$inferSelect;
+export type InsertOhweeeTask = typeof ohweeeTasks.$inferInsert;
