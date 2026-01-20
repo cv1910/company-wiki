@@ -2578,6 +2578,18 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
     reset: protectedProcedure.mutation(async ({ ctx }) => {
       return db.resetDashboardSettings(ctx.user.id);
     }),
+
+    // Update widget size
+    updateSize: protectedProcedure
+      .input(
+        z.object({
+          widgetId: z.string(),
+          size: z.enum(["small", "medium", "large"]),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        return db.updateWidgetSize(ctx.user.id, input.widgetId, input.size);
+      }),
   }),
 });
 

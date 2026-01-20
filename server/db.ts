@@ -2280,6 +2280,7 @@ export async function getUserDashboardSettings(userId: number) {
     showFavorites: true,
     showOnboardingProgress: true,
     widgetOrder: DEFAULT_WIDGET_ORDER,
+    widgetSizes: {} as Record<string, "small" | "medium" | "large">,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -2344,4 +2345,20 @@ export async function resetDashboardSettings(userId: number) {
     .where(eq(userDashboardSettings.userId, userId));
   
   return getUserDashboardSettings(userId);
+}
+
+export async function updateWidgetSize(userId: number, widgetId: string, size: "small" | "medium" | "large") {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const existing = await db
+    .select()
+    .from(userDashboardSettings)
+    .where(eq(userDashboardSettings.userId, userId))
+    .limit(1);
+  
+  const currentSizes = (existing[0]?.widgetSizes as Record<string, "small" | "medium" | "large"> | null) || {};
+  const newSizes: Record<string, "small" | "medium" | "large"> = { ...currentSizes, [widgetId]: size };
+  
+  return upsertUserDashboardSettings(userId, { widgetSizes: newSizes });
 }

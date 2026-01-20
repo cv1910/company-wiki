@@ -1,0 +1,1 @@
+ALTER TABLE `userDashboardSettings` ADD `widgetSizes` json DEFAULT ('{}');

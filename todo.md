@@ -310,3 +310,10 @@
 - [x] Drag & Drop für Widget-Anordnung
 - [x] Präferenzen persistent speichern
 - [x] Tests für Widget-Personalisierung
+
+## Widget-Größenanpassung
+- [x] Datenbank-Schema für Widget-Größen erweitern (widgetSizes JSON-Feld)
+- [x] Backend-API für Größeneinstellungen implementieren
+- [x] Frontend: Größenauswahl-UI im Anpassungs-Dialog
+- [x] Widget-Rendering mit verschiedenen Größen (klein, mittel, groß)
+- [x] Tests für Widget-Größenanpassung

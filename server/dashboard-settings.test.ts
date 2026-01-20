@@ -102,4 +102,68 @@ describe("dashboardSettings router", () => {
     // After reset, settings should show default values
     expect(settings === null || settings.showFavorites === true).toBe(true);
   });
+
+  it("updateSize updates widget size", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+
+    // Update size for a widget
+    await caller.dashboardSettings.updateSize({
+      widgetId: "recentArticles",
+      size: "large",
+    });
+
+    // Get settings and verify
+    const settings = await caller.dashboardSettings.get();
+    expect(settings).toBeDefined();
+    if (settings && settings.widgetSizes) {
+      const sizes = settings.widgetSizes as Record<string, string>;
+      expect(sizes.recentArticles).toBe("large");
+    }
+  });
+
+  it("updateSize can set multiple widget sizes", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+
+    // Update sizes for multiple widgets
+    await caller.dashboardSettings.updateSize({
+      widgetId: "favorites",
+      size: "small",
+    });
+    await caller.dashboardSettings.updateSize({
+      widgetId: "activityFeed",
+      size: "large",
+    });
+
+    // Get settings and verify both sizes are saved
+    const settings = await caller.dashboardSettings.get();
+    expect(settings).toBeDefined();
+    if (settings && settings.widgetSizes) {
+      const sizes = settings.widgetSizes as Record<string, string>;
+      expect(sizes.favorites).toBe("small");
+      expect(sizes.activityFeed).toBe("large");
+    }
+  });
+
+  it("reset clears widget sizes", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+
+    // Set a widget size
+    await caller.dashboardSettings.updateSize({
+      widgetId: "onboardingProgress",
+      size: "large",
+    });
+
+    // Reset settings
+    await caller.dashboardSettings.reset();
+
+    // Get settings - sizes should be empty or not set
+    const settings = await caller.dashboardSettings.get();
+    if (settings && settings.widgetSizes) {
+      const sizes = settings.widgetSizes as Record<string, string>;
+      expect(sizes.onboardingProgress).toBeUndefined();
+    }
+  });
 });

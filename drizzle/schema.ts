@@ -642,6 +642,8 @@ export const userDashboardSettings = mysqlTable("userDashboardSettings", {
     "favorites",
     "onboardingProgress"
   ]).notNull(),
+  // Widget sizes (JSON object mapping widget ID to size: "small" | "medium" | "large")
+  widgetSizes: json("widgetSizes").$type<Record<string, "small" | "medium" | "large">>().default({}),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

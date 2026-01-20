@@ -27,7 +27,10 @@ import {
   RotateCcw,
   GripVertical,
   X,
-  Star
+  Star,
+  Maximize2,
+  Minimize2,
+  Square
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
@@ -63,31 +66,50 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-// Widget definitions
+// Widget size options
+type WidgetSize = "small" | "medium" | "large";
+
+const SIZE_LABELS: Record<WidgetSize, string> = {
+  small: "Klein",
+  medium: "Mittel",
+  large: "Groß",
+};
+
+const SIZE_ICONS: Record<WidgetSize, typeof Minimize2> = {
+  small: Minimize2,
+  medium: Square,
+  large: Maximize2,
+};
+
+// Widget definitions with size support
 const WIDGET_DEFINITIONS = {
-  welcomeHero: { id: "welcomeHero", label: "Willkommens-Banner", description: "Personalisierte Begrüßung" },
-  announcements: { id: "announcements", label: "Ankündigungen", description: "Unternehmensweite Mitteilungen" },
-  navigation: { id: "navigation", label: "Navigation", description: "Schnellzugriff auf Bereiche" },
-  stats: { id: "stats", label: "Statistiken", description: "Übersicht der Inhalte" },
-  recentArticles: { id: "recentArticles", label: "Kürzlich aktualisiert", description: "Neueste Artikel" },
-  activityFeed: { id: "activityFeed", label: "Aktivitäten", description: "Letzte Änderungen" },
-  favorites: { id: "favorites", label: "Favoriten", description: "Deine Lieblingsartikel" },
-  onboardingProgress: { id: "onboardingProgress", label: "Onboarding-Fortschritt", description: "Dein Einarbeitungsstatus" },
+  welcomeHero: { id: "welcomeHero", label: "Willkommens-Banner", description: "Personalisierte Begrüßung", supportsResize: false },
+  announcements: { id: "announcements", label: "Ankündigungen", description: "Unternehmensweite Mitteilungen", supportsResize: true },
+  navigation: { id: "navigation", label: "Navigation", description: "Schnellzugriff auf Bereiche", supportsResize: false },
+  stats: { id: "stats", label: "Statistiken", description: "Übersicht der Inhalte", supportsResize: false },
+  recentArticles: { id: "recentArticles", label: "Kürzlich aktualisiert", description: "Neueste Artikel", supportsResize: true },
+  activityFeed: { id: "activityFeed", label: "Aktivitäten", description: "Letzte Änderungen", supportsResize: true },
+  favorites: { id: "favorites", label: "Favoriten", description: "Deine Lieblingsartikel", supportsResize: true },
+  onboardingProgress: { id: "onboardingProgress", label: "Onboarding-Fortschritt", description: "Dein Einarbeitungsstatus", supportsResize: true },
 };
 
 type WidgetId = keyof typeof WIDGET_DEFINITIONS;
 
-// Sortable Widget Item Component
+// Sortable Widget Item Component with Size Selection
 function SortableWidgetItem({ 
   id, 
   widget, 
   isVisible, 
-  onToggle 
+  currentSize,
+  onToggle,
+  onSizeChange
 }: { 
   id: string; 
-  widget: { label: string; description: string }; 
-  isVisible: boolean; 
+  widget: { label: string; description: string; supportsResize: boolean }; 
+  isVisible: boolean;
+  currentSize: WidgetSize;
   onToggle: (checked: boolean) => void;
+  onSizeChange: (size: WidgetSize) => void;
 }) {
   const {
     attributes,
@@ -103,6 +125,8 @@ function SortableWidgetItem({
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+
+  const sizes: WidgetSize[] = ["small", "medium", "large"];
 
   return (
     <div
@@ -125,11 +149,34 @@ function SortableWidgetItem({
           <p className="text-xs text-muted-foreground">{widget.description}</p>
         </div>
       </div>
-      <Switch
-        id={id}
-        checked={isVisible}
-        onCheckedChange={onToggle}
-      />
+      <div className="flex items-center gap-3">
+        {widget.supportsResize && isVisible && (
+          <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
+            {sizes.map((size) => {
+              const Icon = SIZE_ICONS[size];
+              return (
+                <button
+                  key={size}
+                  onClick={() => onSizeChange(size)}
+                  className={`p-1.5 rounded transition-colors ${
+                    currentSize === size 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'hover:bg-muted text-muted-foreground'
+                  }`}
+                  title={SIZE_LABELS[size]}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                </button>
+              );
+            })}
+          </div>
+        )}
+        <Switch
+          id={id}
+          checked={isVisible}
+          onCheckedChange={onToggle}
+        />
+      </div>
     </div>
   );
 }
@@ -170,6 +217,12 @@ export default function Home() {
     },
   });
 
+  const updateSize = trpc.dashboardSettings.updateSize.useMutation({
+    onSuccess: () => {
+      utils.dashboardSettings.get.invalidate();
+    },
+  });
+
   // Get widget visibility settings
   const widgetVisibility = useMemo(() => ({
     welcomeHero: dashboardSettings?.showWelcomeHero ?? true,
@@ -190,6 +243,16 @@ export default function Home() {
     }
     return Object.keys(WIDGET_DEFINITIONS);
   }, [dashboardSettings]);
+
+  // Get widget sizes
+  const widgetSizes = useMemo(() => {
+    const sizes = dashboardSettings?.widgetSizes as Record<string, WidgetSize> | undefined;
+    return sizes || {};
+  }, [dashboardSettings]);
+
+  const getWidgetSize = (widgetId: string): WidgetSize => {
+    return widgetSizes[widgetId] || "medium";
+  };
 
   // DnD sensors
   const sensors = useSensors(
@@ -752,14 +815,21 @@ export default function Home() {
     onboardingProgress: renderOnboardingProgress,
   };
 
-  // Render widgets in order
+  // Get grid class based on widget size
+  const getWidgetGridClass = (widgetId: string): string => {
+    const size = getWidgetSize(widgetId);
+    switch (size) {
+      case "small": return "lg:col-span-1";
+      case "large": return "lg:col-span-2";
+      default: return "lg:col-span-1";
+    }
+  };
+
+  // Render widgets in order with size support
   const renderWidgets = () => {
     // Group widgets that should be side by side
     const singleWidgets = ["welcomeHero", "announcements", "navigation", "stats"];
-    const pairedWidgets = [
-      ["recentArticles", "activityFeed"],
-      ["favorites", "onboardingProgress"],
-    ];
+    const resizableWidgets = ["recentArticles", "activityFeed", "favorites", "onboardingProgress"];
 
     const elements: React.ReactNode[] = [];
 
@@ -780,20 +850,27 @@ export default function Home() {
       }
     });
 
-    // Render paired widgets
-    pairedWidgets.forEach((pair) => {
-      const visiblePair = pair.filter((id) => widgetVisibility[id as WidgetId]);
-      if (visiblePair.length > 0) {
-        elements.push(
-          <div key={pair.join("-")} className="grid lg:grid-cols-2 gap-6">
-            {visiblePair.map((widgetId) => {
-              const renderer = widgetRenderers[widgetId as WidgetId];
-              return renderer ? <div key={widgetId}>{renderer()}</div> : null;
-            })}
-          </div>
-        );
-      }
-    });
+    // Collect visible resizable widgets in order
+    const visibleResizable = widgetOrder.filter(
+      (id) => resizableWidgets.includes(id) && widgetVisibility[id as WidgetId]
+    );
+
+    if (visibleResizable.length > 0) {
+      elements.push(
+        <div key="resizable-widgets" className="grid lg:grid-cols-2 gap-6">
+          {visibleResizable.map((widgetId) => {
+            const renderer = widgetRenderers[widgetId as WidgetId];
+            const size = getWidgetSize(widgetId);
+            const gridClass = size === "large" ? "lg:col-span-2" : size === "small" ? "lg:col-span-1" : "lg:col-span-1";
+            return renderer ? (
+              <div key={widgetId} className={`${gridClass} transition-all duration-300`}>
+                {renderer()}
+              </div>
+            ) : null;
+          })}
+        </div>
+      );
+    }
 
     return elements;
   };
@@ -846,7 +923,9 @@ export default function Home() {
                         id={id}
                         widget={widget}
                         isVisible={widgetVisibility[id as WidgetId]}
+                        currentSize={getWidgetSize(id)}
                         onToggle={(checked) => handleToggleWidget(id, checked)}
+                        onSizeChange={(size) => updateSize.mutate({ widgetId: id, size })}
                       />
                     );
                   })}
