@@ -390,3 +390,10 @@
 - [x] Zellen über die gesamte Bildschirmbreite (flex-1)
 - [x] Keine feste Zellenbreite, responsive Layout
 - [x] Wie bei Hey Calendar: volle Breite nutzen
+
+## Jahreskalender Hey-Style KORREKT
+- [x] 7 Zeilen für Wochentage (MON, TUE, WED, THU, FRI, SAT, SUN als Zeilen-Header links)
+- [x] Tage als Spalten horizontal durchs Jahr (53 Wochen-Spalten)
+- [x] Horizontales Scrollen durch das Jahr
+- [x] Monatslabels bei Monatswechsel
+- [x] Mehrtägige Events als horizontale Balken über Spalten
