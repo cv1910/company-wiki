@@ -366,3 +366,10 @@
 - [x] Termin-Dialog: Countdown-Option hinzufügen
 - [x] Termin-Dialog: Circle Event-Option hinzufügen
 - [x] Termin-Dialog: Erinnerung/Notify-Option hinzufügen
+
+## Kalender Drag & Drop
+- [x] Drag & Drop in Monatsansicht (Termine auf andere Tage ziehen)
+- [x] Drag & Drop in Wochenansicht (Termine verschieben)
+- [x] Drag & Drop in Tagesansicht (Termine verschieben)
+- [ ] Resize-Funktion für Termin-Dauer (Anfang/Ende anpassen) - spätere Erweiterung
+- [x] Visuelles Feedback beim Ziehen (Ghost-Element, Drop-Zone Highlight)

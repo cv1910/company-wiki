@@ -30,6 +30,7 @@ import {
   Bell,
   X,
   ArrowRight,
+  GripVertical,
 } from "lucide-react";
 import {
   format,
@@ -185,6 +186,11 @@ export default function Calendar() {
   const [showLinkField, setShowLinkField] = useState(false);
   const [showNotesField, setShowNotesField] = useState(false);
   const [showRepeatField, setShowRepeatField] = useState(false);
+  
+  // Drag & Drop state
+  const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null);
+  const [dragOverDate, setDragOverDate] = useState<Date | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -297,6 +303,72 @@ export default function Calendar() {
       toast.error("Fehler beim Import: " + error.message);
     },
   });
+
+  // Drag & Drop handlers
+  const handleDragStart = (event: CalendarEvent, e: React.DragEvent) => {
+    if (event.id < 0) {
+      // Urlaube können nicht verschoben werden
+      e.preventDefault();
+      return;
+    }
+    setDraggedEvent(event);
+    setIsDragging(true);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", event.id.toString());
+    // Ghost-Element Styling
+    const target = e.target as HTMLElement;
+    target.style.opacity = "0.5";
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    setDraggedEvent(null);
+    setDragOverDate(null);
+    setIsDragging(false);
+    const target = e.target as HTMLElement;
+    target.style.opacity = "1";
+  };
+
+  const handleDragOver = (date: Date, e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverDate(date);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverDate(null);
+  };
+
+  const handleDrop = (targetDate: Date, e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverDate(null);
+    
+    if (!draggedEvent) return;
+    
+    const eventStart = new Date(draggedEvent.startDate);
+    const eventEnd = new Date(draggedEvent.endDate);
+    const duration = eventEnd.getTime() - eventStart.getTime();
+    
+    // Berechne neue Start- und Endzeit
+    const newStart = new Date(targetDate);
+    if (!draggedEvent.isAllDay) {
+      // Behalte die ursprüngliche Uhrzeit bei
+      newStart.setHours(eventStart.getHours(), eventStart.getMinutes(), 0, 0);
+    } else {
+      newStart.setHours(0, 0, 0, 0);
+    }
+    const newEnd = new Date(newStart.getTime() + duration);
+    
+    // Update Event
+    updateEvent.mutate({
+      id: draggedEvent.id,
+      startDate: newStart.toISOString(),
+      endDate: newEnd.toISOString(),
+    });
+    
+    setDraggedEvent(null);
+    setIsDragging(false);
+    toast.success("Termin verschoben");
+  };
 
   // Handle export
   const handleExport = () => {
@@ -512,15 +584,21 @@ export default function Calendar() {
             const dayEvents = getEventsForDay(day);
             const isCurrentMonth = isSameMonth(day, currentDate);
             const isCurrentDay = isToday(day);
+            const isDropTarget = dragOverDate && isSameDay(day, dragOverDate);
 
             return (
               <div
                 key={index}
                 className={cn(
-                  "min-h-[100px] border-b border-r p-1 cursor-pointer transition-colors hover:bg-muted/50",
-                  !isCurrentMonth && "bg-muted/20 text-muted-foreground"
+                  "min-h-[100px] border-b border-r p-1 cursor-pointer transition-colors",
+                  !isCurrentMonth && "bg-muted/20 text-muted-foreground",
+                  isDropTarget && isDragging && "bg-primary/20 ring-2 ring-primary ring-inset",
+                  !isDropTarget && "hover:bg-muted/50"
                 )}
                 onClick={() => openNewEventDialog(day)}
+                onDragOver={(e) => handleDragOver(day, e)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(day, e)}
               >
                 <div
                   className={cn(
@@ -534,16 +612,24 @@ export default function Calendar() {
                   {dayEvents.slice(0, 3).map((event) => (
                     <div
                       key={event.id}
+                      draggable={event.id > 0}
+                      onDragStart={(e) => handleDragStart(event, e)}
+                      onDragEnd={handleDragEnd}
                       className={cn(
-                        "text-xs px-1.5 py-0.5 rounded truncate cursor-pointer border",
-                        getColorClass(event.color)
+                        "text-xs px-1.5 py-0.5 rounded truncate cursor-pointer border group flex items-center gap-1",
+                        getColorClass(event.color),
+                        event.id > 0 && "cursor-grab active:cursor-grabbing",
+                        draggedEvent?.id === event.id && "opacity-50"
                       )}
                       onClick={(e) => {
                         e.stopPropagation();
                         openEditEventDialog(event);
                       }}
                     >
-                      {event.title}
+                      {event.id > 0 && (
+                        <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-50 flex-shrink-0" />
+                      )}
+                      <span className="truncate">{event.title}</span>
                     </div>
                   ))}
                   {dayEvents.length > 3 && (
@@ -569,32 +655,65 @@ export default function Calendar() {
     });
     const hours = Array.from({ length: 24 }, (_, i) => i);
 
+    // Helper to handle drop with specific hour
+    const handleDropWithHour = (day: Date, hour: number, e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOverDate(null);
+      
+      if (!draggedEvent) return;
+      
+      const eventStart = new Date(draggedEvent.startDate);
+      const eventEnd = new Date(draggedEvent.endDate);
+      const duration = eventEnd.getTime() - eventStart.getTime();
+      
+      const newStart = new Date(day);
+      newStart.setHours(hour, 0, 0, 0);
+      const newEnd = new Date(newStart.getTime() + duration);
+      
+      updateEvent.mutate({
+        id: draggedEvent.id,
+        startDate: newStart.toISOString(),
+        endDate: newEnd.toISOString(),
+      });
+      
+      setDraggedEvent(null);
+      setIsDragging(false);
+      toast.success("Termin verschoben");
+    };
+
     return (
       <div className="flex flex-col h-full overflow-hidden">
         {/* Header with days */}
         <div className="flex border-b">
           <div className="w-16 flex-shrink-0" />
-          {days.map((day) => (
-            <div
-              key={day.toISOString()}
-              className={cn(
-                "flex-1 p-2 text-center border-l",
-                isToday(day) && "bg-primary/5"
-              )}
-            >
-              <div className="text-sm text-muted-foreground">
-                {format(day, "EEE", { locale: de })}
-              </div>
+          {days.map((day) => {
+            const isDropTarget = dragOverDate && isSameDay(day, dragOverDate);
+            return (
               <div
+                key={day.toISOString()}
                 className={cn(
-                  "text-lg font-semibold w-8 h-8 flex items-center justify-center mx-auto rounded-full",
-                  isToday(day) && "bg-primary text-primary-foreground"
+                  "flex-1 p-2 text-center border-l transition-colors",
+                  isToday(day) && "bg-primary/5",
+                  isDropTarget && isDragging && "bg-primary/20"
                 )}
+                onDragOver={(e) => handleDragOver(day, e)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(day, e)}
               >
-                {format(day, "d")}
+                <div className="text-sm text-muted-foreground">
+                  {format(day, "EEE", { locale: de })}
+                </div>
+                <div
+                  className={cn(
+                    "text-lg font-semibold w-8 h-8 flex items-center justify-center mx-auto rounded-full",
+                    isToday(day) && "bg-primary text-primary-foreground"
+                  )}
+                >
+                  {format(day, "d")}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* All-day events */}
@@ -604,18 +723,36 @@ export default function Calendar() {
           </div>
           {days.map((day) => {
             const allDayEvents = getEventsForDay(day).filter((e) => e.isAllDay);
+            const isDropTarget = dragOverDate && isSameDay(day, dragOverDate);
             return (
-              <div key={day.toISOString()} className="flex-1 p-1 border-l min-h-[40px]">
+              <div
+                key={day.toISOString()}
+                className={cn(
+                  "flex-1 p-1 border-l min-h-[40px] transition-colors",
+                  isDropTarget && isDragging && "bg-primary/20"
+                )}
+                onDragOver={(e) => handleDragOver(day, e)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(day, e)}
+              >
                 {allDayEvents.slice(0, 2).map((event) => (
                   <div
                     key={event.id}
+                    draggable={event.id > 0}
+                    onDragStart={(e) => handleDragStart(event, e)}
+                    onDragEnd={handleDragEnd}
                     className={cn(
-                      "text-xs px-1 py-0.5 rounded truncate mb-0.5 cursor-pointer border",
-                      getColorClass(event.color)
+                      "text-xs px-1 py-0.5 rounded truncate mb-0.5 cursor-pointer border group flex items-center gap-1",
+                      getColorClass(event.color),
+                      event.id > 0 && "cursor-grab active:cursor-grabbing",
+                      draggedEvent?.id === event.id && "opacity-50"
                     )}
                     onClick={() => openEditEventDialog(event)}
                   >
-                    {event.title}
+                    {event.id > 0 && (
+                      <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-50 flex-shrink-0" />
+                    )}
+                    <span className="truncate">{event.title}</span>
                   </div>
                 ))}
                 {allDayEvents.length > 2 && (
@@ -636,17 +773,28 @@ export default function Calendar() {
                 <div className="w-16 flex-shrink-0 text-xs text-muted-foreground text-right pr-2 -mt-2">
                   {hour.toString().padStart(2, "0")}:00
                 </div>
-                {days.map((day) => (
-                  <div
-                    key={day.toISOString()}
-                    className="flex-1 border-l hover:bg-muted/30 cursor-pointer"
-                    onClick={() => {
-                      const clickDate = new Date(day);
-                      clickDate.setHours(hour);
-                      openNewEventDialog(clickDate);
-                    }}
-                  />
-                ))}
+                {days.map((day) => {
+                  const cellDate = new Date(day);
+                  cellDate.setHours(hour, 0, 0, 0);
+                  const isDropTarget = dragOverDate && isSameDay(day, dragOverDate);
+                  return (
+                    <div
+                      key={day.toISOString()}
+                      className={cn(
+                        "flex-1 border-l cursor-pointer transition-colors",
+                        isDropTarget && isDragging ? "bg-primary/20" : "hover:bg-muted/30"
+                      )}
+                      onClick={() => {
+                        const clickDate = new Date(day);
+                        clickDate.setHours(hour);
+                        openNewEventDialog(clickDate);
+                      }}
+                      onDragOver={(e) => handleDragOver(day, e)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDropWithHour(day, hour, e)}
+                    />
+                  );
+                })}
               </div>
             ))}
           </div>
@@ -662,22 +810,64 @@ export default function Calendar() {
     const allDayEvents = dayEvents.filter((e) => e.isAllDay);
     const timedEvents = dayEvents.filter((e) => !e.isAllDay);
 
+    // Helper to handle drop with specific hour in day view
+    const handleDayDropWithHour = (hour: number, e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOverDate(null);
+      
+      if (!draggedEvent) return;
+      
+      const eventStart = new Date(draggedEvent.startDate);
+      const eventEnd = new Date(draggedEvent.endDate);
+      const duration = eventEnd.getTime() - eventStart.getTime();
+      
+      const newStart = new Date(currentDate);
+      newStart.setHours(hour, 0, 0, 0);
+      const newEnd = new Date(newStart.getTime() + duration);
+      
+      updateEvent.mutate({
+        id: draggedEvent.id,
+        startDate: newStart.toISOString(),
+        endDate: newEnd.toISOString(),
+      });
+      
+      setDraggedEvent(null);
+      setIsDragging(false);
+      toast.success("Termin verschoben");
+    };
+
     return (
       <div className="flex flex-col h-full overflow-hidden">
         {/* All-day events */}
         {allDayEvents.length > 0 && (
-          <div className="border-b p-2 bg-muted/30">
+          <div
+            className={cn(
+              "border-b p-2 bg-muted/30 transition-colors",
+              isDragging && "bg-primary/10"
+            )}
+            onDragOver={(e) => handleDragOver(currentDate, e)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(currentDate, e)}
+          >
             <div className="text-xs text-muted-foreground mb-1">Ganztägig</div>
             <div className="flex flex-wrap gap-1">
               {allDayEvents.map((event) => (
                 <div
                   key={event.id}
+                  draggable={event.id > 0}
+                  onDragStart={(e) => handleDragStart(event, e)}
+                  onDragEnd={handleDragEnd}
                   className={cn(
-                    "text-sm px-2 py-1 rounded cursor-pointer border",
-                    getColorClass(event.color)
+                    "text-sm px-2 py-1 rounded cursor-pointer border group flex items-center gap-1",
+                    getColorClass(event.color),
+                    event.id > 0 && "cursor-grab active:cursor-grabbing",
+                    draggedEvent?.id === event.id && "opacity-50"
                   )}
                   onClick={() => openEditEventDialog(event)}
                 >
+                  {event.id > 0 && (
+                    <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-50 flex-shrink-0" />
+                  )}
                   {event.title}
                 </div>
               ))}
@@ -687,46 +877,70 @@ export default function Calendar() {
 
         {/* Time grid */}
         <div className="flex-1 overflow-auto">
-          {hours.map((hour) => (
-            <div key={hour} className="flex h-16 border-b">
-              <div className="w-20 flex-shrink-0 text-sm text-muted-foreground text-right pr-3 pt-1">
-                {hour.toString().padStart(2, "0")}:00
-              </div>
-              <div
-                className="flex-1 border-l hover:bg-muted/30 cursor-pointer relative"
-                onClick={() => {
-                  const clickDate = new Date(currentDate);
-                  clickDate.setHours(hour);
-                  openNewEventDialog(clickDate);
-                }}
-              >
-                {timedEvents
-                  .filter((e) => {
-                    const eventHour = new Date(e.startDate).getHours();
-                    return eventHour === hour;
-                  })
-                  .map((event) => (
-                    <div
-                      key={event.id}
-                      className={cn(
-                        "absolute left-1 right-1 px-2 py-1 rounded text-sm cursor-pointer border",
-                        getColorClass(event.color)
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openEditEventDialog(event);
-                      }}
-                    >
-                      <div className="font-medium truncate">{event.title}</div>
-                      <div className="text-xs opacity-75">
-                        {format(new Date(event.startDate), "HH:mm")} -{" "}
-                        {format(new Date(event.endDate), "HH:mm")}
+          {hours.map((hour) => {
+            const hourDate = new Date(currentDate);
+            hourDate.setHours(hour, 0, 0, 0);
+            const isDropTarget = isDragging;
+            
+            return (
+              <div key={hour} className="flex h-16 border-b">
+                <div className="w-20 flex-shrink-0 text-sm text-muted-foreground text-right pr-3 pt-1">
+                  {hour.toString().padStart(2, "0")}:00
+                </div>
+                <div
+                  className={cn(
+                    "flex-1 border-l cursor-pointer relative transition-colors",
+                    isDropTarget ? "hover:bg-primary/20" : "hover:bg-muted/30"
+                  )}
+                  onClick={() => {
+                    const clickDate = new Date(currentDate);
+                    clickDate.setHours(hour);
+                    openNewEventDialog(clickDate);
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                  }}
+                  onDrop={(e) => handleDayDropWithHour(hour, e)}
+                >
+                  {timedEvents
+                    .filter((e) => {
+                      const eventHour = new Date(e.startDate).getHours();
+                      return eventHour === hour;
+                    })
+                    .map((event) => (
+                      <div
+                        key={event.id}
+                        draggable={event.id > 0}
+                        onDragStart={(e) => handleDragStart(event, e)}
+                        onDragEnd={handleDragEnd}
+                        className={cn(
+                          "absolute left-1 right-1 px-2 py-1 rounded text-sm cursor-pointer border group",
+                          getColorClass(event.color),
+                          event.id > 0 && "cursor-grab active:cursor-grabbing",
+                          draggedEvent?.id === event.id && "opacity-50"
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditEventDialog(event);
+                        }}
+                      >
+                        <div className="flex items-center gap-1">
+                          {event.id > 0 && (
+                            <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-50 flex-shrink-0" />
+                          )}
+                          <span className="font-medium truncate">{event.title}</span>
+                        </div>
+                        <div className="text-xs opacity-75">
+                          {format(new Date(event.startDate), "HH:mm")} -{" "}
+                          {format(new Date(event.endDate), "HH:mm")}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
