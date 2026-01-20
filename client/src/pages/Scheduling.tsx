@@ -623,7 +623,7 @@ function CreateEventTypeDialog({ open, onOpenChange, editEventType }: {
                     <SelectItem value="1440">24 Stunden vorher</SelectItem>
                     <SelectItem value="1440,60">24 Stunden + 1 Stunde vorher</SelectItem>
                     <SelectItem value="2880,1440,60">48h + 24h + 1h vorher</SelectItem>
-                    <SelectItem value="">Keine Erinnerungen</SelectItem>
+                    <SelectItem value="none">Keine Erinnerungen</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">

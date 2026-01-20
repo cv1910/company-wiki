@@ -487,3 +487,6 @@
 - [x] Erinnerung an Host senden
 - [x] Tracking welche Erinnerungen bereits gesendet wurden (remindersSent)
 - [x] UI für Erinnerungs-Einstellungen im Event-Typ-Dialog
+
+## Terminplanung nur für Admin sichtbar
+- [x] Terminplanung in der Navigation nur für Admin-Benutzer anzeigen (unter ADMINISTRATION)

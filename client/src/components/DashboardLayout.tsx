@@ -40,6 +40,7 @@ import {
   CheckSquare,
   Calendar,
   CalendarDays,
+  CalendarClock,
   Star,
   Keyboard,
   AtSign,
@@ -74,6 +75,7 @@ const menuItems = [
 ];
 
 const adminMenuItems = [
+  { icon: CalendarClock, label: "Terminplanung", path: "/scheduling" },
   { icon: FolderOpen, label: "Bereiche", path: "/admin/categories" },
   { icon: Users, label: "Benutzer", path: "/admin/users" },
   { icon: Calendar, label: "Urlaubsanträge", path: "/admin/leave" },
