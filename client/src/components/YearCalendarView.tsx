@@ -1,16 +1,19 @@
-import React, { useMemo, useRef, useEffect } from "react";
+import React, { useMemo, useEffect } from "react";
 import {
   format,
   startOfYear,
   endOfYear,
-  eachDayOfInterval,
+  addDays,
   isToday,
   isSameDay,
-  getDay,
   differenceInDays,
+  getMonth,
+  getDay,
+  subDays,
 } from "date-fns";
 import { de } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useSidebar } from "@/components/ui/sidebar";
 
 interface CalendarEvent {
   id: number;
@@ -34,22 +37,38 @@ interface YearCalendarViewProps {
   onEventClick: (event: CalendarEvent) => void;
 }
 
-// Hey Calendar style - weekdays as ROW headers on the left
-const WEEKDAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+// Hey Calendar style month colors
+const MONTH_COLORS: Record<number, string> = {
+  0: "bg-blue-500",    // JAN
+  1: "bg-blue-400",    // FEB
+  2: "bg-orange-500",  // MAR
+  3: "bg-green-500",   // APR
+  4: "bg-green-400",   // MAY
+  5: "bg-yellow-500",  // JUN
+  6: "bg-orange-400",  // JUL
+  7: "bg-orange-500",  // AUG
+  8: "bg-red-500",     // SEP
+  9: "bg-orange-600",  // OCT
+  10: "bg-amber-700",  // NOV
+  11: "bg-blue-600",   // DEC
+};
+
 const MONTH_ABBREVS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+const WEEKDAY_ABBREVS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
 const getEventBgColor = (color: string) => {
   const colors: Record<string, string> = {
-    blue: "bg-blue-500",
-    green: "bg-green-500",
-    red: "bg-red-500",
-    yellow: "bg-yellow-500",
-    purple: "bg-purple-500",
-    pink: "bg-pink-500",
-    orange: "bg-orange-500",
-    gray: "bg-gray-500",
+    blue: "bg-blue-400",
+    green: "bg-green-400",
+    red: "bg-red-400",
+    yellow: "bg-yellow-400",
+    purple: "bg-purple-400",
+    pink: "bg-pink-400",
+    orange: "bg-orange-400",
+    gray: "bg-gray-400",
+    teal: "bg-teal-400",
   };
-  return colors[color] || "bg-gray-500";
+  return colors[color] || "bg-gray-400";
 };
 
 export function YearCalendarView({
@@ -58,316 +77,235 @@ export function YearCalendarView({
   onDayClick,
   onEventClick,
 }: YearCalendarViewProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
   const year = currentDate.getFullYear();
+  const { setOpen } = useSidebar();
   
-  // Generate all days of the year
-  const allDays = useMemo(() => {
+  // Hide sidebar completely when year view is active
+  useEffect(() => {
+    setOpen(false);
+    
+    const sidebar = document.querySelector('[data-sidebar="sidebar"]');
+    const sidebarRail = document.querySelector('[data-sidebar="rail"]');
+    if (sidebar) (sidebar as HTMLElement).style.display = 'none';
+    if (sidebarRail) (sidebarRail as HTMLElement).style.display = 'none';
+    
+    return () => {
+      if (sidebar) (sidebar as HTMLElement).style.display = '';
+      if (sidebarRail) (sidebarRail as HTMLElement).style.display = '';
+      setOpen(true);
+    };
+  }, [setOpen]);
+  
+  // Generate all days of the year as rows of 28 days each (like Hey Calendar)
+  const rows = useMemo(() => {
     const yearStart = startOfYear(currentDate);
     const yearEnd = endOfYear(currentDate);
-    return eachDayOfInterval({ start: yearStart, end: yearEnd });
-  }, [currentDate]);
-
-  // Group days by weekday (0=Monday, 1=Tuesday, ..., 6=Sunday)
-  // Each row is a weekday, each column is a specific date
-  const daysByWeekday = useMemo(() => {
-    // Create 7 arrays, one for each weekday
-    const weekdays: (Date | null)[][] = [[], [], [], [], [], [], []];
     
-    // Find the first Monday of the year or before
-    const firstDay = allDays[0];
-    const firstDayWeekday = getDay(firstDay); // 0=Sunday, 1=Monday, ...
-    const mondayBasedWeekday = firstDayWeekday === 0 ? 6 : firstDayWeekday - 1; // Convert to Monday=0
+    // Start from the Monday before or on Jan 1
+    const jan1DayOfWeek = getDay(yearStart); // 0=Sun, 1=Mon, ...
+    const daysToGoBack = jan1DayOfWeek === 0 ? 6 : jan1DayOfWeek - 1;
+    let currentDay = subDays(yearStart, daysToGoBack);
     
-    // Calculate how many weeks we need (roughly 53)
-    const totalWeeks = Math.ceil((allDays.length + mondayBasedWeekday) / 7);
+    const allRows: Date[][] = [];
+    const DAYS_PER_ROW = 28; // 4 weeks per row like Hey Calendar
     
-    // Initialize arrays with nulls
-    for (let w = 0; w < 7; w++) {
-      weekdays[w] = new Array(totalWeeks).fill(null);
-    }
-    
-    // Place each day in the correct position
-    allDays.forEach((day, idx) => {
-      const dayWeekday = getDay(day); // 0=Sunday
-      const mondayBased = dayWeekday === 0 ? 6 : dayWeekday - 1; // Monday=0, Sunday=6
-      const weekIndex = Math.floor((idx + mondayBasedWeekday) / 7);
-      weekdays[mondayBased][weekIndex] = day;
-    });
-    
-    return weekdays;
-  }, [allDays]);
-
-  // Calculate column indices for each day (for event positioning)
-  const dayToColumnIndex = useMemo(() => {
-    const map = new Map<string, number>();
-    const firstDay = allDays[0];
-    const firstDayWeekday = getDay(firstDay);
-    const mondayBasedWeekday = firstDayWeekday === 0 ? 6 : firstDayWeekday - 1;
-    
-    allDays.forEach((day, idx) => {
-      const weekIndex = Math.floor((idx + mondayBasedWeekday) / 7);
-      map.set(format(day, 'yyyy-MM-dd'), weekIndex);
-    });
-    return map;
-  }, [allDays]);
-
-  // Number of columns (weeks)
-  const numColumns = daysByWeekday[0].length;
-
-  // Scroll to current week on mount
-  useEffect(() => {
-    if (scrollRef.current) {
-      const today = new Date();
-      const todayKey = format(today, 'yyyy-MM-dd');
-      const colIdx = dayToColumnIndex.get(todayKey);
-      if (colIdx !== undefined && colIdx > 3) {
-        const colWidth = 48;
-        scrollRef.current.scrollLeft = Math.max(0, (colIdx - 3) * colWidth);
+    // Generate rows until we've covered the entire year
+    while (currentDay <= yearEnd || allRows.length < 14) {
+      const row: Date[] = [];
+      for (let i = 0; i < DAYS_PER_ROW; i++) {
+        row.push(currentDay);
+        currentDay = addDays(currentDay, 1);
+      }
+      allRows.push(row);
+      
+      // Stop if we've passed the year end
+      if (currentDay > yearEnd) {
+        break;
       }
     }
-  }, [dayToColumnIndex]);
-
-  // Calculate event bars - events span horizontally across columns
-  const eventBars = useMemo(() => {
-    if (!events || events.length === 0) return [];
     
+    return allRows;
+  }, [currentDate]);
+
+  // Get events for a specific row of days
+  const getEventsForRow = (row: Date[]) => {
+    if (!events || events.length === 0) return [];
+    const rowStart = row[0];
+    const rowEnd = row[row.length - 1];
+    return events.filter(event => {
+      const eventStart = new Date(event.startDate);
+      const eventEnd = new Date(event.endDate);
+      return eventStart <= rowEnd && eventEnd >= rowStart;
+    });
+  };
+
+  // Calculate event bar positions for 28-day rows
+  const getEventBars = (row: Date[], rowEvents: CalendarEvent[]) => {
     const bars: Array<{
       event: CalendarEvent;
-      weekdayRow: number;
-      startCol: number;
-      endCol: number;
-      row: number;
+      startDay: number;
+      endDay: number;
+      rowNum: number;
     }> = [];
     
-    // Track occupied slots per weekday row
-    const occupiedSlots: Map<number, Set<string>> = new Map();
-    for (let i = 0; i < 7; i++) {
-      occupiedSlots.set(i, new Set());
-    }
+    const occupiedRows: Set<string>[] = Array(28).fill(null).map(() => new Set());
     
-    // Sort events by duration (longer first)
-    const sortedEvents = [...events].sort((a, b) => {
+    const sortedEvents = [...rowEvents].sort((a, b) => {
       const aDuration = differenceInDays(new Date(a.endDate), new Date(a.startDate));
       const bDuration = differenceInDays(new Date(b.endDate), new Date(b.startDate));
       return bDuration - aDuration;
     });
     
-    sortedEvents.forEach((event) => {
+    sortedEvents.forEach(event => {
       const eventStart = new Date(event.startDate);
       const eventEnd = new Date(event.endDate);
       
-      // Get all days this event spans
-      const eventDays = eachDayOfInterval({ start: eventStart, end: eventEnd });
+      let startDay = eventStart < row[0] ? 0 : row.findIndex(d => isSameDay(d, eventStart));
+      let endDay = eventEnd > row[row.length - 1] ? row.length - 1 : row.findIndex(d => isSameDay(d, eventEnd));
       
-      // Group consecutive days by weekday row
-      const segments: Map<number, { startCol: number; endCol: number }> = new Map();
+      if (startDay === -1) startDay = 0;
+      if (endDay === -1) endDay = row.length - 1;
       
-      eventDays.forEach((day) => {
-        const dayKey = format(day, 'yyyy-MM-dd');
-        const colIdx = dayToColumnIndex.get(dayKey);
-        if (colIdx === undefined) return;
-        
-        const dayWeekday = getDay(day);
-        const mondayBased = dayWeekday === 0 ? 6 : dayWeekday - 1;
-        
-        if (!segments.has(mondayBased)) {
-          segments.set(mondayBased, { startCol: colIdx, endCol: colIdx });
-        } else {
-          const seg = segments.get(mondayBased)!;
-          seg.startCol = Math.min(seg.startCol, colIdx);
-          seg.endCol = Math.max(seg.endCol, colIdx);
-        }
-      });
-      
-      // Create bars for each weekday segment
-      segments.forEach((seg, weekdayRow) => {
-        const slots = occupiedSlots.get(weekdayRow)!;
-        
-        // Find available row
-        let row = 0;
-        let foundRow = false;
-        while (!foundRow && row < 3) {
-          foundRow = true;
-          for (let c = seg.startCol; c <= seg.endCol; c++) {
-            if (slots.has(`${c}-${row}`)) {
-              foundRow = false;
-              break;
-            }
+      let rowNum = 0;
+      while (rowNum < 2) {
+        let canPlace = true;
+        for (let d = startDay; d <= endDay; d++) {
+          if (occupiedRows[d].has(String(rowNum))) {
+            canPlace = false;
+            break;
           }
-          if (!foundRow) row++;
         }
-        
-        // Mark slots as occupied
-        for (let c = seg.startCol; c <= seg.endCol; c++) {
-          slots.add(`${c}-${row}`);
-        }
-        
-        bars.push({
-          event,
-          weekdayRow,
-          startCol: seg.startCol,
-          endCol: seg.endCol,
-          row,
-        });
-      });
+        if (canPlace) break;
+        rowNum++;
+      }
+      
+      for (let d = startDay; d <= endDay; d++) {
+        occupiedRows[d].add(String(rowNum));
+      }
+      
+      if (rowNum < 2) {
+        bars.push({ event, startDay, endDay, rowNum });
+      }
     });
     
     return bars;
-  }, [events, dayToColumnIndex]);
+  };
 
-  const colWidth = 48; // Width per day column
-  const rowHeight = 80; // Height per weekday row
-  const headerHeight = 28; // Height of the date header
-  const eventHeight = 16;
-  const eventGap = 2;
-  const weekdayLabelWidth = 40; // Width of the weekday labels on the left
+  // Hey Calendar cell height - compact for 14 rows
+  const CELL_HEIGHT = 48;
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden">
-      {/* Main container with fixed weekday labels and scrollable content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Fixed weekday labels on the left */}
-        <div className="flex-shrink-0 flex flex-col" style={{ width: `${weekdayLabelWidth}px` }}>
-          {/* Empty corner for header alignment */}
-          <div style={{ height: `${headerHeight}px` }} className="border-b border-border/20" />
-          
-          {/* Weekday labels */}
-          {WEEKDAY_LABELS.map((label, idx) => (
-            <div
-              key={idx}
-              className={cn(
-                "flex items-start justify-end pr-2 pt-1 text-[11px] font-medium uppercase tracking-wide",
-                idx >= 5 ? "text-muted-foreground/50" : "text-muted-foreground"
-              )}
-              style={{ height: `${rowHeight}px` }}
-            >
-              {label}
-            </div>
-          ))}
+    <div className="h-full flex flex-col bg-white dark:bg-gray-950 overflow-hidden">
+      {/* Compact header - Hey style */}
+      <div className="flex-shrink-0 flex items-center justify-between px-6 py-3">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => window.history.back()}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+          >
+            <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{year}</h2>
         </div>
-        
-        {/* Scrollable calendar grid */}
-        <div className="flex-1 overflow-x-auto overflow-y-hidden" ref={scrollRef}>
-          <div style={{ width: `${numColumns * colWidth}px` }}>
-            {/* Header row with dates and month labels */}
-            <div className="flex border-b border-border/20" style={{ height: `${headerHeight}px` }}>
-              {daysByWeekday[0].map((_, colIdx) => {
-                // Find the first non-null day in this column to get the date
-                let columnDate: Date | null = null;
-                for (let w = 0; w < 7; w++) {
-                  if (daysByWeekday[w][colIdx]) {
-                    columnDate = daysByWeekday[w][colIdx];
-                    break;
-                  }
-                }
-                
-                // Check if this column starts a new month
-                const isFirstOfMonth = columnDate && columnDate.getDate() <= 7;
-                const showMonthLabel = columnDate && columnDate.getDate() === 1;
-                const monthIdx = columnDate ? columnDate.getMonth() : 0;
-                
-                return (
-                  <div
-                    key={colIdx}
-                    className="flex-shrink-0 flex items-center justify-center text-[10px] text-muted-foreground border-r border-border/10"
-                    style={{ width: `${colWidth}px` }}
-                  >
-                    {showMonthLabel && (
-                      <span className="font-semibold text-orange-600 dark:text-orange-400">
-                        {MONTH_ABBREVS[monthIdx]}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+        <button
+          onClick={() => onDayClick(new Date())}
+          className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+        >
+          Heute
+        </button>
+      </div>
+      
+      {/* Calendar grid - Hey style with 28 days per row */}
+      <div className="flex-1 overflow-auto">
+        <div className="min-w-full">
+          {rows.map((row, rowIdx) => {
+            const rowEvents = getEventsForRow(row);
+            const eventBars = getEventBars(row, rowEvents);
             
-            {/* Weekday rows */}
-            {WEEKDAY_LABELS.map((_, weekdayIdx) => {
-              const rowBars = eventBars.filter(b => b.weekdayRow === weekdayIdx);
-              
-              return (
-                <div
-                  key={weekdayIdx}
-                  className={cn(
-                    "flex relative border-b border-border/10",
-                    weekdayIdx >= 5 && "bg-muted/5"
-                  )}
-                  style={{ height: `${rowHeight}px` }}
-                >
-                  {/* Day cells */}
-                  {daysByWeekday[weekdayIdx].map((day, colIdx) => {
-                    if (!day) {
-                      return (
-                        <div
-                          key={colIdx}
-                          className="flex-shrink-0 border-r border-border/5"
-                          style={{ width: `${colWidth}px` }}
-                        />
-                      );
-                    }
-                    
-                    const dayIsToday = isToday(day);
-                    const isCurrentYear = day.getFullYear() === year;
-                    const isFirstOfMonth = day.getDate() === 1;
-                    const monthIdx = day.getMonth();
-                    
-                    return (
-                      <div
-                        key={colIdx}
-                        className={cn(
-                          "flex-shrink-0 border-r border-border/10 cursor-pointer hover:bg-muted/30 transition-colors",
-                          !isCurrentYear && "opacity-40",
-                          dayIsToday && "bg-blue-50/50 dark:bg-blue-950/20"
-                        )}
-                        style={{ width: `${colWidth}px` }}
-                        onClick={() => onDayClick(day)}
-                        title={format(day, "EEEE, d. MMMM yyyy", { locale: de })}
-                      >
-                        {/* Day number */}
-                        <div className="flex items-center gap-0.5 px-1 pt-1">
-                          {dayIsToday ? (
-                            <span className="text-xs font-bold text-white bg-red-500 rounded-full w-5 h-5 flex items-center justify-center">
-                              {day.getDate()}
-                            </span>
-                          ) : (
-                            <span className={cn(
-                              "text-xs font-bold",
-                              weekdayIdx >= 5 ? "text-muted-foreground/60" : "text-foreground"
-                            )}>
-                              {day.getDate()}
-                            </span>
-                          )}
-                          {isFirstOfMonth && (
-                            <span className="text-[8px] font-semibold text-orange-600 dark:text-orange-400">
-                              {MONTH_ABBREVS[monthIdx]}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+            return (
+              <div
+                key={rowIdx}
+                className="grid relative"
+                style={{ 
+                  gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))`,
+                  height: `${CELL_HEIGHT}px` 
+                }}
+              >
+                {row.map((day, dayIdx) => {
+                  const dayIsToday = isToday(day);
+                  const isCurrentYear = day.getFullYear() === year;
+                  const isFirstOfMonth = day.getDate() === 1;
+                  const monthIdx = getMonth(day);
+                  const dayOfWeek = getDay(day); // 0=Sun, 1=Mon, ..., 6=Sat
+                  const isWeekendDay = dayOfWeek === 0 || dayOfWeek === 6; // Sun or Sat
                   
-                  {/* Event bars overlay */}
-                  <div className="absolute inset-0 pointer-events-none" style={{ top: '22px' }}>
-                    {rowBars.map((bar, idx) => {
-                      const left = bar.startCol * colWidth + 2;
-                      const width = (bar.endCol - bar.startCol + 1) * colWidth - 4;
-                      const top = bar.row * (eventHeight + eventGap);
+                  return (
+                    <div
+                      key={dayIdx}
+                      className={cn(
+                        "relative cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors",
+                        "flex items-center gap-1 px-1",
+                        !isCurrentYear && "opacity-30",
+                        // Border around EVERY cell - Hey style
+                        "border border-gray-200 dark:border-gray-700",
+                        // Weekend (SAT, SUN) gray background
+                        isWeekendDay && "bg-gray-50 dark:bg-gray-900/50"
+                      )}
+                      onClick={() => onDayClick(day)}
+                      title={format(day, "EEEE, d. MMMM yyyy", { locale: de })}
+                    >
+                      {/* Weekday abbreviation - small, gray like Hey */}
+                      <span className="text-[9px] font-medium text-gray-400 dark:text-gray-500 uppercase flex-shrink-0">
+                        {WEEKDAY_ABBREVS[dayOfWeek]}
+                      </span>
+                      
+                      {/* Day number - Hey style */}
+                      {dayIsToday ? (
+                        <span className="text-xs font-bold text-white bg-red-500 rounded-full min-w-[18px] h-[18px] flex items-center justify-center flex-shrink-0">
+                          {day.getDate()}
+                        </span>
+                      ) : (
+                        <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 flex-shrink-0">
+                          {day.getDate()}
+                        </span>
+                      )}
+                      
+                      {/* Month label - Hey style colored badge */}
+                      {isFirstOfMonth && (
+                        <span 
+                          className={cn(
+                            "text-[8px] font-bold text-white px-1 py-0.5 rounded flex-shrink-0",
+                            MONTH_COLORS[monthIdx]
+                          )}
+                        >
+                          {MONTH_ABBREVS[monthIdx]}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+                
+                {/* Event bars */}
+                {eventBars.length > 0 && (
+                  <div className="absolute inset-0 pointer-events-none">
+                    {eventBars.map((bar, idx) => {
+                      const leftPercent = (bar.startDay / row.length) * 100;
+                      const widthPercent = ((bar.endDay - bar.startDay + 1) / row.length) * 100;
+                      const topOffset = bar.rowNum === 0 ? 'calc(100% - 12px)' : 'calc(100% - 22px)';
                       
                       return (
                         <div
                           key={idx}
                           className={cn(
-                            "absolute rounded text-[10px] text-white px-1.5 truncate pointer-events-auto cursor-pointer hover:opacity-80 shadow-sm flex items-center font-medium",
+                            "absolute h-[10px] rounded text-[8px] text-white px-1 truncate pointer-events-auto cursor-pointer hover:opacity-80 flex items-center",
                             getEventBgColor(bar.event.color)
                           )}
                           style={{
-                            top: `${top}px`,
-                            left: `${left}px`,
-                            width: `${width}px`,
-                            height: `${eventHeight}px`,
+                            top: topOffset,
+                            left: `calc(${leftPercent}% + 1px)`,
+                            width: `calc(${widthPercent}% - 2px)`,
                           }}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -380,10 +318,10 @@ export function YearCalendarView({
                       );
                     })}
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

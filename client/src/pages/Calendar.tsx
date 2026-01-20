@@ -1258,10 +1258,19 @@ export default function Calendar() {
     );
   }
 
+  // In year view, use full height without header
+  const isYearView = viewMode === "year";
+
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4 flex-shrink-0">
+    <div className={cn(
+      "flex flex-col",
+      isYearView ? "h-[calc(100vh-60px)]" : "h-[calc(100vh-120px)]"
+    )}>
+      {/* Header - hidden in year view for more space */}
+      <div className={cn(
+        "flex items-center justify-between mb-4 flex-shrink-0",
+        isYearView && "hidden"
+      )}>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={() => navigate("prev")}>
             <ChevronLeft className="h-4 w-4" />
@@ -1360,24 +1369,28 @@ export default function Calendar() {
       </div>
 
       {/* Calendar content */}
-      <Card className="flex-1 overflow-hidden">
-        <CardContent className="p-0 h-full">
-          {viewMode === "month" && renderMonthView()}
-          {viewMode === "week" && renderWeekView()}
-          {viewMode === "day" && renderDayView()}
-          {viewMode === "year" && (
-            <YearCalendarView
-              currentDate={currentDate}
-              events={allEvents || []}
-              onDayClick={(day) => {
-                setCurrentDate(day);
-                setViewMode("day");
-              }}
-              onEventClick={openEditEventDialog}
-            />
-          )}
-        </CardContent>
-      </Card>
+      {isYearView ? (
+        // Year view - full screen without card wrapper
+        <div className="flex-1 overflow-hidden">
+          <YearCalendarView
+            currentDate={currentDate}
+            events={allEvents || []}
+            onDayClick={(day) => {
+              setCurrentDate(day);
+              setViewMode("day");
+            }}
+            onEventClick={openEditEventDialog}
+          />
+        </div>
+      ) : (
+        <Card className="flex-1 overflow-hidden">
+          <CardContent className="p-0 h-full">
+            {viewMode === "month" && renderMonthView()}
+            {viewMode === "week" && renderWeekView()}
+            {viewMode === "day" && renderDayView()}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Event Dialog - Hey Calendar Style */}
       <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>

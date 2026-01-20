@@ -397,3 +397,46 @@
 - [x] Horizontales Scrollen durch das Jahr
 - [x] Monatslabels bei Monatswechsel
 - [x] Mehrtägige Events als horizontale Balken über Spalten
+
+## Jahreskalender Hey-Style FINAL
+- [ ] Jeder Tag = eine eigene Spalte (365 Spalten für das Jahr)
+- [ ] Horizontales Scrollen durch ALLE Tage des Jahres (nicht nur Wochen)
+- [ ] 7 Zeilen für Wochentage (MON-SUN) als fixierte Zeilen-Header links
+- [ ] Monatslabels in der Kopfzeile über den entsprechenden Tagen
+- [ ] Schmale Spalten (ca. 24-32px pro Tag) für kompakte Darstellung
+
+## Jahreskalender Bildschirmfüllend (KEIN horizontales Scrollen)
+- [ ] 7 Spalten für Wochentage (MON-SUN) über die VOLLE Bildschirmbreite
+- [ ] Wochen als Zeilen (vertikales Scrollen durch das Jahr)
+- [ ] Jede Zelle zeigt "WOC TAG" (z.B. "MON 26")
+- [ ] Kein horizontales Scrollen - alles sofort sichtbar
+- [ ] Responsive Layout das sich an Bildschirmbreite anpasst
+
+## Jahreskalender Hey-Style EXAKT (basierend auf Screenshot)
+- [ ] Wochen als Zeilen (52-53 Zeilen für das Jahr)
+- [ ] Tage fließen horizontal durch die Zeilen (MON 26, TUE 27, WED 28... bis SUN)
+- [ ] Gesamtes Jahr auf einem Bildschirm sichtbar (kompakt)
+- [ ] Keine Scrollbars - alles bildschirmfüllend
+- [ ] Monatslabels bei Monatswechsel (JAN, FEB, MAR, etc.)
+- [ ] Mehrtägige Events als horizontale Balken über Tage
+
+## Jahreskalender Vollbild-Modus (exakt wie Hey)
+- [ ] Sidebar ausblenden wenn Jahresansicht aktiv ist
+- [ ] Zeilen noch kompakter machen (weniger Höhe pro Woche)
+- [ ] Gesamtes Jahr ohne Scrollen auf einem Bildschirm sichtbar
+
+## Jahreskalender Styling wie Hey
+- [ ] Weißer/heller Hintergrund
+- [ ] Keine roten Kästchen um die Zahlen - sauberes Layout
+- [ ] Dezente Linien zwischen den Wochen
+- [ ] Farbige Monatslabels am Anfang jedes Monats
+- [ ] Responsive Design überprüfen und optimieren
+
+## Jahreskalender Feintuning
+- [x] Kästchen-Größe ähnlich wie bei Hey (28 Tage pro Zeile)
+- [x] Wochenenden grau unterlegt (SAT, SUN)
+- [x] Schriftgrößen wie bei Hey (Wochentag kleiner, Datum größer)
+
+## Jahreskalender Quadratische Zellen
+- [x] Zellen mit 28 Tagen pro Zeile wie bei Hey
+- [x] Trennlinien wie bei Hey (Rahmen um jede Zelle)
