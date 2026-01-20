@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO calendarEvents (userId, title, description, startDate, endDate, isAllDay, color, eventType, createdAt, updatedAt)\nVALUES \n(1, 'Urlaub Mallorca', 'Familienurlaub', '2026-02-15 00:00:00', '2026-02-25 23:59:59', 1, 'orange', 'vacation', NOW(), NOW()),\n(1, 'Projekt Alpha', 'Wichtiges Projekt', '2026-03-01 00:00:00', '2026-03-15 23:59:59', 1, 'blue', 'meeting', NOW(), NOW()),\n(1, 'Konferenz Berlin', 'Tech-Konferenz', '2026-04-10 00:00:00', '2026-04-12 23:59:59', 1, 'green', 'meeting', NOW(), NOW()),\n(1, 'Sommerfest', 'Firmenevent', '2026-06-20 00:00:00', '2026-06-22 23:59:59', 1, 'yellow', 'personal', NOW(), NOW()),\n(1, 'Workshop', 'Team-Workshop', '2026-05-05 00:00:00', '2026-05-08 23:59:59', 1, 'purple', 'meeting', NOW(), NOW());",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute INSERT INTO calendarEvents (userId, title, description, startDate, endDate, isAllDay, color, eventType, createdAt, updatedAt)\nVALUES \n(1, 'Urlaub Mallorca', 'Familienurlaub', '2026-02-15 00:00:00', '2026-02-25 23:59:59', 1, 'orange', 'vacation', NOW(), NOW()),\n(1, 'Projekt Alpha', 'Wichtiges Projekt', '2026-03-01 00:00:00', '2026-03-15 23:59:59', 1, 'blue', 'meeting', NOW(), NOW()),\n(1, 'Konferenz Berlin', 'Tech-Konferenz', '2026-04-10 00:00:00', '2026-04-12 23:59:59', 1, 'green', 'meeting', NOW(), NOW()),\n(1, 'Sommerfest', 'Firmenevent', '2026-06-20 00:00:00', '2026-06-22 23:59:59', 1, 'yellow', 'personal', NOW(), NOW()),\n(1, 'Workshop', 'Team-Workshop', '2026-05-05 00:00:00', '2026-05-08 23:59:59', 1, 'purple', 'meeting', NOW(), NOW());",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 59
+}

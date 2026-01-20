@@ -444,3 +444,9 @@
 ## Jahreskalender Dynamische Zeilenhöhe
 - [x] Zeilenhöhe dynamisch berechnen basierend auf verfügbarer Bildschirmhöhe
 - [x] Alle Zeilen ohne Scrollen in den sichtbaren Bereich passen (nach Publizierung)
+
+## Mehrtägige Events als horizontale Balken
+- [ ] Mehrtägige Events als durchgehende horizontale Balken darstellen
+- [ ] Balken erstrecken sich über die entsprechenden Tage
+- [ ] Event-Titel im Balken anzeigen
+- [ ] Farbkodierung für verschiedene Events

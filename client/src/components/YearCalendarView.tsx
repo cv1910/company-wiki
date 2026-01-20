@@ -165,35 +165,46 @@ export function YearCalendarView({
     });
   };
 
-  // Calculate event bar positions for 28-day rows
+  // Calculate event bar positions for 28-day rows - Hey Calendar style
   const getEventBars = (row: Date[], rowEvents: CalendarEvent[]) => {
     const bars: Array<{
       event: CalendarEvent;
       startDay: number;
       endDay: number;
       rowNum: number;
+      continuesFromPrevious: boolean;
+      continuesToNext: boolean;
     }> = [];
     
-    const occupiedRows: Set<string>[] = Array(28).fill(null).map(() => new Set());
+    const occupiedRows: Set<string>[] = Array(row.length).fill(null).map(() => new Set());
     
+    // Sort events by duration (longest first) and then by start date
     const sortedEvents = [...rowEvents].sort((a, b) => {
       const aDuration = differenceInDays(new Date(a.endDate), new Date(a.startDate));
       const bDuration = differenceInDays(new Date(b.endDate), new Date(b.startDate));
-      return bDuration - aDuration;
+      if (bDuration !== aDuration) return bDuration - aDuration;
+      return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
     });
     
     sortedEvents.forEach(event => {
       const eventStart = new Date(event.startDate);
       const eventEnd = new Date(event.endDate);
       
-      let startDay = eventStart < row[0] ? 0 : row.findIndex(d => isSameDay(d, eventStart));
-      let endDay = eventEnd > row[row.length - 1] ? row.length - 1 : row.findIndex(d => isSameDay(d, eventEnd));
+      // Check if event continues from previous row or to next row
+      const continuesFromPrevious = eventStart < row[0];
+      const continuesToNext = eventEnd > row[row.length - 1];
+      
+      // Find start and end positions in this row
+      let startDay = continuesFromPrevious ? 0 : row.findIndex(d => isSameDay(d, eventStart));
+      let endDay = continuesToNext ? row.length - 1 : row.findIndex(d => isSameDay(d, eventEnd));
       
       if (startDay === -1) startDay = 0;
       if (endDay === -1) endDay = row.length - 1;
       
+      // Find available row for this event bar
       let rowNum = 0;
-      while (rowNum < 2) {
+      const maxRows = 3; // Allow up to 3 event bars per row
+      while (rowNum < maxRows) {
         let canPlace = true;
         for (let d = startDay; d <= endDay; d++) {
           if (occupiedRows[d].has(String(rowNum))) {
@@ -205,12 +216,20 @@ export function YearCalendarView({
         rowNum++;
       }
       
+      // Mark days as occupied
       for (let d = startDay; d <= endDay; d++) {
         occupiedRows[d].add(String(rowNum));
       }
       
-      if (rowNum < 2) {
-        bars.push({ event, startDay, endDay, rowNum });
+      if (rowNum < maxRows) {
+        bars.push({ 
+          event, 
+          startDay, 
+          endDay, 
+          rowNum,
+          continuesFromPrevious,
+          continuesToNext
+        });
       }
     });
     
@@ -333,38 +352,50 @@ export function YearCalendarView({
                   );
                 })}
                 
-                {/* Event bars */}
+                {/* Event bars - Hey Calendar style: horizontal bars spanning days */}
                 {eventBars.length > 0 && (
-                  <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute inset-0 pointer-events-none overflow-hidden">
                     {eventBars.map((bar, idx) => {
                       const leftPercent = (bar.startDay / row.length) * 100;
                       const widthPercent = ((bar.endDay - bar.startDay + 1) / row.length) * 100;
-                      const eventBarHeight = rowHeight < 40 ? '8px' : '11px';
-                      const topOffset = bar.rowNum === 0 
-                        ? `calc(100% - ${parseInt(eventBarHeight) + 2}px)` 
-                        : `calc(100% - ${(parseInt(eventBarHeight) + 2) * 2}px)`;
+                      const eventBarHeight = rowHeight < 35 ? 10 : rowHeight < 45 ? 12 : 14;
+                      const eventBarGap = 2;
+                      const topOffset = rowHeight - (eventBarHeight + eventBarGap) * (bar.rowNum + 1) - 2;
                       
                       return (
                         <div
                           key={idx}
                           className={cn(
-                            "absolute rounded text-white px-1 truncate pointer-events-auto cursor-pointer hover:opacity-80 flex items-center",
-                            getEventBgColor(bar.event.color)
+                            "absolute text-white truncate pointer-events-auto cursor-pointer hover:brightness-110 flex items-center shadow-sm",
+                            getEventBgColor(bar.event.color),
+                            // Rounded corners based on continuation
+                            bar.continuesFromPrevious && bar.continuesToNext ? "rounded-none" :
+                            bar.continuesFromPrevious ? "rounded-r" :
+                            bar.continuesToNext ? "rounded-l" :
+                            "rounded"
                           )}
                           style={{
-                            top: topOffset,
-                            left: `calc(${leftPercent}% + 2px)`,
-                            width: `calc(${widthPercent}% - 4px)`,
-                            height: eventBarHeight,
-                            fontSize: rowHeight < 40 ? '7px' : '9px',
+                            top: `${topOffset}px`,
+                            left: bar.continuesFromPrevious ? '0' : `calc(${leftPercent}% + 1px)`,
+                            width: bar.continuesFromPrevious && bar.continuesToNext 
+                              ? '100%' 
+                              : bar.continuesFromPrevious 
+                                ? `calc(${widthPercent}% - 1px)` 
+                                : bar.continuesToNext 
+                                  ? `calc(${widthPercent}% - 1px)` 
+                                  : `calc(${widthPercent}% - 2px)`,
+                            height: `${eventBarHeight}px`,
+                            fontSize: rowHeight < 35 ? '8px' : rowHeight < 45 ? '9px' : '10px',
+                            paddingLeft: bar.continuesFromPrevious ? '4px' : '6px',
+                            paddingRight: '4px',
                           }}
                           onClick={(e) => {
                             e.stopPropagation();
                             onEventClick(bar.event);
                           }}
-                          title={bar.event.title}
+                          title={`${bar.event.title}${bar.continuesFromPrevious ? ' (Fortsetzung)' : ''}${bar.continuesToNext ? ' (wird fortgesetzt)' : ''}`}
                         >
-                          <span className="truncate">{bar.event.title}</span>
+                          <span className="truncate font-medium">{bar.event.title}</span>
                         </div>
                       );
                     })}
