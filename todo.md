@@ -385,3 +385,8 @@
 - [x] Wochen als horizontale Zeilen (nicht alle Tage in einer Zeile)
 - [x] Jede Woche = eine Zeile mit MON bis SUN
 - [x] Vertikales Scrollen durch die Wochen des Jahres
+
+## Jahreskalender Bildschirmfüllend
+- [x] Zellen über die gesamte Bildschirmbreite (flex-1)
+- [x] Keine feste Zellenbreite, responsive Layout
+- [x] Wie bei Hey Calendar: volle Breite nutzen

@@ -7,7 +7,6 @@ import {
   addDays,
   isToday,
   isSameDay,
-  getDay,
   differenceInDays,
 } from "date-fns";
 import { de } from "date-fns/locale";
@@ -91,7 +90,7 @@ export function YearCalendarView({
         week.some(day => isSameDay(day, today))
       );
       if (currentWeekIdx > 2) {
-        const rowHeight = 56;
+        const rowHeight = 52;
         scrollRef.current.scrollTop = Math.max(0, (currentWeekIdx - 2) * rowHeight);
       }
     }
@@ -188,8 +187,7 @@ export function YearCalendarView({
     return barsByWeek;
   }, [events, weeksData]);
 
-  const cellWidth = 90; // Width per day
-  const rowHeight = 56; // Height per week row
+  const rowHeight = 52;
   const eventHeight = 16;
   const eventGap = 2;
 
@@ -201,15 +199,15 @@ export function YearCalendarView({
         {weeksData.map((week, weekIdx) => {
           const weekBars = eventBarsByWeek.get(weekIdx) || [];
           const maxRow = weekBars.length > 0 ? Math.max(...weekBars.map((b: { row: number }) => b.row)) : -1;
-          const dynamicHeight = Math.max(rowHeight, 24 + (maxRow + 1) * (eventHeight + eventGap) + 4);
+          const dynamicHeight = Math.max(rowHeight, 24 + (maxRow + 1) * (eventHeight + eventGap) + 8);
           
           return (
             <div 
               key={weekIdx} 
-              className="flex border-b border-border/20 relative"
+              className="flex border-b border-border/20 relative w-full"
               style={{ minHeight: `${dynamicHeight}px` }}
             >
-              {/* Day cells for this week */}
+              {/* Day cells for this week - flex-1 to fill width equally */}
               {week.map((day, dayIdx) => {
                 const dayIsToday = isToday(day);
                 const isFirstOfMonth = day.getDate() === 1;
@@ -222,37 +220,37 @@ export function YearCalendarView({
                   <div
                     key={dayIdx}
                     className={cn(
-                      "flex-shrink-0 border-r border-border/10 cursor-pointer hover:bg-muted/30 transition-colors relative",
+                      "flex-1 border-r border-border/10 cursor-pointer hover:bg-muted/30 transition-colors relative",
                       isWeekend && "bg-muted/5",
                       !isCurrentYear && "opacity-40",
                       dayIsToday && "bg-blue-50/50 dark:bg-blue-950/20"
                     )}
-                    style={{ width: `${cellWidth}px`, minHeight: `${dynamicHeight}px` }}
+                    style={{ minHeight: `${dynamicHeight}px` }}
                     onClick={() => onDayClick(day)}
                     title={format(day, "EEEE, d. MMMM yyyy", { locale: de })}
                   >
                     {/* Day header: WOC TAG [MONAT] */}
-                    <div className="flex items-center gap-1 px-1 py-1">
+                    <div className="flex items-center gap-1.5 px-2 py-1.5">
                       <span className={cn(
-                        "text-[10px] uppercase tracking-wide",
+                        "text-[11px] uppercase tracking-wide font-medium",
                         isWeekend ? "text-muted-foreground/50" : "text-muted-foreground"
                       )}>
                         {weekdayAbbrev}
                       </span>
                       {dayIsToday ? (
-                        <span className="text-xs font-bold text-white bg-red-500 rounded-full w-5 h-5 flex items-center justify-center">
+                        <span className="text-sm font-bold text-white bg-red-500 rounded-full w-6 h-6 flex items-center justify-center">
                           {day.getDate()}
                         </span>
                       ) : (
                         <span className={cn(
-                          "text-xs font-bold",
+                          "text-sm font-bold",
                           isWeekend ? "text-muted-foreground/60" : "text-foreground"
                         )}>
                           {day.getDate()}
                         </span>
                       )}
                       {isFirstOfMonth && isCurrentYear && (
-                        <span className="text-[9px] font-semibold text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/40 px-1 rounded">
+                        <span className="text-[10px] font-semibold text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/40 px-1.5 py-0.5 rounded">
                           {MONTH_ABBREVS[monthIdx]}
                         </span>
                       )}
@@ -261,24 +259,25 @@ export function YearCalendarView({
                 );
               })}
               
-              {/* Event bars overlay for this week */}
-              <div className="absolute inset-0 pointer-events-none" style={{ top: '24px' }}>
+              {/* Event bars overlay for this week - positioned using percentages */}
+              <div className="absolute inset-0 pointer-events-none" style={{ top: '28px' }}>
                 {weekBars.map((bar: { event: CalendarEvent; startDayIdx: number; endDayIdx: number; row: number }, idx: number) => {
-                  const left = bar.startDayIdx * cellWidth + 2;
-                  const width = (bar.endDayIdx - bar.startDayIdx + 1) * cellWidth - 4;
+                  // Calculate position using percentages for responsive layout
+                  const leftPercent = (bar.startDayIdx / 7) * 100;
+                  const widthPercent = ((bar.endDayIdx - bar.startDayIdx + 1) / 7) * 100;
                   const top = bar.row * (eventHeight + eventGap);
                   
                   return (
                     <div
                       key={idx}
                       className={cn(
-                        "absolute rounded text-[10px] text-white px-1.5 truncate pointer-events-auto cursor-pointer hover:opacity-80 shadow-sm flex items-center font-medium",
+                        "absolute rounded text-[11px] text-white px-2 truncate pointer-events-auto cursor-pointer hover:opacity-80 shadow-sm flex items-center font-medium",
                         getEventBgColor(bar.event.color)
                       )}
                       style={{ 
                         top: `${top}px`, 
-                        left: `${left}px`, 
-                        width: `${width}px`,
+                        left: `calc(${leftPercent}% + 4px)`,
+                        width: `calc(${widthPercent}% - 8px)`,
                         height: `${eventHeight}px`
                       }}
                       onClick={(e) => {
