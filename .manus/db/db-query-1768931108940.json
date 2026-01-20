@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `ohweeeTypingIndicators` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`roomId` int NOT NULL,\n\t`userId` int NOT NULL,\n\t`lastTypingAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `ohweeeTypingIndicators_id` PRIMARY KEY(`id`)\n);\n\nCREATE TABLE `ohweeeUnreadMarkers` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`ohweeeId` int NOT NULL,\n\t`userId` int NOT NULL,\n\t`markedAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `ohweeeUnreadMarkers_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute CREATE TABLE `ohweeeTypingIndicators` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`roomId` int NOT NULL,\n\t`userId` int NOT NULL,\n\t`lastTypingAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `ohweeeTypingIndicators_id` PRIMARY KEY(`id`)\n);\n\nCREATE TABLE `ohweeeUnreadMarkers` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`ohweeeId` int NOT NULL,\n\t`userId` int NOT NULL,\n\t`markedAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `ohweeeUnreadMarkers_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 510
+}

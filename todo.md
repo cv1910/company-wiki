@@ -568,3 +568,12 @@
 - [ ] Frontend: Nachrichtensuche mit Filteroptionen
 - [ ] Frontend: Push-Benachrichtigungen (Browser Notifications API)
 - [ ] Service Worker für Hintergrund-Benachrichtigungen
+
+## Ohweees: Ungelesen-Markierung und Typing-Indikator
+- [x] Datenbank: Feld für manuell als ungelesen markierte Nachrichten
+- [x] Datenbank: Tabelle für Typing-Status (wer tippt gerade in welchem Raum)
+- [x] Backend: API zum Markieren/Entmarkieren als ungelesen
+- [x] Backend: API für Typing-Status (setzen/abrufen)
+- [x] Frontend: "Als ungelesen markieren" Option im Nachrichten-Menü
+- [x] Frontend: Typing-Indikator Anzeige ("Anna schreibt...")
+- [x] Frontend: Typing-Status beim Tippen senden

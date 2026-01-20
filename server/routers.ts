@@ -4507,6 +4507,62 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         await db.removePushSubscription(input.endpoint);
         return { success: true };
       }),
+
+    // ==================== UNREAD MARKERS ====================
+    
+    // Mark message as unread (for later review)
+    markAsUnread: protectedProcedure
+      .input(z.object({ ohweeeId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.markOhweeeAsUnread(input.ohweeeId, ctx.user.id);
+        return { success: true };
+      }),
+
+    // Remove unread marker
+    removeUnreadMarker: protectedProcedure
+      .input(z.object({ ohweeeId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.removeUnreadMarker(input.ohweeeId, ctx.user.id);
+        return { success: true };
+      }),
+
+    // Get all messages marked as unread by user
+    getUnreadMarkers: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUnreadMarkersForUser(ctx.user.id);
+    }),
+
+    // Check if message is marked as unread (batch)
+    getUnreadMarkersBatch: protectedProcedure
+      .input(z.object({ ohweeeIds: z.array(z.number()) }))
+      .query(async ({ input, ctx }) => {
+        const markedIds = await db.getUnreadMarkersBatch(input.ohweeeIds, ctx.user.id);
+        return Array.from(markedIds);
+      }),
+
+    // ==================== TYPING INDICATORS ====================
+    
+    // Set typing status (call this while user is typing)
+    setTyping: protectedProcedure
+      .input(z.object({ roomId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.setTypingStatus(input.roomId, ctx.user.id);
+        return { success: true };
+      }),
+
+    // Clear typing status (call when user stops typing or sends message)
+    clearTyping: protectedProcedure
+      .input(z.object({ roomId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.clearTypingStatus(input.roomId, ctx.user.id);
+        return { success: true };
+      }),
+
+    // Get users currently typing in a room
+    getTypingUsers: protectedProcedure
+      .input(z.object({ roomId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        return db.getTypingUsersInRoom(input.roomId, ctx.user.id);
+      }),
   }),
 });
 

@@ -87,6 +87,10 @@ import {
   InsertSchedule,
   scheduleAvailability,
   InsertScheduleAvailability,
+  ohweeeUnreadMarkers,
+  InsertOhweeeUnreadMarker,
+  ohweeeTypingIndicators,
+  InsertOhweeeTypingIndicator,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -4191,4 +4195,160 @@ export async function getPushSubscriptionsForUsers(userIds: number[]) {
   const db = await getDb();
   if (!db || userIds.length === 0) return [];
   return db.select().from(pushSubscriptions).where(inArray(pushSubscriptions.userId, userIds));
+}
+
+
+// ==================== OHWEEE UNREAD MARKERS ====================
+
+// Mark a message as unread (for later review)
+export async function markOhweeeAsUnread(ohweeeId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  // Check if already marked
+  const existing = await db
+    .select()
+    .from(ohweeeUnreadMarkers)
+    .where(and(eq(ohweeeUnreadMarkers.ohweeeId, ohweeeId), eq(ohweeeUnreadMarkers.userId, userId)))
+    .limit(1);
+  
+  if (existing.length === 0) {
+    await db.insert(ohweeeUnreadMarkers).values({ ohweeeId, userId });
+  }
+}
+
+// Remove unread marker from a message
+export async function removeUnreadMarker(ohweeeId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db
+    .delete(ohweeeUnreadMarkers)
+    .where(and(eq(ohweeeUnreadMarkers.ohweeeId, ohweeeId), eq(ohweeeUnreadMarkers.userId, userId)));
+}
+
+// Get all unread markers for a user
+export async function getUnreadMarkersForUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select({
+      marker: ohweeeUnreadMarkers,
+      ohweee: ohweees,
+      sender: {
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+      },
+      room: chatRooms,
+    })
+    .from(ohweeeUnreadMarkers)
+    .innerJoin(ohweees, eq(ohweeeUnreadMarkers.ohweeeId, ohweees.id))
+    .innerJoin(users, eq(ohweees.senderId, users.id))
+    .innerJoin(chatRooms, eq(ohweees.roomId, chatRooms.id))
+    .where(eq(ohweeeUnreadMarkers.userId, userId))
+    .orderBy(desc(ohweeeUnreadMarkers.markedAt));
+}
+
+// Check if a message is marked as unread by user
+export async function isOhweeeMarkedUnread(ohweeeId: number, userId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const existing = await db
+    .select()
+    .from(ohweeeUnreadMarkers)
+    .where(and(eq(ohweeeUnreadMarkers.ohweeeId, ohweeeId), eq(ohweeeUnreadMarkers.userId, userId)))
+    .limit(1);
+  
+  return existing.length > 0;
+}
+
+// Get unread markers for multiple messages (batch)
+export async function getUnreadMarkersBatch(ohweeeIds: number[], userId: number): Promise<Set<number>> {
+  const db = await getDb();
+  if (!db || ohweeeIds.length === 0) return new Set();
+  
+  const results = await db
+    .select({ ohweeeId: ohweeeUnreadMarkers.ohweeeId })
+    .from(ohweeeUnreadMarkers)
+    .where(and(inArray(ohweeeUnreadMarkers.ohweeeId, ohweeeIds), eq(ohweeeUnreadMarkers.userId, userId)));
+  
+  return new Set(results.map(r => r.ohweeeId));
+}
+
+
+// ==================== OHWEEE TYPING INDICATORS ====================
+
+// Set typing status for a user in a room
+export async function setTypingStatus(roomId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  // Check if record exists
+  const existing = await db
+    .select()
+    .from(ohweeeTypingIndicators)
+    .where(and(eq(ohweeeTypingIndicators.roomId, roomId), eq(ohweeeTypingIndicators.userId, userId)))
+    .limit(1);
+  
+  if (existing.length > 0) {
+    // Update timestamp
+    await db
+      .update(ohweeeTypingIndicators)
+      .set({ lastTypingAt: new Date() })
+      .where(and(eq(ohweeeTypingIndicators.roomId, roomId), eq(ohweeeTypingIndicators.userId, userId)));
+  } else {
+    // Insert new record
+    await db.insert(ohweeeTypingIndicators).values({ roomId, userId });
+  }
+}
+
+// Clear typing status for a user in a room
+export async function clearTypingStatus(roomId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db
+    .delete(ohweeeTypingIndicators)
+    .where(and(eq(ohweeeTypingIndicators.roomId, roomId), eq(ohweeeTypingIndicators.userId, userId)));
+}
+
+// Get users currently typing in a room (within last 5 seconds)
+export async function getTypingUsersInRoom(roomId: number, excludeUserId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get typing indicators from last 5 seconds
+  const fiveSecondsAgo = new Date(Date.now() - 5000);
+  
+  return db
+    .select({
+      userId: ohweeeTypingIndicators.userId,
+      userName: users.name,
+      userAvatar: users.avatarUrl,
+      lastTypingAt: ohweeeTypingIndicators.lastTypingAt,
+    })
+    .from(ohweeeTypingIndicators)
+    .innerJoin(users, eq(ohweeeTypingIndicators.userId, users.id))
+    .where(
+      and(
+        eq(ohweeeTypingIndicators.roomId, roomId),
+        sql`${ohweeeTypingIndicators.userId} != ${excludeUserId}`,
+        sql`${ohweeeTypingIndicators.lastTypingAt} > ${fiveSecondsAgo}`
+      )
+    );
+}
+
+// Clean up old typing indicators (older than 10 seconds)
+export async function cleanupOldTypingIndicators() {
+  const db = await getDb();
+  if (!db) return;
+  
+  const tenSecondsAgo = new Date(Date.now() - 10000);
+  
+  await db
+    .delete(ohweeeTypingIndicators)
+    .where(sql`${ohweeeTypingIndicators.lastTypingAt} < ${tenSecondsAgo}`);
 }

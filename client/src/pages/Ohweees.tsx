@@ -45,6 +45,8 @@ import {
   FileImage,
   File,
   Download,
+  BookmarkMinus,
+  BookmarkPlus,
 } from "lucide-react";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { de } from "date-fns/locale";
@@ -86,12 +88,15 @@ function OhweeeMessage({
   onShowThread,
   onAddReaction,
   onRemoveReaction,
+  onMarkAsUnread,
+  onRemoveUnreadMarker,
   currentUserId,
   reactions,
   replyCount,
   showReactionPicker,
   onToggleReactionPicker,
   readReceipts,
+  isMarkedUnread,
 }: {
   message: {
     ohweee: {
@@ -124,6 +129,9 @@ function OhweeeMessage({
   showReactionPicker: boolean;
   onToggleReactionPicker: () => void;
   readReceipts?: { userId: number; userName: string | null; userAvatar: string | null }[];
+  isMarkedUnread?: boolean;
+  onMarkAsUnread: () => void;
+  onRemoveUnreadMarker: () => void;
 }) {
   const getInitials = (name: string) => {
     return name
@@ -318,6 +326,17 @@ function OhweeeMessage({
                   <Pin className="h-4 w-4 mr-2" />
                   {message.ohweee.isPinned ? "Lösen" : "Anpinnen"}
                 </DropdownMenuItem>
+                {isMarkedUnread ? (
+                  <DropdownMenuItem onClick={onRemoveUnreadMarker}>
+                    <BookmarkMinus className="h-4 w-4 mr-2" />
+                    Gelesen-Markierung entfernen
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onClick={onMarkAsUnread}>
+                    <BookmarkPlus className="h-4 w-4 mr-2" />
+                    Als ungelesen markieren
+                  </DropdownMenuItem>
+                )}
                 {isOwn && (
                   <>
                     <DropdownMenuItem onClick={onEdit}>
@@ -477,6 +496,9 @@ export default function OhweeesPage() {
   // Reaction picker state
   const [showReactionPicker, setShowReactionPicker] = useState<number | null>(null);
   
+  // Typing indicator state
+  const [lastTypingTime, setLastTypingTime] = useState<number>(0);
+  
   // Search state
   const [showSearchDialog, setShowSearchDialog] = useState(false);
   const [searchInput, setSearchInput] = useState("");
@@ -635,6 +657,44 @@ export default function OhweeesPage() {
   // Mark messages as read when viewing
   const markAsRead = trpc.ohweees.markAsRead.useMutation();
   
+  // Unread markers
+  const { data: unreadMarkers } = trpc.ohweees.getUnreadMarkersBatch.useQuery(
+    { ohweeeIds: messageIds },
+    { enabled: messageIds.length > 0 }
+  );
+  
+  const markAsUnread = trpc.ohweees.markAsUnread.useMutation({
+    onSuccess: () => {
+      utils.ohweees.getUnreadMarkersBatch.invalidate();
+      toast.success("Als ungelesen markiert");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+  
+  const removeUnreadMarker = trpc.ohweees.removeUnreadMarker.useMutation({
+    onSuccess: () => {
+      utils.ohweees.getUnreadMarkersBatch.invalidate();
+      toast.success("Markierung entfernt");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+  
+  // Typing indicator
+  const { data: typingUsers } = trpc.ohweees.getTypingUsers.useQuery(
+    { roomId: selectedRoomId! },
+    { 
+      enabled: !!selectedRoomId,
+      refetchInterval: 2000, // Check every 2 seconds
+    }
+  );
+  
+  const setTyping = trpc.ohweees.setTyping.useMutation();
+  const clearTyping = trpc.ohweees.clearTyping.useMutation();
+  
   useEffect(() => {
     if (messageIds.length > 0 && user?.id) {
       // Mark all visible messages as read
@@ -696,6 +756,10 @@ export default function OhweeesPage() {
 
   const handleSendMessage = () => {
     if ((!messageInput.trim() && pendingAttachments.length === 0) || !selectedRoomId) return;
+    
+    // Clear typing status when sending
+    clearTyping.mutate({ roomId: selectedRoomId });
+    
     sendMessage.mutate({
       roomId: selectedRoomId,
       content: messageInput.trim() || (pendingAttachments.length > 0 ? "[Datei]" : ""),
@@ -748,6 +812,13 @@ export default function OhweeesPage() {
       setEditContent(value);
     } else {
       setMessageInput(value);
+    }
+    
+    // Send typing indicator (throttled to every 3 seconds)
+    const now = Date.now();
+    if (selectedRoomId && now - lastTypingTime > 3000) {
+      setLastTypingTime(now);
+      setTyping.mutate({ roomId: selectedRoomId });
     }
     
     // Check for @ trigger
@@ -1135,6 +1206,13 @@ export default function OhweeesPage() {
                             onTogglePin={() => {
                               togglePin.mutate({ id: message.ohweee.id });
                             }}
+                            isMarkedUnread={unreadMarkers?.includes(message.ohweee.id)}
+                            onMarkAsUnread={() => {
+                              markAsUnread.mutate({ ohweeeId: message.ohweee.id });
+                            }}
+                            onRemoveUnreadMarker={() => {
+                              removeUnreadMarker.mutate({ ohweeeId: message.ohweee.id });
+                            }}
                           />
                         );
                       })}
@@ -1144,6 +1222,27 @@ export default function OhweeesPage() {
                 <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
+
+            {/* Typing Indicator */}
+            {typingUsers && typingUsers.length > 0 && (
+              <div className="px-4 py-2 text-sm text-muted-foreground animate-pulse">
+                <span className="inline-flex items-center gap-1">
+                  <span className="flex gap-0.5">
+                    <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </span>
+                  <span className="ml-1">
+                    {typingUsers.length === 1 
+                      ? `${typingUsers[0].userName || 'Jemand'} schreibt...`
+                      : typingUsers.length === 2
+                        ? `${typingUsers[0].userName} und ${typingUsers[1].userName} schreiben...`
+                        : `${typingUsers[0].userName} und ${typingUsers.length - 1} weitere schreiben...`
+                    }
+                  </span>
+                </span>
+              </div>
+            )}
 
             {/* Message Input */}
             <div className="p-4 border-t">

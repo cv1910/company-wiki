@@ -1009,3 +1009,31 @@ export const pushSubscriptions = mysqlTable("pushSubscriptions", {
 
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;
+
+
+/**
+ * Manually marked unread messages - allows users to mark messages as unread for later.
+ */
+export const ohweeeUnreadMarkers = mysqlTable("ohweeeUnreadMarkers", {
+  id: int("id").autoincrement().primaryKey(),
+  ohweeeId: int("ohweeeId").notNull(),
+  userId: int("userId").notNull(),
+  markedAt: timestamp("markedAt").defaultNow().notNull(),
+});
+
+export type OhweeeUnreadMarker = typeof ohweeeUnreadMarkers.$inferSelect;
+export type InsertOhweeeUnreadMarker = typeof ohweeeUnreadMarkers.$inferInsert;
+
+/**
+ * Typing indicators - tracks who is currently typing in which room.
+ * Records are automatically cleaned up after a few seconds of inactivity.
+ */
+export const ohweeeTypingIndicators = mysqlTable("ohweeeTypingIndicators", {
+  id: int("id").autoincrement().primaryKey(),
+  roomId: int("roomId").notNull(),
+  userId: int("userId").notNull(),
+  lastTypingAt: timestamp("lastTypingAt").defaultNow().notNull(),
+});
+
+export type OhweeeTypingIndicator = typeof ohweeeTypingIndicators.$inferSelect;
+export type InsertOhweeeTypingIndicator = typeof ohweeeTypingIndicators.$inferInsert;
