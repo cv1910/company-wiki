@@ -317,3 +317,18 @@
 - [x] Frontend: Größenauswahl-UI im Anpassungs-Dialog
 - [x] Widget-Rendering mit verschiedenen Größen (klein, mittel, groß)
 - [x] Tests für Widget-Größenanpassung
+
+## Kalender (Hey Calendar-Stil)
+- [ ] Hey Calendar Design recherchieren
+- [x] Datenbank-Schema für Termine (calendarEvents)
+- [x] Backend-API für Termine (CRUD)
+- [x] Monatsansicht implementieren
+- [x] Wochenansicht implementieren
+- [x] Tagesansicht implementieren
+- [x] Jahresansicht implementieren
+- [x] Termin-Erstellung (Dialog)
+- [x] Ganztägige Termine unterstützen
+- [x] Mehrtägige Termine unterstützen
+- [x] Urlaubs-Integration (genehmigte Urlaube anzeigen)
+- [x] Kalender in Sidebar-Navigation hinzufügen
+- [x] Tests für Kalender-Funktionalität

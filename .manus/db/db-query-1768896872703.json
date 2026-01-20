@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `calendarEvents` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `userId` int NOT NULL,\n  `title` varchar(500) NOT NULL,\n  `description` text,\n  `startDate` timestamp NOT NULL,\n  `endDate` timestamp NOT NULL,\n  `isAllDay` boolean NOT NULL DEFAULT false,\n  `color` varchar(20) NOT NULL DEFAULT 'blue',\n  `eventType` enum('personal','meeting','reminder','vacation','other') NOT NULL DEFAULT 'personal',\n  `linkedResourceType` enum('leave_request','article','sop'),\n  `linkedResourceId` int,\n  `isRecurring` boolean NOT NULL DEFAULT false,\n  `recurrenceRule` varchar(255),\n  `location` varchar(500),\n  `notes` text,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `calendarEvents_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute CREATE TABLE `calendarEvents` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `userId` int NOT NULL,\n  `title` varchar(500) NOT NULL,\n  `description` text,\n  `startDate` timestamp NOT NULL,\n  `endDate` timestamp NOT NULL,\n  `isAllDay` boolean NOT NULL DEFAULT false,\n  `color` varchar(20) NOT NULL DEFAULT 'blue',\n  `eventType` enum('personal','meeting','reminder','vacation','other') NOT NULL DEFAULT 'personal',\n  `linkedResourceType` enum('leave_request','article','sop'),\n  `linkedResourceId` int,\n  `isRecurring` boolean NOT NULL DEFAULT false,\n  `recurrenceRule` varchar(255),\n  `location` varchar(500),\n  `notes` text,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `calendarEvents_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 217
+}

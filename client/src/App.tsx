@@ -44,6 +44,9 @@ import Mentions from "./pages/Mentions";
 // Onboarding
 import Onboarding from "./pages/Onboarding";
 
+// Calendar
+import Calendar from "./pages/Calendar";
+
 function Router() {
   return (
     <DashboardLayout>
@@ -71,6 +74,9 @@ function Router() {
         
         {/* Leave/Vacation Routes */}
         <Route path="/leave" component={Leave} />
+        
+        {/* Calendar */}
+        <Route path="/calendar" component={Calendar} />
         
         {/* Settings & Mentions */}
         <Route path="/settings/email" component={EmailSettings} />

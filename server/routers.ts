@@ -2591,6 +2591,208 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         return db.updateWidgetSize(ctx.user.id, input.widgetId, input.size);
       }),
   }),
+
+  // ==================== CALENDAR ====================
+  calendar: router({
+    // Get events for a date range
+    getEvents: protectedProcedure
+      .input(
+        z.object({
+          startDate: z.string(),
+          endDate: z.string(),
+          includeTeamLeaves: z.boolean().optional().default(false),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        const startDate = new Date(input.startDate);
+        const endDate = new Date(input.endDate);
+        
+        // Get user's own events
+        const userEvents = await db.getCalendarEventsByDateRange(
+          ctx.user.id,
+          startDate,
+          endDate
+        );
+        
+        // Get user's approved leaves as events
+        const userLeaves = await db.getApprovedLeavesAsCalendarEvents(
+          ctx.user.id,
+          startDate,
+          endDate
+        );
+        
+        // Optionally get team leaves (for admins)
+        let teamLeaves: Awaited<ReturnType<typeof db.getTeamLeavesAsCalendarEvents>> = [];
+        if (input.includeTeamLeaves && (ctx.user.role === "admin" || ctx.user.role === "editor")) {
+          teamLeaves = await db.getTeamLeavesAsCalendarEvents(startDate, endDate);
+          // Filter out current user's leaves to avoid duplicates
+          teamLeaves = teamLeaves.filter((leave) => leave.userId !== ctx.user.id);
+        }
+        
+        return {
+          events: userEvents,
+          leaves: userLeaves,
+          teamLeaves,
+        };
+      }),
+
+    // Get events for a specific month
+    getMonthEvents: protectedProcedure
+      .input(
+        z.object({
+          year: z.number(),
+          month: z.number().min(1).max(12),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        const startDate = new Date(input.year, input.month - 1, 1);
+        const endDate = new Date(input.year, input.month, 0, 23, 59, 59);
+        
+        const userEvents = await db.getCalendarEventsForMonth(
+          ctx.user.id,
+          input.year,
+          input.month
+        );
+        
+        const userLeaves = await db.getApprovedLeavesAsCalendarEvents(
+          ctx.user.id,
+          startDate,
+          endDate
+        );
+        
+        return {
+          events: userEvents,
+          leaves: userLeaves,
+        };
+      }),
+
+    // Get events for a specific year
+    getYearEvents: protectedProcedure
+      .input(
+        z.object({
+          year: z.number(),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        const startDate = new Date(input.year, 0, 1);
+        const endDate = new Date(input.year, 11, 31, 23, 59, 59);
+        
+        const userEvents = await db.getCalendarEventsForYear(ctx.user.id, input.year);
+        const userLeaves = await db.getApprovedLeavesAsCalendarEvents(
+          ctx.user.id,
+          startDate,
+          endDate
+        );
+        
+        return {
+          events: userEvents,
+          leaves: userLeaves,
+        };
+      }),
+
+    // Create a new event
+    create: protectedProcedure
+      .input(
+        z.object({
+          title: z.string().min(1).max(500),
+          description: z.string().optional(),
+          startDate: z.string(),
+          endDate: z.string(),
+          isAllDay: z.boolean().optional().default(false),
+          color: z.string().optional().default("blue"),
+          eventType: z.enum(["personal", "meeting", "reminder", "vacation", "other"]).optional().default("personal"),
+          location: z.string().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const event = await db.createCalendarEvent({
+          userId: ctx.user.id,
+          title: input.title,
+          description: input.description || null,
+          startDate: new Date(input.startDate),
+          endDate: new Date(input.endDate),
+          isAllDay: input.isAllDay,
+          color: input.color,
+          eventType: input.eventType,
+          location: input.location || null,
+          notes: input.notes || null,
+        });
+        
+        if (!event) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create event",
+          });
+        }
+        
+        return event;
+      }),
+
+    // Update an event
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          title: z.string().min(1).max(500).optional(),
+          description: z.string().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+          isAllDay: z.boolean().optional(),
+          color: z.string().optional(),
+          eventType: z.enum(["personal", "meeting", "reminder", "vacation", "other"]).optional(),
+          location: z.string().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...updates } = input;
+        
+        const updateData: Record<string, unknown> = {};
+        if (updates.title !== undefined) updateData.title = updates.title;
+        if (updates.description !== undefined) updateData.description = updates.description;
+        if (updates.startDate !== undefined) updateData.startDate = new Date(updates.startDate);
+        if (updates.endDate !== undefined) updateData.endDate = new Date(updates.endDate);
+        if (updates.isAllDay !== undefined) updateData.isAllDay = updates.isAllDay;
+        if (updates.color !== undefined) updateData.color = updates.color;
+        if (updates.eventType !== undefined) updateData.eventType = updates.eventType;
+        if (updates.location !== undefined) updateData.location = updates.location;
+        if (updates.notes !== undefined) updateData.notes = updates.notes;
+        
+        const event = await db.updateCalendarEvent(id, ctx.user.id, updateData);
+        
+        if (!event) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Event not found or access denied",
+          });
+        }
+        
+        return event;
+      }),
+
+    // Delete an event
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const success = await db.deleteCalendarEvent(input.id, ctx.user.id);
+        return { success };
+      }),
+
+    // Get a single event
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const event = await db.getCalendarEvent(input.id, ctx.user.id);
+        if (!event) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Event not found",
+          });
+        }
+        return event;
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

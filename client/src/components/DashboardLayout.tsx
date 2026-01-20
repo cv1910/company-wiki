@@ -39,6 +39,7 @@ import {
   Shield,
   CheckSquare,
   Calendar,
+  CalendarDays,
   Star,
   Keyboard,
   AtSign,
@@ -67,6 +68,7 @@ const menuItems = [
   { icon: GraduationCap, label: "Onboarding", path: "/onboarding" },
   { icon: Search, label: "Suche", path: "/search" },
   { icon: MessageCircle, label: "AI-Assistent", path: "/chat" },
+  { icon: CalendarDays, label: "Kalender", path: "/calendar" },
   { icon: Calendar, label: "Urlaub", path: "/leave" },
   { icon: AtSign, label: "Erwähnungen", path: "/mentions" },
 ];

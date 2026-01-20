@@ -650,3 +650,36 @@ export const userDashboardSettings = mysqlTable("userDashboardSettings", {
 
 export type UserDashboardSetting = typeof userDashboardSettings.$inferSelect;
 export type InsertUserDashboardSetting = typeof userDashboardSettings.$inferInsert;
+
+
+/**
+ * Calendar events for personal scheduling.
+ * Supports single-day, multi-day, and all-day events.
+ */
+export const calendarEvents = mysqlTable("calendarEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 500 }).notNull(),
+  description: text("description"),
+  // Event timing
+  startDate: timestamp("startDate").notNull(),
+  endDate: timestamp("endDate").notNull(),
+  isAllDay: boolean("isAllDay").default(false).notNull(),
+  // Event styling and categorization
+  color: varchar("color", { length: 20 }).default("blue").notNull(),
+  eventType: mysqlEnum("eventType", ["personal", "meeting", "reminder", "vacation", "other"]).default("personal").notNull(),
+  // Linked resources (optional)
+  linkedResourceType: mysqlEnum("linkedResourceType", ["leave_request", "article", "sop"]),
+  linkedResourceId: int("linkedResourceId"),
+  // Recurrence (for future expansion)
+  isRecurring: boolean("isRecurring").default(false).notNull(),
+  recurrenceRule: varchar("recurrenceRule", { length: 255 }),
+  // Metadata
+  location: varchar("location", { length: 500 }),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CalendarEvent = typeof calendarEvents.$inferSelect;
+export type InsertCalendarEvent = typeof calendarEvents.$inferInsert;

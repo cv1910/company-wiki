@@ -1,4 +1,4 @@
-import { eq, desc, and, like, or, sql, inArray } from "drizzle-orm";
+import { eq, desc, and, like, or, sql, inArray, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -60,6 +60,8 @@ import {
   InsertContentVerification,
   userDashboardSettings,
   InsertUserDashboardSetting,
+  calendarEvents,
+  InsertCalendarEvent,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -2361,4 +2363,229 @@ export async function updateWidgetSize(userId: number, widgetId: string, size: "
   const newSizes: Record<string, "small" | "medium" | "large"> = { ...currentSizes, [widgetId]: size };
   
   return upsertUserDashboardSettings(userId, { widgetSizes: newSizes });
+}
+
+
+// ==================== CALENDAR FUNCTIONS ====================
+
+export async function createCalendarEvent(event: InsertCalendarEvent) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.insert(calendarEvents).values(event);
+  const insertId = result[0].insertId;
+  
+  const created = await db
+    .select()
+    .from(calendarEvents)
+    .where(eq(calendarEvents.id, insertId))
+    .limit(1);
+  
+  return created[0] || null;
+}
+
+export async function updateCalendarEvent(
+  eventId: number,
+  userId: number,
+  updates: Partial<InsertCalendarEvent>
+) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db
+    .update(calendarEvents)
+    .set(updates)
+    .where(and(eq(calendarEvents.id, eventId), eq(calendarEvents.userId, userId)));
+  
+  const updated = await db
+    .select()
+    .from(calendarEvents)
+    .where(eq(calendarEvents.id, eventId))
+    .limit(1);
+  
+  return updated[0] || null;
+}
+
+export async function deleteCalendarEvent(eventId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  await db
+    .delete(calendarEvents)
+    .where(and(eq(calendarEvents.id, eventId), eq(calendarEvents.userId, userId)));
+  
+  return true;
+}
+
+export async function getCalendarEvent(eventId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db
+    .select()
+    .from(calendarEvents)
+    .where(and(eq(calendarEvents.id, eventId), eq(calendarEvents.userId, userId)))
+    .limit(1);
+  
+  return result[0] || null;
+}
+
+export async function getCalendarEventsByDateRange(
+  userId: number,
+  startDate: Date,
+  endDate: Date
+) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get events that overlap with the date range
+  // An event overlaps if: event.startDate <= endDate AND event.endDate >= startDate
+  const result = await db
+    .select()
+    .from(calendarEvents)
+    .where(
+      and(
+        eq(calendarEvents.userId, userId),
+        lte(calendarEvents.startDate, endDate),
+        gte(calendarEvents.endDate, startDate)
+      )
+    )
+    .orderBy(calendarEvents.startDate);
+  
+  return result;
+}
+
+export async function getCalendarEventsForMonth(userId: number, year: number, month: number) {
+  const startDate = new Date(year, month - 1, 1, 0, 0, 0);
+  const endDate = new Date(year, month, 0, 23, 59, 59); // Last day of month
+  
+  return getCalendarEventsByDateRange(userId, startDate, endDate);
+}
+
+export async function getCalendarEventsForWeek(userId: number, weekStart: Date) {
+  const startDate = new Date(weekStart);
+  startDate.setHours(0, 0, 0, 0);
+  
+  const endDate = new Date(weekStart);
+  endDate.setDate(endDate.getDate() + 6);
+  endDate.setHours(23, 59, 59, 999);
+  
+  return getCalendarEventsByDateRange(userId, startDate, endDate);
+}
+
+export async function getCalendarEventsForDay(userId: number, date: Date) {
+  const startDate = new Date(date);
+  startDate.setHours(0, 0, 0, 0);
+  
+  const endDate = new Date(date);
+  endDate.setHours(23, 59, 59, 999);
+  
+  return getCalendarEventsByDateRange(userId, startDate, endDate);
+}
+
+export async function getCalendarEventsForYear(userId: number, year: number) {
+  const startDate = new Date(year, 0, 1, 0, 0, 0);
+  const endDate = new Date(year, 11, 31, 23, 59, 59);
+  
+  return getCalendarEventsByDateRange(userId, startDate, endDate);
+}
+
+// Get approved leave requests as calendar events for a user
+export async function getApprovedLeavesAsCalendarEvents(userId: number, startDate: Date, endDate: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const leaves = await db
+    .select({
+      id: leaveRequests.id,
+      startDate: leaveRequests.startDate,
+      endDate: leaveRequests.endDate,
+      leaveType: leaveRequests.leaveType,
+      reason: leaveRequests.reason,
+      userId: leaveRequests.userId,
+    })
+    .from(leaveRequests)
+    .where(
+      and(
+        eq(leaveRequests.userId, userId),
+        eq(leaveRequests.status, "approved"),
+        lte(leaveRequests.startDate, endDate),
+        gte(leaveRequests.endDate, startDate)
+      )
+    )
+    .orderBy(leaveRequests.startDate);
+  
+  // Convert leave requests to calendar event format
+  return leaves.map((leave) => ({
+    id: -leave.id, // Negative ID to distinguish from regular events
+    userId: leave.userId,
+    title: leave.leaveType === "vacation" ? "Urlaub" : 
+           leave.leaveType === "sick" ? "Krankheit" :
+           leave.leaveType === "personal" ? "Persönlich" : "Sonstiges",
+    description: leave.reason,
+    startDate: leave.startDate,
+    endDate: leave.endDate,
+    isAllDay: true,
+    color: "green",
+    eventType: "vacation" as const,
+    linkedResourceType: "leave_request" as const,
+    linkedResourceId: leave.id,
+    isRecurring: false,
+    recurrenceRule: null,
+    location: null,
+    notes: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }));
+}
+
+// Get all team leaves (for admin/manager view)
+export async function getTeamLeavesAsCalendarEvents(startDate: Date, endDate: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const leaves = await db
+    .select({
+      id: leaveRequests.id,
+      startDate: leaveRequests.startDate,
+      endDate: leaveRequests.endDate,
+      leaveType: leaveRequests.leaveType,
+      reason: leaveRequests.reason,
+      userId: leaveRequests.userId,
+      userName: users.name,
+    })
+    .from(leaveRequests)
+    .leftJoin(users, eq(leaveRequests.userId, users.id))
+    .where(
+      and(
+        eq(leaveRequests.status, "approved"),
+        lte(leaveRequests.startDate, endDate),
+        gte(leaveRequests.endDate, startDate)
+      )
+    )
+    .orderBy(leaveRequests.startDate);
+  
+  return leaves.map((leave) => ({
+    id: -leave.id,
+    userId: leave.userId,
+    title: `${leave.userName || "Mitarbeiter"} - ${
+      leave.leaveType === "vacation" ? "Urlaub" : 
+      leave.leaveType === "sick" ? "Krankheit" :
+      leave.leaveType === "personal" ? "Persönlich" : "Sonstiges"
+    }`,
+    description: leave.reason,
+    startDate: leave.startDate,
+    endDate: leave.endDate,
+    isAllDay: true,
+    color: "green",
+    eventType: "vacation" as const,
+    linkedResourceType: "leave_request" as const,
+    linkedResourceId: leave.id,
+    isRecurring: false,
+    recurrenceRule: null,
+    location: null,
+    notes: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }));
 }

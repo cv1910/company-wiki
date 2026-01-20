@@ -1,0 +1,20 @@
+CREATE TABLE `calendarEvents` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`title` varchar(500) NOT NULL,
+	`description` text,
+	`startDate` timestamp NOT NULL,
+	`endDate` timestamp NOT NULL,
+	`isAllDay` boolean NOT NULL DEFAULT false,
+	`color` varchar(20) NOT NULL DEFAULT 'blue',
+	`eventType` enum('personal','meeting','reminder','vacation','other') NOT NULL DEFAULT 'personal',
+	`linkedResourceType` enum('leave_request','article','sop'),
+	`linkedResourceId` int,
+	`isRecurring` boolean NOT NULL DEFAULT false,
+	`recurrenceRule` varchar(255),
+	`location` varchar(500),
+	`notes` text,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `calendarEvents_id` PRIMARY KEY(`id`)
+);
