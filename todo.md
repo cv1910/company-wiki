@@ -559,3 +559,12 @@
 - [ ] Frontend: Auto-Refresh alle 3 Sekunden
 - [ ] Frontend: Neue Nachrichten sanft einblenden
 - [ ] Frontend: "Neue Nachrichten"-Indikator wenn gescrollt
+
+## Ohweees: Push-Benachrichtigungen, Suche, Lesebestätigungen
+- [ ] Datenbank-Schema für Lesebestätigungen (ohweeeReadReceipts)
+- [ ] Backend: Lesebestätigungen speichern und abrufen
+- [ ] Backend: Volltextsuche über Ohweees
+- [ ] Frontend: Lesebestätigungen-UI (wer hat gelesen)
+- [ ] Frontend: Nachrichtensuche mit Filteroptionen
+- [ ] Frontend: Push-Benachrichtigungen (Browser Notifications API)
+- [ ] Service Worker für Hintergrund-Benachrichtigungen

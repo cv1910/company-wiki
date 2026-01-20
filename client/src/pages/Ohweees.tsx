@@ -91,6 +91,7 @@ function OhweeeMessage({
   replyCount,
   showReactionPicker,
   onToggleReactionPicker,
+  readReceipts,
 }: {
   message: {
     ohweee: {
@@ -122,6 +123,7 @@ function OhweeeMessage({
   replyCount: number;
   showReactionPicker: boolean;
   onToggleReactionPicker: () => void;
+  readReceipts?: { userId: number; userName: string | null; userAvatar: string | null }[];
 }) {
   const getInitials = (name: string) => {
     return name
@@ -402,6 +404,26 @@ function OhweeeMessage({
           </button>
         )}
 
+        {/* Read receipts - only show for own messages */}
+        {isOwn && readReceipts && readReceipts.length > 0 && (
+          <div className="flex items-center gap-1 mt-1">
+            <span className="text-xs text-muted-foreground">Gelesen von</span>
+            <div className="flex -space-x-1">
+              {readReceipts.slice(0, 5).map((receipt: { userId: number; userName: string | null; userAvatar: string | null }, idx: number) => (
+                <Avatar key={idx} className="h-4 w-4 border border-background">
+                  <AvatarImage src={receipt.userAvatar || undefined} />
+                  <AvatarFallback className="text-[8px]">
+                    {(receipt.userName || "?")[0]}
+                  </AvatarFallback>
+                </Avatar>
+              ))}
+            </div>
+            {readReceipts.length > 5 && (
+              <span className="text-xs text-muted-foreground">+{readReceipts.length - 5}</span>
+            )}
+          </div>
+        )}
+
         {isOwn && (
           <span className="text-xs text-muted-foreground mt-1">{time}</span>
         )}
@@ -454,6 +476,11 @@ export default function OhweeesPage() {
   
   // Reaction picker state
   const [showReactionPicker, setShowReactionPicker] = useState<number | null>(null);
+  
+  // Search state
+  const [showSearchDialog, setShowSearchDialog] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -474,6 +501,19 @@ export default function OhweeesPage() {
   const { data: unreadCount } = trpc.ohweees.unreadCount.useQuery(undefined, {
     refetchInterval: 5000, // Refresh unread count every 5 seconds
   });
+  
+  // Search query
+  const { data: searchResults, refetch: searchRefetch } = trpc.ohweees.search.useQuery(
+    { query: searchInput },
+    { enabled: false }
+  );
+  
+  const handleSearch = async () => {
+    if (!searchInput.trim()) return;
+    setIsSearching(true);
+    await searchRefetch();
+    setIsSearching(false);
+  };
 
   // Mutations
   const sendMessage = trpc.ohweees.send.useMutation({
@@ -587,6 +627,20 @@ export default function OhweeesPage() {
     { ohweeeIds: messageIds },
     { enabled: messageIds.length > 0 }
   );
+  const { data: readReceiptsData } = trpc.ohweees.getReadReceiptsBatch.useQuery(
+    { ohweeeIds: messageIds },
+    { enabled: messageIds.length > 0 }
+  );
+
+  // Mark messages as read when viewing
+  const markAsRead = trpc.ohweees.markAsRead.useMutation();
+  
+  useEffect(() => {
+    if (messageIds.length > 0 && user?.id) {
+      // Mark all visible messages as read
+      markAsRead.mutate({ ohweeeIds: messageIds });
+    }
+  }, [messageIds, user?.id]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -808,6 +862,42 @@ export default function OhweeesPage() {
     return groups;
   };
 
+  // Request notification permission and show browser notifications for new messages
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Show browser notification for new messages when tab is not focused
+  const prevMessagesRef = useRef<number>(0);
+  useEffect(() => {
+    if (!currentRoom?.messages || document.hasFocus()) return;
+    
+    const currentCount = currentRoom.messages.length;
+    if (prevMessagesRef.current > 0 && currentCount > prevMessagesRef.current) {
+      const newMessages = currentRoom.messages.slice(prevMessagesRef.current);
+      const latestMsg = newMessages[newMessages.length - 1];
+      
+      if (latestMsg && latestMsg.sender.id !== user?.id && Notification.permission === "granted") {
+        const notification = new Notification(`Neues Ohweee von ${latestMsg.sender.name || "Unbekannt"}`, {
+          body: latestMsg.ohweee.content.substring(0, 100),
+          icon: latestMsg.sender.avatarUrl || "/icon-192.svg",
+          tag: `ohweee-${latestMsg.ohweee.id}`,
+        });
+        
+        notification.onclick = () => {
+          window.focus();
+          notification.close();
+        };
+        
+        // Auto-close after 5 seconds
+        setTimeout(() => notification.close(), 5000);
+      }
+    }
+    prevMessagesRef.current = currentCount;
+  }, [currentRoom?.messages, user?.id]);
+
   if (roomsLoading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-120px)]">
@@ -824,9 +914,20 @@ export default function OhweeesPage() {
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-xl font-semibold">Ohweees</h1>
-            {unreadCount && unreadCount > 0 && (
-              <Badge variant="destructive">{unreadCount}</Badge>
-            )}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setShowSearchDialog(true)}
+                title="Nachrichten durchsuchen"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+              {unreadCount && unreadCount > 0 && (
+                <Badge variant="destructive">{unreadCount}</Badge>
+              )}
+            </div>
           </div>
 
           {/* Search */}
@@ -993,6 +1094,7 @@ export default function OhweeesPage() {
                       {group.messages.map((message) => {
                         const msgReactions = reactionsData?.[message.ohweee.id] || [];
                         const msgReplyCount = replyCountsData?.[message.ohweee.id] || 0;
+                        const msgReadReceipts = readReceiptsData?.[message.ohweee.id] || [];
                         return (
                           <OhweeeMessage
                             key={message.ohweee.id}
@@ -1001,6 +1103,7 @@ export default function OhweeesPage() {
                             currentUserId={user?.id || 0}
                             reactions={msgReactions}
                             replyCount={msgReplyCount}
+                            readReceipts={msgReadReceipts}
                             showReactionPicker={showReactionPicker === message.ohweee.id}
                             onToggleReactionPicker={() => {
                               setShowReactionPicker(
@@ -1466,6 +1569,81 @@ export default function OhweeesPage() {
                 <Send className="h-4 w-4" />
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Search Dialog */}
+      <Dialog open={showSearchDialog} onOpenChange={setShowSearchDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Ohweees durchsuchen</DialogTitle>
+            <DialogDescription>
+              Suche nach Nachrichten in allen deinen Chats
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <div className="flex gap-2 mb-4">
+              <Input
+                placeholder="Suchbegriff eingeben..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSearch();
+                }}
+              />
+              <Button onClick={handleSearch} disabled={isSearching || !searchInput.trim()}>
+                {isSearching ? "Suche..." : "Suchen"}
+              </Button>
+            </div>
+
+            <ScrollArea className="h-[400px]">
+              {searchResults && searchResults.length > 0 ? (
+                <div className="space-y-3">
+                  {searchResults.map((result: { ohweee: { id: number; content: string; createdAt: Date }; sender: { id: number; name: string | null; avatarUrl: string | null }; room: { id: number; name: string | null; type: string } }) => (
+                    <button
+                      key={result.ohweee.id}
+                      className="w-full text-left p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                      onClick={() => {
+                        setSelectedRoomId(result.room.id);
+                        setShowSearchDialog(false);
+                        setSearchInput("");
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={result.sender.avatarUrl || undefined} />
+                          <AvatarFallback className="text-xs">
+                            {(result.sender.name || "?")[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium text-sm">{result.sender.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          in {result.room.name || "Direktnachricht"}
+                        </span>
+                        <span className="text-xs text-muted-foreground ml-auto">
+                          {format(new Date(result.ohweee.createdAt), "dd.MM.yyyy HH:mm")}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {result.ohweee.content}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              ) : searchResults && searchResults.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Search className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                  <p>Keine Ergebnisse für "{searchInput}"</p>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Search className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                  <p>Gib einen Suchbegriff ein</p>
+                </div>
+              )}
+            </ScrollArea>
           </div>
         </DialogContent>
       </Dialog>

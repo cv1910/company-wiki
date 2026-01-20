@@ -4463,6 +4463,50 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           replyCounts,
         };
       }),
+
+    // Mark messages as read
+    markAsRead: protectedProcedure
+      .input(z.object({ ohweeeIds: z.array(z.number()) }))
+      .mutation(async ({ input, ctx }) => {
+        await db.markMultipleOhweeesAsRead(input.ohweeeIds, ctx.user.id);
+        return { success: true };
+      }),
+
+    // Get read receipts for a message
+    getReadReceipts: protectedProcedure
+      .input(z.object({ ohweeeId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getReadReceiptsForOhweee(input.ohweeeId);
+      }),
+
+    // Get read receipts for multiple messages (batch)
+    getReadReceiptsBatch: protectedProcedure
+      .input(z.object({ ohweeeIds: z.array(z.number()) }))
+      .query(async ({ input }) => {
+        return db.getReadReceiptsBatch(input.ohweeeIds);
+      }),
+
+    // Subscribe to push notifications
+    subscribePush: protectedProcedure
+      .input(
+        z.object({
+          endpoint: z.string(),
+          p256dh: z.string(),
+          auth: z.string(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        await db.savePushSubscription(ctx.user.id, input);
+        return { success: true };
+      }),
+
+    // Unsubscribe from push notifications
+    unsubscribePush: protectedProcedure
+      .input(z.object({ endpoint: z.string() }))
+      .mutation(async ({ input }) => {
+        await db.removePushSubscription(input.endpoint);
+        return { success: true };
+      }),
   }),
 });
 

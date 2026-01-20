@@ -993,3 +993,19 @@ export const ohweeeReactions = mysqlTable("ohweeeReactions", {
 
 export type OhweeeReaction = typeof ohweeeReactions.$inferSelect;
 export type InsertOhweeeReaction = typeof ohweeeReactions.$inferInsert;
+
+/**
+ * Push notification subscriptions for browser notifications
+ */
+export const pushSubscriptions = mysqlTable("pushSubscriptions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  endpoint: text("endpoint").notNull(),
+  p256dh: text("p256dh").notNull(), // Public key for encryption
+  auth: text("auth").notNull(), // Auth secret
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;

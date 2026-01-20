@@ -50,6 +50,10 @@ import {
   leaveBalances,
   ohweeeReactions,
   InsertOhweeeReaction,
+  ohweeeReadReceipts,
+  InsertOhweeeReadReceipt,
+  pushSubscriptions,
+  InsertPushSubscription,
   // Teams and Ohweees
   teams,
   InsertTeam,
@@ -61,8 +65,6 @@ import {
   InsertChatRoomParticipant,
   ohweees,
   InsertOhweee,
-  ohweeeReadReceipts,
-  InsertOhweeeReadReceipt,
   InsertLeaveBalance,
   assignments,
   InsertAssignment,
@@ -4063,4 +4065,130 @@ export async function getOhweeeReplyCountsBatch(ohweeeIds: number[]) {
     }
   }
   return counts;
+}
+
+// ==================== OHWEEE READ RECEIPTS ====================
+
+export async function markOhweeeAsRead(ohweeeId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  // Check if already marked as read
+  const existing = await db
+    .select()
+    .from(ohweeeReadReceipts)
+    .where(and(eq(ohweeeReadReceipts.ohweeeId, ohweeeId), eq(ohweeeReadReceipts.userId, userId)))
+    .limit(1);
+  
+  if (existing.length === 0) {
+    await db.insert(ohweeeReadReceipts).values({ ohweeeId, userId });
+  }
+}
+
+export async function markMultipleOhweeesAsRead(ohweeeIds: number[], userId: number) {
+  const db = await getDb();
+  if (!db || ohweeeIds.length === 0) return;
+  
+  // Get already read ones
+  const existing = await db
+    .select({ ohweeeId: ohweeeReadReceipts.ohweeeId })
+    .from(ohweeeReadReceipts)
+    .where(and(inArray(ohweeeReadReceipts.ohweeeId, ohweeeIds), eq(ohweeeReadReceipts.userId, userId)));
+  
+  const existingIds = new Set(existing.map(e => e.ohweeeId));
+  const toInsert = ohweeeIds.filter(id => !existingIds.has(id));
+  
+  if (toInsert.length > 0) {
+    await db.insert(ohweeeReadReceipts).values(toInsert.map(ohweeeId => ({ ohweeeId, userId })));
+  }
+}
+
+export async function getReadReceiptsForOhweee(ohweeeId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select({
+      userId: ohweeeReadReceipts.userId,
+      readAt: ohweeeReadReceipts.readAt,
+      userName: users.name,
+      userAvatar: users.avatarUrl,
+    })
+    .from(ohweeeReadReceipts)
+    .innerJoin(users, eq(ohweeeReadReceipts.userId, users.id))
+    .where(eq(ohweeeReadReceipts.ohweeeId, ohweeeId))
+    .orderBy(ohweeeReadReceipts.readAt);
+}
+
+export async function getReadReceiptsBatch(ohweeeIds: number[]): Promise<Record<number, { userId: number; userName: string | null; userAvatar: string | null }[]>> {
+  const db = await getDb();
+  if (!db || ohweeeIds.length === 0) return {};
+  
+  const results = await db
+    .select({
+      ohweeeId: ohweeeReadReceipts.ohweeeId,
+      userId: ohweeeReadReceipts.userId,
+      userName: users.name,
+      userAvatar: users.avatarUrl,
+    })
+    .from(ohweeeReadReceipts)
+    .innerJoin(users, eq(ohweeeReadReceipts.userId, users.id))
+    .where(inArray(ohweeeReadReceipts.ohweeeId, ohweeeIds));
+  
+  const receipts: Record<number, { userId: number; userName: string | null; userAvatar: string | null }[]> = {};
+  for (const r of results) {
+    if (!receipts[r.ohweeeId]) receipts[r.ohweeeId] = [];
+    receipts[r.ohweeeId].push({ userId: r.userId, userName: r.userName, userAvatar: r.userAvatar });
+  }
+  return receipts;
+}
+
+
+
+// ==================== PUSH SUBSCRIPTIONS ====================
+
+export async function savePushSubscription(userId: number, subscription: { endpoint: string; p256dh: string; auth: string }) {
+  const db = await getDb();
+  if (!db) return;
+  
+  // Check if subscription already exists for this endpoint
+  const existing = await db
+    .select()
+    .from(pushSubscriptions)
+    .where(eq(pushSubscriptions.endpoint, subscription.endpoint))
+    .limit(1);
+  
+  if (existing.length > 0) {
+    // Update existing subscription
+    await db
+      .update(pushSubscriptions)
+      .set({ userId, p256dh: subscription.p256dh, auth: subscription.auth })
+      .where(eq(pushSubscriptions.endpoint, subscription.endpoint));
+  } else {
+    // Insert new subscription
+    await db.insert(pushSubscriptions).values({
+      userId,
+      endpoint: subscription.endpoint,
+      p256dh: subscription.p256dh,
+      auth: subscription.auth,
+    });
+  }
+}
+
+export async function removePushSubscription(endpoint: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint));
+}
+
+export async function getPushSubscriptionsForUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
+}
+
+export async function getPushSubscriptionsForUsers(userIds: number[]) {
+  const db = await getDb();
+  if (!db || userIds.length === 0) return [];
+  return db.select().from(pushSubscriptions).where(inArray(pushSubscriptions.userId, userIds));
 }
