@@ -1271,84 +1271,101 @@ export default function Calendar() {
         "flex-shrink-0 mb-4",
         isYearView && "hidden"
       )}>
-        {/* Mobile Header - Stacked Layout */}
-        <div className="md:hidden space-y-3">
-          {/* Row 1: Month/Year Title - Prominent */}
+        {/* Mobile Header - Premium Design */}
+        <div className="md:hidden space-y-4">
+          {/* Row 1: Month/Year Title with Gradient Icon */}
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-foreground">{getViewTitle()}</h2>
-            <Button onClick={() => openNewEventDialog()} size="sm" className="rounded-full">
-              <Plus className="h-4 w-4" />
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg">
+                <CalendarIcon className="h-5 w-5 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-foreground">{getViewTitle()}</h2>
+            </div>
+            <Button 
+              onClick={() => openNewEventDialog()} 
+              className="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-xl h-10 w-10 p-0 shadow-lg"
+            >
+              <Plus className="h-5 w-5 text-white" />
             </Button>
           </div>
           
-          {/* Row 2: Navigation */}
-          <div className="flex items-center justify-between">
+          {/* Row 2: Navigation - Premium Style */}
+          <div className="flex items-center justify-between bg-muted/30 rounded-xl p-2">
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => navigate("prev")}>
-                <ChevronLeft className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-background" onClick={() => navigate("prev")}>
+                <ChevronLeft className="h-5 w-5" />
               </Button>
-              <Button variant="outline" size="sm" className="h-9 px-3" onClick={goToToday}>
+              <Button variant="ghost" size="sm" className="h-10 px-4 rounded-xl font-semibold hover:bg-background" onClick={goToToday}>
                 Heute
               </Button>
-              <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => navigate("next")}>
-                <ChevronRight className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-background" onClick={() => navigate("next")}>
+                <ChevronRight className="h-5 w-5" />
               </Button>
             </div>
             
-            {/* View Mode Selector - Compact */}
-            <div className="flex items-center gap-1">
+            {/* View Mode Selector - Premium Segmented Control */}
+            <div className="flex items-center gap-1 bg-background rounded-lg p-1 shadow-sm">
               <Button
-                variant={viewMode === "day" ? "default" : "outline"}
+                variant="ghost"
                 size="sm"
-                className="h-9 px-2"
+                className={cn(
+                  "h-8 px-3 rounded-lg font-medium transition-all",
+                  viewMode === "day" && "bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-md"
+                )}
                 onClick={() => setViewMode("day")}
               >
                 Tag
               </Button>
               <Button
-                variant={viewMode === "week" ? "default" : "outline"}
+                variant="ghost"
                 size="sm"
-                className="h-9 px-2"
+                className={cn(
+                  "h-8 px-3 rounded-lg font-medium transition-all",
+                  viewMode === "week" && "bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-md"
+                )}
                 onClick={() => setViewMode("week")}
               >
                 W
               </Button>
               <Button
-                variant={viewMode === "month" ? "default" : "outline"}
+                variant="ghost"
                 size="sm"
-                className="h-9 px-2"
+                className={cn(
+                  "h-8 px-3 rounded-lg font-medium transition-all",
+                  viewMode === "month" && "bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-md"
+                )}
                 onClick={() => setViewMode("month")}
               >
                 M
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-9 w-9">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setViewMode("year")}>
+                <DropdownMenuContent align="end" className="rounded-xl shadow-xl">
+                  <DropdownMenuItem onClick={() => setViewMode("year")} className="rounded-lg">
                     <LayoutGrid className="h-4 w-4 mr-2" />
                     Jahresansicht
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {(user?.role === "admin" || user?.role === "editor") && (
-                    <DropdownMenuItem onClick={() => setShowTeamLeaves(!showTeamLeaves)}>
+                    <DropdownMenuItem onClick={() => setShowTeamLeaves(!showTeamLeaves)} className="rounded-lg">
                       <Users className="h-4 w-4 mr-2" />
                       {showTeamLeaves ? "Team-Urlaube ausblenden" : "Team-Urlaube anzeigen"}
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem onClick={handleExport} disabled={exportIcal.isPending}>
+                  <DropdownMenuItem onClick={handleExport} disabled={exportIcal.isPending} className="rounded-lg">
                     <Download className="h-4 w-4 mr-2" />
                     {exportIcal.isPending ? "Exportiere..." : "Als iCal exportieren"}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setShowImportDialog(true)}>
+                  <DropdownMenuItem onClick={() => setShowImportDialog(true)} className="rounded-lg">
                     <Upload className="h-4 w-4 mr-2" />
                     iCal importieren
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setLocation("/calendar/settings")}>
+                  <DropdownMenuItem onClick={() => setLocation("/calendar/settings")} className="rounded-lg">
                     <Settings className="h-4 w-4 mr-2" />
                     Einstellungen
                   </DropdownMenuItem>

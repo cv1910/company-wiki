@@ -764,3 +764,15 @@
 - [x] Spacing: Großzügigere Abstände (p-6, gap-5)
 - [x] Animationen: Rotate-6, Scale-110, translateY bei Hover
 - [x] Dashboard: Welcome-Hero mit Gradienten, Stats mit Gradient-Icons
+
+## Mobile Navigation-Cards Optimierung
+- [x] Gradient-Icons auf mobilen Geräten (aktiver Tab mit Gradient-Background)
+- [x] Touch-Targets auf 52px erhöht (min-h-[52px])
+- [x] Icon-Container mit 44px (w-11 h-11)
+- [x] Premium Sheet-Menü mit Gradient-Header und Icon-Container
+
+## Premium-Design für weitere Seiten
+- [x] Wiki-Seite: Gradient-Header mit Icon, farbige Kategorie-Cards, Premium-Artikel-Liste
+- [x] SOPs-Seite: Grüner Gradient-Header, farbige Kategorie-Cards, Premium-SOP-Liste
+- [x] Kalender-Seite: Lila Gradient-Header, Segmented Control für View-Mode
+- [x] Einheitliche Gradient-Icons und Schatten auf allen Seiten
