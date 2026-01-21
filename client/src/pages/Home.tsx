@@ -363,19 +363,24 @@ export default function Home() {
 
   // Widget components
   const renderWelcomeHero = () => (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10 p-8">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/8 to-secondary/5 border border-primary/15 p-8 md:p-10 shadow-lg">
+      {/* Decorative elements */}
+      <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+      <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-secondary-accent/10 to-transparent rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
+      
       <div className="relative">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium text-primary">ohwee</span>
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/15">
+                <Sparkles className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-sm font-semibold text-primary tracking-wide">ohwee</span>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
               Willkommen zurück, {user?.name?.split(" ")[0] || "Benutzer"}!
             </h1>
-            <p className="text-muted-foreground mt-2 max-w-lg">
+            <p className="text-muted-foreground mt-3 max-w-xl text-base leading-relaxed">
               Hier findest du alle wichtigen Informationen, Prozesse und Anleitungen für deinen Arbeitsalltag.
             </p>
           </div>
@@ -383,9 +388,9 @@ export default function Home() {
             <Button 
               onClick={() => setLocation("/wiki/new")} 
               size="lg"
-              className="shadow-lg hover:shadow-xl transition-all"
+              className="btn-gradient rounded-xl px-6 h-12 text-base font-semibold"
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-5 w-5 mr-2" />
               Neuer Artikel
             </Button>
           )}
@@ -436,21 +441,21 @@ export default function Home() {
   };
 
   const renderNavigation = () => (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Navigation</h2>
+    <div className="space-y-5">
+      <h2 className="text-xl font-bold tracking-tight">Navigation</h2>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {navigationItems.map((item) => (
           <Card
             key={item.path}
-            className="group cursor-pointer border-0 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+            className="group cursor-pointer card-shadow hover:shadow-xl transition-all duration-300 hover:-translate-y-2 overflow-hidden rounded-xl"
             onClick={() => setLocation(item.path)}
           >
-            <CardContent className="p-4 text-center">
-              <div className={`mx-auto w-12 h-12 rounded-xl ${item.bgColor} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300`}>
-                <item.icon className={`h-6 w-6 ${item.textColor}`} />
+            <CardContent className="p-5 text-center">
+              <div className={`mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg`}>
+                <item.icon className="h-7 w-7 text-white" />
               </div>
-              <h3 className="font-medium text-sm">{item.label}</h3>
-              <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{item.description}</p>
+              <h3 className="font-semibold text-sm">{item.label}</h3>
+              <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1">{item.description}</p>
             </CardContent>
           </Card>
         ))}
@@ -459,78 +464,78 @@ export default function Home() {
   );
 
   const renderStats = () => (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
       <Card 
-        className="cursor-pointer hover:shadow-md transition-all group"
+        className="cursor-pointer card-shadow hover:shadow-xl transition-all duration-300 group rounded-xl overflow-hidden"
         onClick={() => setLocation("/wiki")}
       >
-        <CardContent className="p-5">
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-muted-foreground">Artikel</div>
-              <div className="text-2xl font-bold mt-1">
-                {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.articleCount || 0}
+              <div className="text-sm font-medium text-muted-foreground">Artikel</div>
+              <div className="text-3xl font-bold mt-2 tracking-tight">
+                {statsLoading ? <Skeleton className="h-9 w-16" /> : stats?.articleCount || 0}
               </div>
             </div>
-            <div className="p-3 rounded-xl bg-blue-500/10 group-hover:scale-110 transition-transform">
-              <FileText className="h-5 w-5 text-blue-600" />
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+              <FileText className="h-6 w-6 text-white" />
             </div>
           </div>
         </CardContent>
       </Card>
 
       <Card 
-        className="cursor-pointer hover:shadow-md transition-all group"
+        className="cursor-pointer card-shadow hover:shadow-xl transition-all duration-300 group rounded-xl overflow-hidden"
         onClick={() => setLocation("/sops")}
       >
-        <CardContent className="p-5">
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-muted-foreground">SOPs</div>
-              <div className="text-2xl font-bold mt-1">
-                {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.sopCount || 0}
+              <div className="text-sm font-medium text-muted-foreground">SOPs</div>
+              <div className="text-3xl font-bold mt-2 tracking-tight">
+                {statsLoading ? <Skeleton className="h-9 w-16" /> : stats?.sopCount || 0}
               </div>
             </div>
-            <div className="p-3 rounded-xl bg-green-500/10 group-hover:scale-110 transition-transform">
-              <ClipboardList className="h-5 w-5 text-green-600" />
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+              <ClipboardList className="h-6 w-6 text-white" />
             </div>
           </div>
         </CardContent>
       </Card>
 
       <Card 
-        className="cursor-pointer hover:shadow-md transition-all group"
+        className="cursor-pointer card-shadow hover:shadow-xl transition-all duration-300 group rounded-xl overflow-hidden"
         onClick={() => setLocation("/admin/categories")}
       >
-        <CardContent className="p-5">
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-muted-foreground">Kategorien</div>
-              <div className="text-2xl font-bold mt-1">
-                {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.categoryCount || 0}
+              <div className="text-sm font-medium text-muted-foreground">Kategorien</div>
+              <div className="text-3xl font-bold mt-2 tracking-tight">
+                {statsLoading ? <Skeleton className="h-9 w-16" /> : stats?.categoryCount || 0}
               </div>
             </div>
-            <div className="p-3 rounded-xl bg-purple-500/10 group-hover:scale-110 transition-transform">
-              <FolderOpen className="h-5 w-5 text-purple-600" />
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+              <FolderOpen className="h-6 w-6 text-white" />
             </div>
           </div>
         </CardContent>
       </Card>
 
       <Card 
-        className="cursor-pointer hover:shadow-md transition-all group"
+        className="cursor-pointer card-shadow hover:shadow-xl transition-all duration-300 group rounded-xl overflow-hidden"
         onClick={() => setLocation("/admin/users")}
       >
-        <CardContent className="p-5">
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-muted-foreground">Benutzer</div>
-              <div className="text-2xl font-bold mt-1">
-                {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.userCount || 1}
+              <div className="text-sm font-medium text-muted-foreground">Benutzer</div>
+              <div className="text-3xl font-bold mt-2 tracking-tight">
+                {statsLoading ? <Skeleton className="h-9 w-16" /> : stats?.userCount || 1}
               </div>
             </div>
-            <div className="p-3 rounded-xl bg-orange-500/10 group-hover:scale-110 transition-transform">
-              <Users className="h-5 w-5 text-orange-600" />
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+              <Users className="h-6 w-6 text-white" />
             </div>
           </div>
         </CardContent>

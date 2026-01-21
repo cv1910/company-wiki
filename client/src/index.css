@@ -1,8 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* Apple SF Pro Font */
-@import url('https://fonts.cdnfonts.com/css/sf-pro-display');
+/* Inter Font - Modern, Premium look */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
@@ -46,97 +46,157 @@
 }
 
 :root {
-  /* Warm Orange primary color - Basecamp/HEY inspired */
-  --primary: oklch(0.65 0.19 45);
+  /* Premium Orange - Vibrant and modern (Asana/Monday inspired) */
+  --primary: oklch(0.68 0.21 38);
   --primary-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.65 0.19 45);
+  --primary-hover: oklch(0.62 0.22 38);
+  --primary-light: oklch(0.92 0.08 38);
+  
+  /* Secondary - Teal/Cyan for contrast */
+  --secondary-accent: oklch(0.72 0.14 195);
+  --secondary-accent-foreground: oklch(1 0 0);
+  
+  /* Tertiary - Purple for special elements */
+  --tertiary: oklch(0.65 0.18 290);
+  --tertiary-foreground: oklch(1 0 0);
+  
+  /* Success - Vibrant green */
+  --success: oklch(0.72 0.19 145);
+  --success-foreground: oklch(1 0 0);
+  
+  --sidebar-primary: oklch(0.68 0.21 38);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --chart-1: oklch(0.65 0.19 45);
-  --chart-2: oklch(0.65 0.15 160);
-  --chart-3: oklch(0.7 0.15 50);
-  --chart-4: oklch(0.6 0.18 300);
-  --chart-5: oklch(0.55 0.15 30);
-  /* Larger radius for softer, friendlier look (Basecamp-style) */
-  --radius: 1rem;
-  /* Light, clean backgrounds */
-  --background: oklch(0.985 0.002 240);
-  --foreground: oklch(0.15 0.01 240);
+  
+  /* Chart colors - Vibrant palette */
+  --chart-1: oklch(0.68 0.21 38);
+  --chart-2: oklch(0.72 0.14 195);
+  --chart-3: oklch(0.65 0.18 290);
+  --chart-4: oklch(0.72 0.19 145);
+  --chart-5: oklch(0.7 0.16 60);
+  
+  /* Premium radius - Slightly larger for modern feel */
+  --radius: 0.875rem;
+  
+  /* Clean, slightly warm background */
+  --background: oklch(0.988 0.003 80);
+  --foreground: oklch(0.18 0.02 260);
+  
+  /* Cards with subtle warmth */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0.01 240);
+  --card-foreground: oklch(0.18 0.02 260);
+  
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.01 240);
-  --secondary: oklch(0.96 0.01 240);
-  --secondary-foreground: oklch(0.25 0.01 240);
-  --muted: oklch(0.96 0.005 240);
-  --muted-foreground: oklch(0.5 0.01 240);
-  --accent: oklch(0.96 0.01 240);
-  --accent-foreground: oklch(0.25 0.01 240);
-  --destructive: oklch(0.6 0.2 25);
+  --popover-foreground: oklch(0.18 0.02 260);
+  
+  /* Secondary - Subtle gray with warmth */
+  --secondary: oklch(0.965 0.005 80);
+  --secondary-foreground: oklch(0.3 0.02 260);
+  
+  /* Muted - For less prominent elements */
+  --muted: oklch(0.955 0.005 80);
+  --muted-foreground: oklch(0.45 0.02 260);
+  
+  /* Accent - Subtle highlight */
+  --accent: oklch(0.96 0.008 38);
+  --accent-foreground: oklch(0.3 0.02 260);
+  
+  /* Destructive - Warm red */
+  --destructive: oklch(0.62 0.22 25);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.92 0.005 240);
-  --input: oklch(0.92 0.005 240);
-  --ring: oklch(0.65 0.19 45);
-  /* macOS-style sidebar */
-  --sidebar: oklch(0.97 0.005 240);
-  --sidebar-foreground: oklch(0.25 0.01 240);
-  --sidebar-accent: oklch(0.94 0.01 240);
-  --sidebar-accent-foreground: oklch(0.25 0.01 240);
-  --sidebar-border: oklch(0.92 0.005 240);
-  --sidebar-ring: oklch(0.65 0.19 45);
-  /* SF Pro font family */
-  --font-sans: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  /* Animation timing */
+  
+  /* Borders - Very subtle */
+  --border: oklch(0.925 0.005 80);
+  --input: oklch(0.94 0.005 80);
+  --ring: oklch(0.68 0.21 38);
+  
+  /* Sidebar - Clean and professional */
+  --sidebar: oklch(0.975 0.003 80);
+  --sidebar-foreground: oklch(0.3 0.02 260);
+  --sidebar-accent: oklch(0.95 0.01 38);
+  --sidebar-accent-foreground: oklch(0.25 0.02 260);
+  --sidebar-border: oklch(0.93 0.005 80);
+  --sidebar-ring: oklch(0.68 0.21 38);
+  
+  /* Premium font stack - Inter for modern look */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  
+  /* Smooth animations */
   --transition-fast: 150ms;
   --transition-normal: 250ms;
-  --transition-slow: 350ms;
+  --transition-slow: 400ms;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .dark {
-  /* Warm Orange for dark mode */
-  --primary: oklch(0.72 0.18 45);
-  --primary-foreground: oklch(0.15 0.01 45);
-  --sidebar-primary: oklch(0.72 0.18 45);
+  /* Premium Orange for dark mode */
+  --primary: oklch(0.75 0.2 38);
+  --primary-foreground: oklch(0.15 0.02 38);
+  --primary-hover: oklch(0.7 0.21 38);
+  --primary-light: oklch(0.3 0.1 38);
+  
+  /* Secondary - Teal/Cyan */
+  --secondary-accent: oklch(0.75 0.14 195);
+  --secondary-accent-foreground: oklch(0.15 0.02 195);
+  
+  /* Tertiary - Purple */
+  --tertiary: oklch(0.7 0.18 290);
+  --tertiary-foreground: oklch(0.15 0.02 290);
+  
+  /* Success */
+  --success: oklch(0.75 0.18 145);
+  --success-foreground: oklch(0.15 0.02 145);
+  
+  --sidebar-primary: oklch(0.75 0.2 38);
   --sidebar-primary-foreground: oklch(1 0 0);
-  /* Deep, rich backgrounds like macOS dark mode */
-  --background: oklch(0.13 0.008 270);
-  --foreground: oklch(0.95 0.003 240);
-  /* Elevated cards with subtle distinction */
-  --card: oklch(0.17 0.008 270);
-  --card-foreground: oklch(0.95 0.003 240);
-  /* Popovers slightly elevated */
-  --popover: oklch(0.19 0.008 270);
-  --popover-foreground: oklch(0.95 0.003 240);
-  /* Secondary elements */
-  --secondary: oklch(0.22 0.008 270);
-  --secondary-foreground: oklch(0.88 0.003 240);
-  /* Muted elements with better contrast */
-  --muted: oklch(0.24 0.008 270);
-  --muted-foreground: oklch(0.65 0.008 240);
-  /* Accent colors */
-  --accent: oklch(0.24 0.008 270);
-  --accent-foreground: oklch(0.95 0.003 240);
-  /* Destructive - softer red */
-  --destructive: oklch(0.58 0.18 25);
+  
+  /* Rich, deep background */
+  --background: oklch(0.12 0.01 280);
+  --foreground: oklch(0.94 0.005 80);
+  
+  /* Elevated cards */
+  --card: oklch(0.16 0.01 280);
+  --card-foreground: oklch(0.94 0.005 80);
+  
+  --popover: oklch(0.18 0.01 280);
+  --popover-foreground: oklch(0.94 0.005 80);
+  
+  /* Secondary */
+  --secondary: oklch(0.2 0.01 280);
+  --secondary-foreground: oklch(0.88 0.005 80);
+  
+  /* Muted */
+  --muted: oklch(0.22 0.01 280);
+  --muted-foreground: oklch(0.6 0.01 80);
+  
+  /* Accent */
+  --accent: oklch(0.22 0.015 38);
+  --accent-foreground: oklch(0.94 0.005 80);
+  
+  /* Destructive */
+  --destructive: oklch(0.6 0.2 25);
   --destructive-foreground: oklch(1 0 0);
-  /* Borders - subtle but visible */
-  --border: oklch(0.28 0.008 270);
-  --input: oklch(0.22 0.008 270);
-  --ring: oklch(0.72 0.18 45);
-  /* Charts with vibrant colors */
-  --chart-1: oklch(0.72 0.18 45);
-  --chart-2: oklch(0.68 0.16 160);
-  --chart-3: oklch(0.72 0.16 50);
-  --chart-4: oklch(0.65 0.18 300);
-  --chart-5: oklch(0.6 0.16 30);
-  /* Sidebar - slightly darker than main */
-  --sidebar: oklch(0.11 0.008 270);
-  --sidebar-foreground: oklch(0.88 0.003 240);
-  --sidebar-accent: oklch(0.22 0.012 250);
-  --sidebar-accent-foreground: oklch(0.95 0.003 240);
-  --sidebar-border: oklch(0.22 0.008 270);
-  --sidebar-ring: oklch(0.72 0.18 45);
+  
+  /* Borders */
+  --border: oklch(0.26 0.01 280);
+  --input: oklch(0.2 0.01 280);
+  --ring: oklch(0.75 0.2 38);
+  
+  /* Charts */
+  --chart-1: oklch(0.75 0.2 38);
+  --chart-2: oklch(0.75 0.14 195);
+  --chart-3: oklch(0.7 0.18 290);
+  --chart-4: oklch(0.75 0.18 145);
+  --chart-5: oklch(0.72 0.16 60);
+  
+  /* Sidebar */
+  --sidebar: oklch(0.1 0.01 280);
+  --sidebar-foreground: oklch(0.88 0.005 80);
+  --sidebar-accent: oklch(0.2 0.02 38);
+  --sidebar-accent-foreground: oklch(0.94 0.005 80);
+  --sidebar-border: oklch(0.2 0.01 280);
+  --sidebar-ring: oklch(0.75 0.2 38);
 }
 
 @layer base {
@@ -252,40 +312,84 @@
     border: 1px solid oklch(1 0 0 / 0.08);
   }
 
-  /* macOS-style card shadow */
+  /* Premium card shadow - Asana/Monday inspired */
   .card-shadow {
     box-shadow: 
-      0 0 0 1px oklch(0 0 0 / 0.04),
-      0 1px 2px oklch(0 0 0 / 0.04),
-      0 4px 8px oklch(0 0 0 / 0.04),
-      0 8px 16px oklch(0 0 0 / 0.02);
-    transition: box-shadow var(--transition-normal) var(--ease-out-expo),
-                transform var(--transition-normal) var(--ease-out-expo);
+      0 1px 3px oklch(0 0 0 / 0.06),
+      0 4px 6px oklch(0 0 0 / 0.04),
+      0 12px 24px oklch(0 0 0 / 0.06);
+    border: 1px solid oklch(0 0 0 / 0.04);
+    transition: all var(--transition-normal) var(--ease-out-expo);
   }
   
   .dark .card-shadow {
     box-shadow: 
-      0 0 0 1px oklch(1 0 0 / 0.05),
-      0 1px 2px oklch(0 0 0 / 0.2),
-      0 4px 8px oklch(0 0 0 / 0.2),
-      0 8px 16px oklch(0 0 0 / 0.15);
+      0 1px 3px oklch(0 0 0 / 0.3),
+      0 4px 6px oklch(0 0 0 / 0.2),
+      0 12px 24px oklch(0 0 0 / 0.25);
+    border: 1px solid oklch(1 0 0 / 0.06);
   }
 
   .card-shadow:hover {
     box-shadow: 
-      0 0 0 1px oklch(0 0 0 / 0.06),
-      0 2px 4px oklch(0 0 0 / 0.06),
+      0 2px 8px oklch(0 0 0 / 0.08),
       0 8px 16px oklch(0 0 0 / 0.08),
-      0 16px 32px oklch(0 0 0 / 0.04);
-    transform: translateY(-2px);
+      0 20px 40px oklch(0 0 0 / 0.08);
+    border-color: oklch(0 0 0 / 0.08);
+    transform: translateY(-3px);
   }
   
   .dark .card-shadow:hover {
     box-shadow: 
-      0 0 0 1px oklch(1 0 0 / 0.08),
-      0 2px 4px oklch(0 0 0 / 0.25),
-      0 8px 16px oklch(0 0 0 / 0.25),
-      0 16px 32px oklch(0 0 0 / 0.2);
+      0 2px 8px oklch(0 0 0 / 0.35),
+      0 8px 16px oklch(0 0 0 / 0.3),
+      0 20px 40px oklch(0 0 0 / 0.3);
+    border-color: oklch(1 0 0 / 0.1);
+  }
+
+  /* Premium gradient button */
+  .btn-gradient {
+    background: linear-gradient(135deg, oklch(0.68 0.21 38), oklch(0.62 0.22 30));
+    color: white;
+    border: none;
+    box-shadow: 0 2px 8px oklch(0.68 0.21 38 / 0.35);
+    transition: all var(--transition-normal) var(--ease-out-expo);
+  }
+  
+  .btn-gradient:hover {
+    background: linear-gradient(135deg, oklch(0.62 0.22 38), oklch(0.56 0.23 30));
+    box-shadow: 0 4px 16px oklch(0.68 0.21 38 / 0.45);
+    transform: translateY(-2px);
+  }
+  
+  .btn-gradient:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  /* Premium card with subtle gradient border */
+  .premium-card {
+    position: relative;
+    background: var(--card);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  
+  .premium-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, oklch(0 0 0 / 0.08), oklch(0 0 0 / 0.02));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  
+  .dark .premium-card::before {
+    background: linear-gradient(135deg, oklch(1 0 0 / 0.1), oklch(1 0 0 / 0.02));
   }
 
   /* macOS-style elevated shadow */
@@ -305,15 +409,17 @@
       0 16px 32px oklch(0 0 0 / 0.2);
   }
 
-  /* Sidebar item active state - Orange */
+  /* Sidebar item active state - Premium Orange */
   .sidebar-item-active {
-    background: oklch(0.65 0.19 45 / 0.1);
-    color: oklch(0.65 0.19 45);
+    background: oklch(0.68 0.21 38 / 0.12);
+    color: oklch(0.58 0.21 38);
+    font-weight: 600;
   }
   
   .dark .sidebar-item-active {
-    background: oklch(0.72 0.18 45 / 0.15);
-    color: oklch(0.72 0.18 45);
+    background: oklch(0.75 0.2 38 / 0.18);
+    color: oklch(0.75 0.2 38);
+    font-weight: 600;
   }
 
   /* Interactive button with micro-animation */

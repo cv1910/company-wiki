@@ -266,15 +266,15 @@ function DashboardLayoutContent({
             </div>
           </SidebarHeader>
 
-          <SidebarContent className="gap-0 px-2 py-3">
+          <SidebarContent className="gap-0 px-3 py-4">
             {/* Main Navigation */}
-            <div className="mb-2">
+            <div className="mb-3">
               {!isCollapsed && (
-                <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <p className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-widest">
                   Navigation
                 </p>
               )}
-              <SidebarMenu>
+              <SidebarMenu className="space-y-1">
                 {menuItems.map((item) => {
                   const isActive =
                     location === item.path ||
@@ -285,14 +285,26 @@ function DashboardLayoutContent({
                         isActive={isActive}
                         onClick={() => setLocation(item.path)}
                         tooltip={item.label}
-                        className={`h-10 transition-all font-normal rounded-lg ${
-                          isActive ? "sidebar-item-active" : ""
+                        className={`h-11 transition-all duration-200 rounded-xl group ${
+                          isActive 
+                            ? "sidebar-item-active shadow-sm" 
+                            : "hover:bg-accent/60"
                         }`}
                       >
-                        <item.icon
-                          className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
-                        />
-                        <span>{item.label}</span>
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 ${
+                          isActive 
+                            ? "bg-primary/10" 
+                            : "group-hover:bg-accent"
+                        }`}>
+                          <item.icon
+                            className={`h-[18px] w-[18px] transition-colors duration-200 ${
+                              isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                            }`}
+                          />
+                        </div>
+                        <span className={`text-[14px] ${
+                          isActive ? "font-semibold" : "font-medium"
+                        }`}>{item.label}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
@@ -302,13 +314,13 @@ function DashboardLayoutContent({
 
             {/* Admin Navigation */}
             {isAdmin && (
-              <div className="mt-4 pt-4 border-t border-sidebar-border">
+              <div className="mt-5 pt-5 border-t border-sidebar-border/60">
                 {!isCollapsed && (
-                  <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <p className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-widest">
                     Administration
                   </p>
                 )}
-                <SidebarMenu>
+                <SidebarMenu className="space-y-1">
                   {adminMenuItems.map((item) => {
                     const isActive =
                       location === item.path ||
@@ -319,14 +331,26 @@ function DashboardLayoutContent({
                           isActive={isActive}
                           onClick={() => setLocation(item.path)}
                           tooltip={item.label}
-                          className={`h-10 transition-all font-normal rounded-lg ${
-                            isActive ? "sidebar-item-active" : ""
+                          className={`h-11 transition-all duration-200 rounded-xl group ${
+                            isActive 
+                              ? "sidebar-item-active shadow-sm" 
+                              : "hover:bg-accent/60"
                           }`}
                         >
-                          <item.icon
-                            className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
-                          />
-                          <span>{item.label}</span>
+                          <div className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 ${
+                            isActive 
+                              ? "bg-primary/10" 
+                              : "group-hover:bg-accent"
+                          }`}>
+                            <item.icon
+                              className={`h-[18px] w-[18px] transition-colors duration-200 ${
+                                isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                              }`}
+                            />
+                          </div>
+                          <span className={`text-[14px] ${
+                            isActive ? "font-semibold" : "font-medium"
+                          }`}>{item.label}</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     );
