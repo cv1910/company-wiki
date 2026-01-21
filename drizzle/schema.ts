@@ -1196,3 +1196,60 @@ export const userProfiles = mysqlTable("user_profiles", {
 
 export type UserProfile = typeof userProfiles.$inferSelect;
 export type InsertUserProfile = typeof userProfiles.$inferInsert;
+
+
+/**
+ * Organization chart positions.
+ * Represents positions in the company hierarchy (CEO, Manager, Developer, etc.)
+ */
+export const orgPositions = mysqlTable("org_positions", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  // Department/team this position belongs to
+  department: varchar("department", { length: 255 }),
+  // Parent position in hierarchy (null = top level)
+  parentId: int("parentId"),
+  // User assigned to this position (null = vacant)
+  userId: int("userId"),
+  // Visual customization
+  color: varchar("color", { length: 32 }).default("blue"),
+  // Sort order among siblings
+  sortOrder: int("sortOrder").default(0).notNull(),
+  // Position level in hierarchy (0 = top, 1 = second level, etc.)
+  level: int("level").default(0).notNull(),
+  // Position coordinates for custom layout (optional)
+  positionX: int("positionX"),
+  positionY: int("positionY"),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type OrgPosition = typeof orgPositions.$inferSelect;
+export type InsertOrgPosition = typeof orgPositions.$inferInsert;
+
+/**
+ * Organization chart settings.
+ * Stores global settings for the org chart display.
+ */
+export const orgChartSettings = mysqlTable("org_chart_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  // Chart title
+  title: varchar("title", { length: 255 }).default("Organigramm").notNull(),
+  // Layout type: tree, horizontal, radial
+  layoutType: mysqlEnum("layoutType", ["tree", "horizontal", "radial"]).default("tree").notNull(),
+  // Show vacant positions
+  showVacant: boolean("showVacant").default(true).notNull(),
+  // Show department labels
+  showDepartments: boolean("showDepartments").default(true).notNull(),
+  // Default zoom level
+  defaultZoom: int("defaultZoom").default(100).notNull(),
+  // Company logo URL
+  companyLogo: text("companyLogo"),
+  updatedById: int("updatedById").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type OrgChartSettings = typeof orgChartSettings.$inferSelect;
+export type InsertOrgChartSettings = typeof orgChartSettings.$inferInsert;

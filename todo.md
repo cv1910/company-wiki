@@ -783,3 +783,25 @@
 - [x] Farbige Avatare mit Gradient-Hintergründen (8 verschiedene Farben basierend auf Name-Hash)
 - [x] Mobile Chat-Ansicht mit Premium-Styling (Header, Input, Room-List)
 - [x] Einheitliche Schatten und Animationen (scale-95 active, shadow-lg)
+
+## Onboarding Premium-Design
+- [x] Farbige Progress-Balken mit Gradient
+- [x] Gradient-Icons für Checklisten-Items
+- [x] Premium-Cards mit Hover-Effekten
+- [x] Animierte Fortschrittsanzeige
+
+## Profil-Seite Verbesserungen
+- [x] Größerer Avatar mit Gradient-Fallback
+- [x] Benutzer-Statistiken (Artikel, SOPs, Aktivität)
+- [x] Aktivitäts-Feed mit Timeline
+- [x] Premium-Layout mit Cards
+
+## Organigramm-Feature (Trainual-Stil)
+- [x] Datenbank-Schema für Organigramm (Positionen, Beziehungen)
+- [x] Backend-Routen für CRUD-Operationen
+- [x] Visuelle Baumstruktur mit Verbindungslinien
+- [x] Mitarbeiter-Cards mit Avatar, Name, Position
+- [x] Zoom-Kontrolle (50-150%)
+- [x] Suche nach Mitarbeitern/Positionen
+- [x] Expand/Collapse für Unterebenen
+- [x] Navigation im Sidebar hinzugefügt

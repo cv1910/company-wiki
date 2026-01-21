@@ -55,6 +55,7 @@ import {
   BarChart3,
   ShieldCheck,
   User,
+  Building2,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -76,6 +77,7 @@ const menuItems = [
   { icon: MessageCircle, label: "AI-Assistent", path: "/chat" },
   { icon: Mail, label: "Ohweees", path: "/ohweees" },
   { icon: CalendarDays, label: "Kalender", path: "/calendar" },
+  { icon: Building2, label: "Organigramm", path: "/orgchart" },
   { icon: Calendar, label: "Urlaub", path: "/leave" },
   { icon: AtSign, label: "Erwähnungen", path: "/mentions" },
 ];

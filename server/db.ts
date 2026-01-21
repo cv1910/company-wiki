@@ -105,6 +105,10 @@ import {
   InsertUserNotificationSettings,
   userProfiles,
   InsertUserProfile,
+  orgPositions,
+  InsertOrgPosition,
+  orgChartSettings,
+  InsertOrgChartSettings,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -5535,4 +5539,215 @@ export function getQuickActions(): QuickAction[] {
     { id: "new-announcement", title: "Neue Ankündigung", subtitle: "Team-Ankündigung erstellen", icon: "Megaphone", action: "new-announcement" },
     { id: "request-leave", title: "Urlaub beantragen", subtitle: "Urlaubsantrag stellen", icon: "Calendar", url: "/urlaub" },
   ];
+}
+
+
+// ==================== ORGANIZATION CHART FUNCTIONS ====================
+
+// Get all org positions
+export async function getOrgPositions() {
+  const db = await getDb();
+  if (!db) return [];
+
+  const positions = await db
+    .select({
+      position: orgPositions,
+      user: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(orgPositions)
+    .leftJoin(users, eq(orgPositions.userId, users.id))
+    .orderBy(orgPositions.level, orgPositions.sortOrder);
+
+  return positions;
+}
+
+// Get org position by ID
+export async function getOrgPositionById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select({
+      position: orgPositions,
+      user: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(orgPositions)
+    .leftJoin(users, eq(orgPositions.userId, users.id))
+    .where(eq(orgPositions.id, id))
+    .limit(1);
+
+  return result[0] || null;
+}
+
+// Create org position
+export async function createOrgPosition(position: InsertOrgPosition) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [result] = await db.insert(orgPositions).values(position);
+  return result.insertId;
+}
+
+// Update org position
+export async function updateOrgPosition(id: number, updates: Partial<InsertOrgPosition>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(orgPositions).set(updates).where(eq(orgPositions.id, id));
+}
+
+// Delete org position
+export async function deleteOrgPosition(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // First, update any child positions to have no parent
+  await db.update(orgPositions).set({ parentId: null }).where(eq(orgPositions.parentId, id));
+  
+  // Then delete the position
+  await db.delete(orgPositions).where(eq(orgPositions.id, id));
+}
+
+// Move org position (change parent)
+export async function moveOrgPosition(id: number, newParentId: number | null, sortOrder: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Calculate new level based on parent
+  let newLevel = 0;
+  if (newParentId) {
+    const parent = await getOrgPositionById(newParentId);
+    if (parent) {
+      newLevel = parent.position.level + 1;
+    }
+  }
+
+  await db.update(orgPositions).set({ 
+    parentId: newParentId, 
+    sortOrder,
+    level: newLevel,
+  }).where(eq(orgPositions.id, id));
+}
+
+// Assign user to position
+export async function assignUserToPosition(positionId: number, userId: number | null) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(orgPositions).set({ userId }).where(eq(orgPositions.id, positionId));
+}
+
+// Get org chart settings
+export async function getOrgChartSettings() {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select().from(orgChartSettings).limit(1);
+  return result[0] || null;
+}
+
+// Update org chart settings
+export async function updateOrgChartSettings(userId: number, settings: Partial<InsertOrgChartSettings>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const existing = await getOrgChartSettings();
+  
+  if (existing) {
+    await db.update(orgChartSettings).set({ ...settings, updatedById: userId }).where(eq(orgChartSettings.id, existing.id));
+  } else {
+    await db.insert(orgChartSettings).values({
+      ...settings,
+      updatedById: userId,
+    });
+  }
+
+  return getOrgChartSettings();
+}
+
+// Get positions by department
+export async function getOrgPositionsByDepartment(department: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const positions = await db
+    .select({
+      position: orgPositions,
+      user: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(orgPositions)
+    .leftJoin(users, eq(orgPositions.userId, users.id))
+    .where(eq(orgPositions.department, department))
+    .orderBy(orgPositions.level, orgPositions.sortOrder);
+
+  return positions;
+}
+
+// Get all unique departments
+export async function getOrgDepartments() {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db
+    .selectDistinct({ department: orgPositions.department })
+    .from(orgPositions)
+    .where(sql`${orgPositions.department} IS NOT NULL`);
+
+  return result.map(r => r.department).filter(Boolean) as string[];
+}
+
+// Get direct reports for a position
+export async function getDirectReports(positionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const positions = await db
+    .select({
+      position: orgPositions,
+      user: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(orgPositions)
+    .leftJoin(users, eq(orgPositions.userId, users.id))
+    .where(eq(orgPositions.parentId, positionId))
+    .orderBy(orgPositions.sortOrder);
+
+  return positions;
+}
+
+// Get position hierarchy (path from root to position)
+export async function getPositionHierarchy(positionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const hierarchy: { position: typeof orgPositions.$inferSelect; user: { id: number; name: string | null; email: string | null; avatarUrl: string | null } | null }[] = [];
+  let currentId: number | null = positionId;
+
+  while (currentId) {
+    const position = await getOrgPositionById(currentId);
+    if (!position) break;
+    hierarchy.unshift(position);
+    currentId = position.position.parentId;
+  }
+
+  return hierarchy;
 }

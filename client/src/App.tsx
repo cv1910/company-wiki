@@ -56,6 +56,12 @@ import Book from "./pages/Book";
 import Teams from "./pages/Teams";
 import Ohweees from "./pages/Ohweees";
 
+// Profile
+import Profile from "./pages/Profile";
+
+// OrgChart
+import OrgChart from "./pages/OrgChart";
+
 function Router() {
   return (
     <DashboardLayout>
@@ -99,6 +105,12 @@ function Router() {
         {/* Settings & Mentions */}
         <Route path="/settings/email" component={EmailSettings} />
         <Route path="/mentions" component={Mentions} />
+        
+        {/* Profile */}
+        <Route path="/profile" component={Profile} />
+        
+        {/* OrgChart */}
+        <Route path="/orgchart" component={OrgChart} />
         
         {/* Admin Routes */}
         <Route path="/admin/teams" component={Teams} />

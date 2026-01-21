@@ -5078,6 +5078,160 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         return db.searchUserProfiles(input.query);
       }),
   }),
+
+  // ==================== ORGANIZATION CHART ====================
+  orgChart: router({
+    // Get all positions
+    getPositions: protectedProcedure.query(async () => {
+      return db.getOrgPositions();
+    }),
+
+    // Get position by ID
+    getPosition: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getOrgPositionById(input.id);
+      }),
+
+    // Create position (admin only)
+    createPosition: adminProcedure
+      .input(
+        z.object({
+          title: z.string().min(1),
+          description: z.string().optional(),
+          department: z.string().optional(),
+          parentId: z.number().nullable().optional(),
+          userId: z.number().nullable().optional(),
+          color: z.string().optional(),
+          sortOrder: z.number().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        // Calculate level based on parent
+        let level = 0;
+        if (input.parentId) {
+          const parent = await db.getOrgPositionById(input.parentId);
+          if (parent) {
+            level = parent.position.level + 1;
+          }
+        }
+
+        const id = await db.createOrgPosition({
+          title: input.title,
+          description: input.description || null,
+          department: input.department || null,
+          parentId: input.parentId || null,
+          userId: input.userId || null,
+          color: input.color || "blue",
+          sortOrder: input.sortOrder || 0,
+          level,
+          createdById: ctx.user.id,
+        });
+
+        return { id };
+      }),
+
+    // Update position (admin only)
+    updatePosition: adminProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          title: z.string().min(1).optional(),
+          description: z.string().nullable().optional(),
+          department: z.string().nullable().optional(),
+          userId: z.number().nullable().optional(),
+          color: z.string().optional(),
+          sortOrder: z.number().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { id, ...updates } = input;
+        await db.updateOrgPosition(id, updates);
+        return { success: true };
+      }),
+
+    // Delete position (admin only)
+    deletePosition: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteOrgPosition(input.id);
+        return { success: true };
+      }),
+
+    // Move position (change parent) - admin only
+    movePosition: adminProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          newParentId: z.number().nullable(),
+          sortOrder: z.number(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await db.moveOrgPosition(input.id, input.newParentId, input.sortOrder);
+        return { success: true };
+      }),
+
+    // Assign user to position (admin only)
+    assignUser: adminProcedure
+      .input(
+        z.object({
+          positionId: z.number(),
+          userId: z.number().nullable(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await db.assignUserToPosition(input.positionId, input.userId);
+        return { success: true };
+      }),
+
+    // Get chart settings
+    getSettings: protectedProcedure.query(async () => {
+      return db.getOrgChartSettings();
+    }),
+
+    // Update chart settings (admin only)
+    updateSettings: adminProcedure
+      .input(
+        z.object({
+          title: z.string().optional(),
+          layoutType: z.enum(["tree", "horizontal", "radial"]).optional(),
+          showVacant: z.boolean().optional(),
+          showDepartments: z.boolean().optional(),
+          defaultZoom: z.number().optional(),
+          companyLogo: z.string().nullable().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        return db.updateOrgChartSettings(ctx.user.id, input);
+      }),
+
+    // Get departments
+    getDepartments: protectedProcedure.query(async () => {
+      return db.getOrgDepartments();
+    }),
+
+    // Get positions by department
+    getPositionsByDepartment: protectedProcedure
+      .input(z.object({ department: z.string() }))
+      .query(async ({ input }) => {
+        return db.getOrgPositionsByDepartment(input.department);
+      }),
+
+    // Get direct reports for a position
+    getDirectReports: protectedProcedure
+      .input(z.object({ positionId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getDirectReports(input.positionId);
+      }),
+
+    // Get position hierarchy (path from root)
+    getHierarchy: protectedProcedure
+      .input(z.object({ positionId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getPositionHierarchy(input.positionId);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

@@ -45,32 +45,43 @@ export default function Onboarding() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight flex items-center gap-2">
-          <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-          Onboarding
-        </h1>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          Willkommen! Wichtige Infos für deinen Start.
-        </p>
+      {/* Header - Premium Design */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 shadow-lg">
+            <GraduationCap className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Onboarding</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Willkommen! Wichtige Infos für deinen Start.
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Progress Card */}
+      {/* Progress Card - Premium Design */}
       {totalAssignments > 0 && (
-        <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-          <CardContent className="p-6">
+        <Card className="overflow-hidden border-0 shadow-xl">
+          <div className="bg-gradient-to-r from-teal-500 via-teal-600 to-emerald-600 p-6 text-white">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="font-semibold text-lg">Dein Fortschritt</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="font-bold text-xl">Dein Fortschritt</h3>
+                <p className="text-teal-100">
                   {completedAssignments} von {totalAssignments} Aufgaben abgeschlossen
                 </p>
               </div>
-              <div className="text-3xl font-bold text-primary">{progressPercent}%</div>
+              <div className="flex items-center justify-center w-20 h-20 rounded-full bg-white/20 backdrop-blur">
+                <span className="text-3xl font-bold">{progressPercent}%</span>
+              </div>
             </div>
-            <Progress value={progressPercent} className="h-3" />
-          </CardContent>
+            <div className="h-3 bg-white/20 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-white rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
         </Card>
       )}
 
@@ -89,22 +100,24 @@ export default function Onboarding() {
           </CardContent>
         </Card>
       ) : pendingAssignments.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-amber-500" />
-              Deine Aufgaben
+        <Card className="card-shadow rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-b">
+            <CardTitle className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-md">
+                <Clock className="h-5 w-5 text-white" />
+              </div>
+              <span>Deine Aufgaben</span>
             </CardTitle>
             <CardDescription>
               Diese Inhalte wurden dir zugewiesen
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             <div className="space-y-3">
-              {pendingAssignments.map((assignment) => (
+              {pendingAssignments.map((assignment, index) => (
                 <div
                   key={assignment.id}
-                  className="flex items-center gap-4 p-4 rounded-xl border hover:bg-muted/50 transition-colors cursor-pointer group"
+                  className="flex items-center gap-4 p-4 rounded-xl border hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group bg-background"
                   onClick={() => {
                     if (assignment.resourceType === "article") {
                       setLocation(`/wiki/article/${assignment.resourceSlug}`);
@@ -113,10 +126,10 @@ export default function Onboarding() {
                     }
                   }}
                 >
-                  <div className={`p-2.5 rounded-lg ${
+                  <div className={`p-3 rounded-xl shadow-sm ${
                     assignment.status === "in_progress" 
-                      ? "bg-amber-500/10 text-amber-600" 
-                      : "bg-muted text-muted-foreground"
+                      ? "bg-gradient-to-br from-amber-500 to-orange-500 text-white" 
+                      : "bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 text-muted-foreground"
                   }`}>
                     {assignment.resourceType === "article" ? (
                       <FileText className="h-5 w-5" />
@@ -125,15 +138,22 @@ export default function Onboarding() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-medium truncate group-hover:text-primary transition-colors">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="font-semibold truncate group-hover:text-primary transition-colors">
                         {assignment.resourceTitle}
                       </h4>
-                      <Badge variant={assignment.status === "in_progress" ? "default" : "secondary"} className="text-xs">
+                      <Badge 
+                        variant={assignment.status === "in_progress" ? "default" : "secondary"} 
+                        className={`text-xs ${
+                          assignment.status === "in_progress" 
+                            ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0" 
+                            : ""
+                        }`}
+                      >
                         {assignment.status === "in_progress" ? "In Bearbeitung" : "Offen"}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mt-1">
                       {assignment.resourceType === "article" ? "Wiki-Artikel" : "SOP"} · 
                       Zugewiesen {formatDistanceToNow(new Date(assignment.assignedAt), {
                         addSuffix: true,
@@ -141,7 +161,7 @@ export default function Onboarding() {
                       })}
                     </p>
                   </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                 </div>
               ))}
             </div>
@@ -149,25 +169,29 @@ export default function Onboarding() {
         </Card>
       ) : null}
 
-      {/* Recently Completed */}
+      {/* Recently Completed - Premium Design */}
       {recentlyCompleted.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
-              Kürzlich abgeschlossen
+        <Card className="card-shadow rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-b">
+            <CardTitle className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-md">
+                <CheckCircle2 className="h-5 w-5 text-white" />
+              </div>
+              <span>Kürzlich abgeschlossen</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             <div className="space-y-2">
               {recentlyCompleted.map((assignment) => (
                 <div
                   key={assignment.id}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-green-500/5"
+                  className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-green-500/5 to-emerald-500/5 border border-green-500/10"
                 >
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">{assignment.resourceTitle}</span>
-                  <span className="text-xs text-muted-foreground ml-auto">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500">
+                    <CheckCircle2 className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="text-sm font-medium flex-1">{assignment.resourceTitle}</span>
+                  <span className="text-xs text-muted-foreground">
                     {assignment.completedAt && formatDistanceToNow(new Date(assignment.completedAt), {
                       addSuffix: true,
                       locale: de,
@@ -180,12 +204,14 @@ export default function Onboarding() {
         </Card>
       )}
 
-      {/* Onboarding Articles */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-primary" />
-            Onboarding-Materialien
+      {/* Onboarding Articles - Premium Design */}
+      <Card className="card-shadow rounded-2xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-b">
+          <CardTitle className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-md">
+              <BookOpen className="h-5 w-5 text-white" />
+            </div>
+            <span>Onboarding-Materialien</span>
           </CardTitle>
           <CardDescription>
             Wichtige Artikel und Anleitungen für neue Mitarbeiter
