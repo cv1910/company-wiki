@@ -46,18 +46,18 @@
 }
 
 :root {
-  /* Apple-inspired blue primary color */
-  --primary: oklch(0.55 0.18 250);
+  /* Warm Orange primary color - Basecamp/HEY inspired */
+  --primary: oklch(0.65 0.19 45);
   --primary-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.55 0.18 250);
+  --sidebar-primary: oklch(0.65 0.19 45);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --chart-1: oklch(0.55 0.18 250);
+  --chart-1: oklch(0.65 0.19 45);
   --chart-2: oklch(0.65 0.15 160);
   --chart-3: oklch(0.7 0.15 50);
   --chart-4: oklch(0.6 0.18 300);
   --chart-5: oklch(0.55 0.15 30);
-  /* macOS-style larger radius */
-  --radius: 0.75rem;
+  /* Larger radius for softer, friendlier look (Basecamp-style) */
+  --radius: 1rem;
   /* Light, clean backgrounds */
   --background: oklch(0.985 0.002 240);
   --foreground: oklch(0.15 0.01 240);
@@ -75,14 +75,14 @@
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.92 0.005 240);
   --input: oklch(0.92 0.005 240);
-  --ring: oklch(0.55 0.18 250);
+  --ring: oklch(0.65 0.19 45);
   /* macOS-style sidebar */
   --sidebar: oklch(0.97 0.005 240);
   --sidebar-foreground: oklch(0.25 0.01 240);
   --sidebar-accent: oklch(0.94 0.01 240);
   --sidebar-accent-foreground: oklch(0.25 0.01 240);
   --sidebar-border: oklch(0.92 0.005 240);
-  --sidebar-ring: oklch(0.55 0.18 250);
+  --sidebar-ring: oklch(0.65 0.19 45);
   /* SF Pro font family */
   --font-sans: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   /* Animation timing */
@@ -94,10 +94,10 @@
 }
 
 .dark {
-  /* Apple-style vibrant blue for dark mode */
-  --primary: oklch(0.68 0.19 250);
-  --primary-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.68 0.19 250);
+  /* Warm Orange for dark mode */
+  --primary: oklch(0.72 0.18 45);
+  --primary-foreground: oklch(0.15 0.01 45);
+  --sidebar-primary: oklch(0.72 0.18 45);
   --sidebar-primary-foreground: oklch(1 0 0);
   /* Deep, rich backgrounds like macOS dark mode */
   --background: oklch(0.13 0.008 270);
@@ -123,9 +123,9 @@
   /* Borders - subtle but visible */
   --border: oklch(0.28 0.008 270);
   --input: oklch(0.22 0.008 270);
-  --ring: oklch(0.68 0.19 250);
+  --ring: oklch(0.72 0.18 45);
   /* Charts with vibrant colors */
-  --chart-1: oklch(0.68 0.19 250);
+  --chart-1: oklch(0.72 0.18 45);
   --chart-2: oklch(0.68 0.16 160);
   --chart-3: oklch(0.72 0.16 50);
   --chart-4: oklch(0.65 0.18 300);
@@ -136,7 +136,7 @@
   --sidebar-accent: oklch(0.22 0.012 250);
   --sidebar-accent-foreground: oklch(0.95 0.003 240);
   --sidebar-border: oklch(0.22 0.008 270);
-  --sidebar-ring: oklch(0.68 0.19 250);
+  --sidebar-ring: oklch(0.72 0.18 45);
 }
 
 @layer base {
@@ -174,10 +174,10 @@
   }
   /* Selection color */
   ::selection {
-    background: oklch(0.55 0.18 250 / 0.2);
+    background: oklch(0.65 0.19 45 / 0.2);
   }
   .dark ::selection {
-    background: oklch(0.65 0.18 250 / 0.3);
+    background: oklch(0.72 0.18 45 / 0.3);
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -305,15 +305,15 @@
       0 16px 32px oklch(0 0 0 / 0.2);
   }
 
-  /* Sidebar item active state */
+  /* Sidebar item active state - Orange */
   .sidebar-item-active {
-    background: oklch(0.55 0.18 250 / 0.1);
-    color: oklch(0.55 0.18 250);
+    background: oklch(0.65 0.19 45 / 0.1);
+    color: oklch(0.65 0.19 45);
   }
   
   .dark .sidebar-item-active {
-    background: oklch(0.65 0.18 250 / 0.15);
-    color: oklch(0.65 0.18 250);
+    background: oklch(0.72 0.18 45 / 0.15);
+    color: oklch(0.72 0.18 45);
   }
 
   /* Interactive button with micro-animation */
@@ -329,13 +329,13 @@
     transform: translateY(0) scale(0.98);
   }
 
-  /* Subtle glow effect for primary elements */
+  /* Subtle glow effect for primary elements - Orange */
   .glow-primary {
-    box-shadow: 0 0 20px oklch(0.55 0.18 250 / 0.3);
+    box-shadow: 0 0 20px oklch(0.65 0.19 45 / 0.3);
   }
   
   .dark .glow-primary {
-    box-shadow: 0 0 25px oklch(0.65 0.18 250 / 0.4);
+    box-shadow: 0 0 25px oklch(0.72 0.18 45 / 0.4);
   }
 
   /* Gradient backgrounds */
@@ -359,7 +359,7 @@
     position: absolute;
     inset: -1px;
     border-radius: calc(var(--radius-lg) + 1px);
-    background: linear-gradient(135deg, oklch(0.55 0.18 250 / 0.5), oklch(0.6 0.15 280 / 0.5));
+    background: linear-gradient(135deg, oklch(0.65 0.19 45 / 0.5), oklch(0.7 0.16 30 / 0.5));
     z-index: -1;
     opacity: 0;
     transition: opacity var(--transition-normal) var(--ease-out-expo);
@@ -442,11 +442,11 @@
   }
   
   .focus-ring:focus-visible {
-    box-shadow: 0 0 0 2px var(--background), 0 0 0 4px oklch(0.55 0.18 250);
+    box-shadow: 0 0 0 2px var(--background), 0 0 0 4px oklch(0.65 0.19 45);
   }
   
   .dark .focus-ring:focus-visible {
-    box-shadow: 0 0 0 2px var(--background), 0 0 0 4px oklch(0.65 0.18 250);
+    box-shadow: 0 0 0 2px var(--background), 0 0 0 4px oklch(0.72 0.18 45);
   }
 }
 
@@ -545,16 +545,16 @@
   .stagger-4 { animation-delay: 200ms; }
   .stagger-5 { animation-delay: 250ms; }
 
-  /* Gradient text */
+  /* Gradient text - Orange */
   .gradient-text {
-    background: linear-gradient(135deg, oklch(0.55 0.18 250), oklch(0.6 0.15 280));
+    background: linear-gradient(135deg, oklch(0.65 0.19 45), oklch(0.7 0.16 30));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
   
   .dark .gradient-text {
-    background: linear-gradient(135deg, oklch(0.65 0.18 250), oklch(0.7 0.15 280));
+    background: linear-gradient(135deg, oklch(0.72 0.18 45), oklch(0.75 0.15 30));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

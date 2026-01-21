@@ -29,19 +29,26 @@ export default function SOPs() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">SOPs</h1>
-          <p className="text-muted-foreground mt-1">
-            Standard Operating Procedures und Prozessanleitungen
-          </p>
+      <div className="space-y-3">
+        {/* Mobile: Kompaktes Layout */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">SOPs</h1>
+          {isEditor && (
+            <Button onClick={() => setLocation("/sops/new")} size="sm" className="card-shadow sm:hidden">
+              <Plus className="h-4 w-4 mr-1" />
+              Neu
+            </Button>
+          )}
+          {isEditor && (
+            <Button onClick={() => setLocation("/sops/new")} className="card-shadow hidden sm:flex">
+              <Plus className="h-4 w-4 mr-2" />
+              Neue SOP
+            </Button>
+          )}
         </div>
-        {isEditor && (
-          <Button onClick={() => setLocation("/sops/new")} className="card-shadow">
-            <Plus className="h-4 w-4 mr-2" />
-            Neue SOP
-          </Button>
-        )}
+        <p className="text-sm sm:text-base text-muted-foreground">
+          Standard Operating Procedures
+        </p>
       </div>
 
       {/* Search */}

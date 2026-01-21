@@ -728,3 +728,28 @@
 ## Mobile AI-Assistent Bugfix
 - [x] Header-Überlappung beheben (Titel + "Neuer Chat" Button)
 - [x] Mobile-optimiertes Layout für AI-Assistent-Header
+
+## Mobile Überlappungen prüfen
+- [x] Wiki-Seite: Header-Layout für mobile Ansicht optimieren
+- [x] SOPs-Seite: Header-Layout für mobile Ansicht optimieren
+- [x] Onboarding-Seite: Header-Layout für mobile Ansicht optimieren
+
+## Bottom Navigation Optimierung
+- [x] Icons vergrößert (28px, h-7 w-7)
+- [x] Touch-Targets auf 44px erhöht (min-h-[44px])
+- [x] Aktiver Tab visuell hervorgehoben (scale-110, font-bold)
+- [x] Active-State Animation (scale-95, bg-accent/50)
+
+## Pull-to-Refresh
+- [x] Pull-to-Refresh Hook implementieren (usePullToRefresh)
+- [x] PullToRefresh UI-Komponente erstellt
+- [x] Visuelles Feedback beim Ziehen (Spinner + Arrow)
+
+## Umfassendes Design-Upgrade (Slack/Basecamp/Asana-Stil)
+- [x] Farbpalette: Warmes Orange als Primärfarbe (oklch 0.65 0.19 45)
+- [x] Schatten: Weiche, mehrschichtige Schatten (card-shadow)
+- [x] Spacing: Größerer Radius (1rem statt 0.75rem)
+- [x] Cards: Abgerundete Ecken, dezente Hover-Effekte
+- [x] Buttons: Weichere Ecken, btn-interactive Klasse
+- [x] Micro-Interactions: Sanfte Übergänge (animate-fade-in, animate-scale-in)
+- [x] Focus-Ring und Gradient-Text auf Orange aktualisiert

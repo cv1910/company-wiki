@@ -64,9 +64,9 @@ export function MobileNavigation() {
 
   return (
     <>
-      {/* Bottom Tab Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/50 pb-safe md:hidden">
-        <div className="flex items-center justify-around h-16 px-2">
+      {/* Bottom Tab Bar - Optimized for Touch (44px targets, larger icons) */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/40 pb-safe md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="flex items-center justify-around h-[72px] px-1">
           {mainNavItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
@@ -75,19 +75,27 @@ export function MobileNavigation() {
                 key={item.path}
                 onClick={() => handleNavClick(item.path)}
                 className={cn(
-                  "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
-                  active ? "text-primary" : "text-muted-foreground"
+                  "flex flex-col items-center justify-center min-w-[64px] min-h-[44px] py-2 gap-0.5 transition-all duration-200 rounded-xl",
+                  active 
+                    ? "text-primary" 
+                    : "text-muted-foreground active:scale-95 active:bg-accent/50"
                 )}
               >
                 <div className="relative">
-                  <Icon className={cn("h-6 w-6", active && "stroke-[2.5px]")} />
+                  <Icon className={cn(
+                    "h-7 w-7 transition-all duration-200", 
+                    active && "stroke-[2.5px] scale-110"
+                  )} />
                   {item.badge && item.badge > 0 && (
-                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground flex items-center justify-center">
+                    <span className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground flex items-center justify-center shadow-sm">
                       {item.badge > 9 ? "9+" : item.badge}
                     </span>
                   )}
                 </div>
-                <span className={cn("text-[10px] font-medium", active && "font-semibold")}>
+                <span className={cn(
+                  "text-[11px] transition-all duration-200", 
+                  active ? "font-bold" : "font-medium"
+                )}>
                   {item.label}
                 </span>
               </button>
@@ -97,20 +105,20 @@ export function MobileNavigation() {
           {/* Search Button */}
           <button
             onClick={() => setSpotlightOpen(true)}
-            className="flex flex-col items-center justify-center flex-1 h-full gap-1 text-muted-foreground transition-colors"
+            className="flex flex-col items-center justify-center min-w-[64px] min-h-[44px] py-2 gap-0.5 text-muted-foreground transition-all duration-200 rounded-xl active:scale-95 active:bg-accent/50"
           >
-            <Search className="h-6 w-6" />
-            <span className="text-[10px] font-medium">Suche</span>
+            <Search className="h-7 w-7" />
+            <span className="text-[11px] font-medium">Suche</span>
           </button>
 
           {/* Menu Button */}
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild>
-              <button className="flex flex-col items-center justify-center flex-1 h-full gap-1 text-muted-foreground transition-colors relative">
-                <Menu className="h-6 w-6" />
-                <span className="text-[10px] font-medium">Mehr</span>
+              <button className="flex flex-col items-center justify-center min-w-[64px] min-h-[44px] py-2 gap-0.5 text-muted-foreground transition-all duration-200 rounded-xl active:scale-95 active:bg-accent/50 relative">
+                <Menu className="h-7 w-7" />
+                <span className="text-[11px] font-medium">Mehr</span>
                 {unreadCount && unreadCount > 0 && (
-                  <span className="absolute top-2 right-1/4 h-2 w-2 rounded-full bg-destructive" />
+                  <span className="absolute top-1 right-2 h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
                 )}
               </button>
             </SheetTrigger>
@@ -183,8 +191,8 @@ export function MobileNavigation() {
       {/* Spotlight Dialog */}
       <Spotlight open={spotlightOpen} onOpenChange={setSpotlightOpen} />
 
-      {/* Bottom Padding for content */}
-      <div className="h-16 md:hidden" />
+      {/* Bottom Padding for content - matches nav height */}
+      <div className="h-[72px] md:hidden" />
     </>
   );
 }

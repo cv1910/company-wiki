@@ -46,16 +46,14 @@ export default function Onboarding() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
-            <GraduationCap className="h-6 w-6 text-primary" />
-            Onboarding
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Willkommen! Hier findest du alle wichtigen Informationen für deinen Start.
-          </p>
-        </div>
+      <div className="space-y-2">
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight flex items-center gap-2">
+          <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+          Onboarding
+        </h1>
+        <p className="text-sm sm:text-base text-muted-foreground">
+          Willkommen! Wichtige Infos für deinen Start.
+        </p>
       </div>
 
       {/* Progress Card */}
