@@ -708,11 +708,19 @@
 - [x] Add-to-Homescreen Unterstützung
 
 ## Mobile Chat-Design (Basecamp/Hey-Stil)
-- [ ] Chat-Übersicht: Horizontale Avatar-Leiste für Schnellzugriff
-- [ ] Chat-Übersicht: Benachrichtigungs-Liste mit Avatar, Badge, Vorschau
-- [ ] Chat-Ansicht: Minimalistischer Header (Zurück, Name zentriert, Menü)
-- [ ] Chat-Ansicht: Datums-Trenner als Pill ("YESTERDAY")
-- [ ] Chat-Ansicht: Große runde Avatare, Name+Zeit+Menü in einer Zeile
-- [ ] Chat-Ansicht: Nachrichten ohne Bubble-Hintergrund
-- [ ] Chat-Ansicht: Reaktionen als Avatar+Emoji unter Nachricht
-- [ ] Eingabefeld: Attachment-Icon links, abgerundetes Textfeld
+- [x] Chat-Übersicht: Horizontale Avatar-Leiste für Schnellzugriff
+- [x] Chat-Übersicht: Benachrichtigungs-Liste mit Avatar, Badge, Vorschau
+- [x] Chat-Ansicht: Minimalistischer Header (Zurück, Name zentriert, Menü)
+- [x] Chat-Ansicht: Datums-Trenner als Pill ("HEUTE"/"GESTERN")
+- [x] Chat-Ansicht: Große runde Avatare (48px), Name+Zeit+Menü in einer Zeile
+- [x] Chat-Ansicht: Nachrichten ohne Bubble-Hintergrund
+- [x] Chat-Ansicht: Reaktionen als Avatar+Emoji unter Nachricht
+- [x] Eingabefeld: Attachment-Icon links, abgerundetes Textfeld
+- [x] Responsive Erkennung: Automatischer Wechsel Desktop/Mobile bei 768px
+- [x] Mobile-spezifische Dialoge für Suche, Aufgaben, Threads, Emoji-Picker
+
+## Mobile Kalender-Design Bugfix
+- [x] Header-Überlappung beheben (Januar 2026 nicht lesbar)
+- [x] Filter-Buttons (Team, Urlaub, Tag, W) unter Monatsanzeige verschieben
+- [x] Mobile-optimiertes Layout für Kalender-Header
+- [x] Visuell ansprechendes Design für mobile Ansicht

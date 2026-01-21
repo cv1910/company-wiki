@@ -1268,102 +1268,192 @@ export default function Calendar() {
     )}>
       {/* Header - hidden in year view for more space */}
       <div className={cn(
-        "flex items-center justify-between mb-4 flex-shrink-0",
+        "flex-shrink-0 mb-4",
         isYearView && "hidden"
       )}>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => navigate("prev")}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon" onClick={() => navigate("next")}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" onClick={goToToday}>
-            Heute
-          </Button>
-          <h2 className="text-xl font-semibold ml-2">{getViewTitle()}</h2>
+        {/* Mobile Header - Stacked Layout */}
+        <div className="md:hidden space-y-3">
+          {/* Row 1: Month/Year Title - Prominent */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-foreground">{getViewTitle()}</h2>
+            <Button onClick={() => openNewEventDialog()} size="sm" className="rounded-full">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {/* Row 2: Navigation */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => navigate("prev")}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" className="h-9 px-3" onClick={goToToday}>
+                Heute
+              </Button>
+              <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => navigate("next")}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {/* View Mode Selector - Compact */}
+            <div className="flex items-center gap-1">
+              <Button
+                variant={viewMode === "day" ? "default" : "outline"}
+                size="sm"
+                className="h-9 px-2"
+                onClick={() => setViewMode("day")}
+              >
+                Tag
+              </Button>
+              <Button
+                variant={viewMode === "week" ? "default" : "outline"}
+                size="sm"
+                className="h-9 px-2"
+                onClick={() => setViewMode("week")}
+              >
+                W
+              </Button>
+              <Button
+                variant={viewMode === "month" ? "default" : "outline"}
+                size="sm"
+                className="h-9 px-2"
+                onClick={() => setViewMode("month")}
+              >
+                M
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-9 w-9">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setViewMode("year")}>
+                    <LayoutGrid className="h-4 w-4 mr-2" />
+                    Jahresansicht
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {(user?.role === "admin" || user?.role === "editor") && (
+                    <DropdownMenuItem onClick={() => setShowTeamLeaves(!showTeamLeaves)}>
+                      <Users className="h-4 w-4 mr-2" />
+                      {showTeamLeaves ? "Team-Urlaube ausblenden" : "Team-Urlaube anzeigen"}
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={handleExport} disabled={exportIcal.isPending}>
+                    <Download className="h-4 w-4 mr-2" />
+                    {exportIcal.isPending ? "Exportiere..." : "Als iCal exportieren"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowImportDialog(true)}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    iCal importieren
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setLocation("/calendar/settings")}>
+                    <Settings className="h-4 w-4 mr-2" />
+                    Einstellungen
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {(user?.role === "admin" || user?.role === "editor") && (
-            <div className="flex items-center gap-2 mr-4">
-              <Switch
-                id="team-leaves"
-                checked={showTeamLeaves}
-                onCheckedChange={setShowTeamLeaves}
-              />
-              <Label htmlFor="team-leaves" className="text-sm">
-                Team-Urlaube
-              </Label>
-            </div>
-          )}
-
-          <div className="flex items-center border rounded-lg overflow-hidden">
-            <Button
-              variant={viewMode === "day" ? "default" : "ghost"}
-              size="sm"
-              className="rounded-none"
-              onClick={() => setViewMode("day")}
-            >
-              <List className="h-4 w-4 mr-1" />
-              Tag
+        {/* Desktop Header - Original Layout */}
+        <div className="hidden md:flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => navigate("prev")}>
+              <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button
-              variant={viewMode === "week" ? "default" : "ghost"}
-              size="sm"
-              className="rounded-none border-l"
-              onClick={() => setViewMode("week")}
-            >
-              <Columns className="h-4 w-4 mr-1" />
-              Woche
+            <Button variant="outline" size="icon" onClick={() => navigate("next")}>
+              <ChevronRight className="h-4 w-4" />
             </Button>
-            <Button
-              variant={viewMode === "month" ? "default" : "ghost"}
-              size="sm"
-              className="rounded-none border-l"
-              onClick={() => setViewMode("month")}
-            >
-              <Grid3X3 className="h-4 w-4 mr-1" />
-              Monat
+            <Button variant="outline" onClick={goToToday}>
+              Heute
             </Button>
-            <Button
-              variant={viewMode === "year" ? "default" : "ghost"}
-              size="sm"
-              className="rounded-none border-l"
-              onClick={() => setViewMode("year")}
-            >
-              <LayoutGrid className="h-4 w-4 mr-1" />
-              Jahr
-            </Button>
+            <h2 className="text-xl font-semibold ml-2">{getViewTitle()}</h2>
           </div>
 
           <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleExport} disabled={exportIcal.isPending}>
-                  <Download className="h-4 w-4 mr-2" />
-                  {exportIcal.isPending ? "Exportiere..." : "Als iCal exportieren"}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowImportDialog(true)}>
-                  <Upload className="h-4 w-4 mr-2" />
-                  iCal importieren
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setLocation("/calendar/settings")}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Google Calendar verbinden
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button onClick={() => openNewEventDialog()}>
-              <Plus className="h-4 w-4 mr-1" />
-              Neuer Termin
-            </Button>
+            {(user?.role === "admin" || user?.role === "editor") && (
+              <div className="flex items-center gap-2 mr-4">
+                <Switch
+                  id="team-leaves"
+                  checked={showTeamLeaves}
+                  onCheckedChange={setShowTeamLeaves}
+                />
+                <Label htmlFor="team-leaves" className="text-sm">
+                  Team-Urlaube
+                </Label>
+              </div>
+            )}
+
+            <div className="flex items-center border rounded-lg overflow-hidden">
+              <Button
+                variant={viewMode === "day" ? "default" : "ghost"}
+                size="sm"
+                className="rounded-none"
+                onClick={() => setViewMode("day")}
+              >
+                <List className="h-4 w-4 mr-1" />
+                Tag
+              </Button>
+              <Button
+                variant={viewMode === "week" ? "default" : "ghost"}
+                size="sm"
+                className="rounded-none border-l"
+                onClick={() => setViewMode("week")}
+              >
+                <Columns className="h-4 w-4 mr-1" />
+                Woche
+              </Button>
+              <Button
+                variant={viewMode === "month" ? "default" : "ghost"}
+                size="sm"
+                className="rounded-none border-l"
+                onClick={() => setViewMode("month")}
+              >
+                <Grid3X3 className="h-4 w-4 mr-1" />
+                Monat
+              </Button>
+              <Button
+                variant={viewMode === "year" ? "default" : "ghost"}
+                size="sm"
+                className="rounded-none border-l"
+                onClick={() => setViewMode("year")}
+              >
+                <LayoutGrid className="h-4 w-4 mr-1" />
+                Jahr
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleExport} disabled={exportIcal.isPending}>
+                    <Download className="h-4 w-4 mr-2" />
+                    {exportIcal.isPending ? "Exportiere..." : "Als iCal exportieren"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowImportDialog(true)}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    iCal importieren
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setLocation("/calendar/settings")}>
+                    <Settings className="h-4 w-4 mr-2" />
+                    Google Calendar verbinden
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button onClick={() => openNewEventDialog()}>
+                <Plus className="h-4 w-4 mr-1" />
+                Neuer Termin
+              </Button>
+            </div>
           </div>
         </div>
       </div>
