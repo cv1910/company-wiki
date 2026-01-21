@@ -118,17 +118,33 @@ export default function Chat() {
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">AI-Assistent</h1>
-          <p className="text-muted-foreground mt-1">
-            Stellen Sie Fragen zu Wiki-Inhalten und SOPs
+      <div className="mb-4">
+        {/* Mobile: Stacked Layout */}
+        <div className="md:hidden space-y-3">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold tracking-tight">AI-Assistent</h1>
+            <Button variant="outline" size="sm" onClick={handleNewChat}>
+              <Plus className="h-4 w-4 mr-1" />
+              Neu
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Fragen zu Wiki-Inhalten und SOPs
           </p>
         </div>
-        <Button variant="outline" onClick={handleNewChat}>
-          <Plus className="h-4 w-4 mr-2" />
-          Neuer Chat
-        </Button>
+        {/* Desktop: Original Layout */}
+        <div className="hidden md:flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">AI-Assistent</h1>
+            <p className="text-muted-foreground mt-1">
+              Stellen Sie Fragen zu Wiki-Inhalten und SOPs
+            </p>
+          </div>
+          <Button variant="outline" onClick={handleNewChat}>
+            <Plus className="h-4 w-4 mr-2" />
+            Neuer Chat
+          </Button>
+        </div>
       </div>
 
       {/* Chat Container */}

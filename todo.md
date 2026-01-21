@@ -724,3 +724,7 @@
 - [x] Filter-Buttons (Team, Urlaub, Tag, W) unter Monatsanzeige verschieben
 - [x] Mobile-optimiertes Layout für Kalender-Header
 - [x] Visuell ansprechendes Design für mobile Ansicht
+
+## Mobile AI-Assistent Bugfix
+- [x] Header-Überlappung beheben (Titel + "Neuer Chat" Button)
+- [x] Mobile-optimiertes Layout für AI-Assistent-Header
