@@ -776,3 +776,10 @@
 - [x] SOPs-Seite: Grüner Gradient-Header, farbige Kategorie-Cards, Premium-SOP-Liste
 - [x] Kalender-Seite: Lila Gradient-Header, Segmented Control für View-Mode
 - [x] Einheitliche Gradient-Icons und Schatten auf allen Seiten
+
+## Ohweees Premium-Design
+- [x] Gradient-Header mit MessageCircle-Icon (Orange-Stil passend zur App)
+- [x] Chat-Übersicht mit Premium-Cards und Hover-Effekten
+- [x] Farbige Avatare mit Gradient-Hintergründen (8 verschiedene Farben basierend auf Name-Hash)
+- [x] Mobile Chat-Ansicht mit Premium-Styling (Header, Input, Room-List)
+- [x] Einheitliche Schatten und Animationen (scale-95 active, shadow-lg)

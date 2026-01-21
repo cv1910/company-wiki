@@ -271,7 +271,7 @@ function MobileMessage({
   );
 }
 
-// Mobile Chat Header
+// Mobile Chat Header - Premium Design
 export function MobileChatHeader({
   room,
   currentUserId,
@@ -299,24 +299,39 @@ export function MobileChatHeader({
     return null;
   };
 
+  const displayName = getDisplayName();
+  const gradient = getAvatarGradient(displayName);
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
-    <div className="flex items-center justify-between px-2 py-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 safe-area-top">
-      <Button variant="ghost" size="icon" onClick={onBack} className="h-10 w-10">
+    <div className="flex items-center justify-between px-2 py-3 border-b bg-gradient-to-b from-background to-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 safe-area-top">
+      <Button variant="ghost" size="icon" onClick={onBack} className="h-11 w-11 rounded-xl hover:bg-primary/10">
         <ChevronLeft className="h-6 w-6 text-primary" />
       </Button>
       
-      <div className="flex-1 text-center">
-        <h1 className="font-semibold text-[17px]">{getDisplayName()}</h1>
+      <div className="flex-1 flex items-center justify-center gap-3">
+        <Avatar className="h-9 w-9 ring-2 ring-background shadow-md">
+          <AvatarImage src={getAvatar() || undefined} className="object-cover" />
+          <AvatarFallback className={`text-sm font-bold text-white bg-gradient-to-br ${gradient}`}>
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+        <h1 className="font-bold text-[17px]">{displayName}</h1>
       </div>
       
-      <Button variant="ghost" size="icon" onClick={onMenuClick} className="h-10 w-10">
+      <Button variant="ghost" size="icon" onClick={onMenuClick} className="h-11 w-11 rounded-xl hover:bg-muted">
         <MoreHorizontal className="h-6 w-6" />
       </Button>
     </div>
   );
 }
 
-// Mobile Chat Input
+// Mobile Chat Input - Premium Design
 export function MobileChatInput({
   value,
   onChange,
@@ -337,26 +352,26 @@ export function MobileChatInput({
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="px-3 py-2 border-t bg-background safe-area-bottom">
+    <div className="px-3 py-3 border-t bg-gradient-to-t from-background to-background/95 safe-area-bottom">
       <div className="flex items-center gap-2">
         {/* Attachment Button */}
         <Button
           variant="ghost"
           size="icon"
           onClick={onAttachment}
-          className="h-10 w-10 shrink-0 text-muted-foreground"
+          className="h-11 w-11 shrink-0 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
         >
           <Paperclip className="h-5 w-5" />
         </Button>
 
-        {/* Input Field */}
+        {/* Input Field - Premium Style */}
         <div className="flex-1 relative">
           <Input
             ref={inputRef}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder="Nachricht schreiben..."
-            className="pr-10 rounded-full border-muted-foreground/20 bg-muted/30 h-10"
+            className="pr-11 rounded-2xl border-border/50 bg-muted/40 h-11 focus:bg-background focus:border-primary/30 transition-all"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -371,19 +386,19 @@ export function MobileChatInput({
             variant="ghost"
             size="icon"
             onClick={onEmoji}
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 rounded-xl text-muted-foreground hover:text-primary"
           >
             <Smile className="h-5 w-5" />
           </Button>
         </div>
 
-        {/* Send or Voice Button */}
+        {/* Send or Voice Button - Premium Style */}
         {value.trim() ? (
           <Button
             size="icon"
             onClick={onSend}
             disabled={disabled}
-            className="h-10 w-10 shrink-0 rounded-full"
+            className="h-11 w-11 shrink-0 rounded-xl bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg active:scale-95 transition-all"
           >
             <Send className="h-5 w-5" />
           </Button>
@@ -392,7 +407,7 @@ export function MobileChatInput({
             variant="ghost"
             size="icon"
             onClick={onVoice}
-            className="h-10 w-10 shrink-0 text-muted-foreground"
+            className="h-11 w-11 shrink-0 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
           >
             <Mic className="h-5 w-5" />
           </Button>
@@ -402,7 +417,7 @@ export function MobileChatInput({
   );
 }
 
-// Mobile Room List Item
+// Mobile Room List Item - Premium Design
 export function MobileRoomListItem({
   room,
   currentUserId,
@@ -448,23 +463,26 @@ export function MobileRoomListItem({
     return format(date, "d. MMM", { locale: de });
   };
 
+  const displayName = getDisplayName();
+  const gradient = getAvatarGradient(displayName);
+
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 transition-colors active:bg-muted/50 ${
-        isSelected ? "bg-primary/5" : ""
+      className={`w-full flex items-center gap-4 px-4 py-3.5 transition-all active:scale-[0.98] ${
+        isSelected ? "bg-primary/5" : "hover:bg-muted/30"
       }`}
     >
-      {/* Avatar */}
+      {/* Avatar - Premium Style */}
       <div className="relative">
-        <Avatar className="h-14 w-14 ring-2 ring-background shadow-sm">
-          <AvatarImage src={getAvatar() || undefined} />
-          <AvatarFallback className="text-lg font-medium bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
-            {getInitials(getDisplayName())}
+        <Avatar className="h-14 w-14 ring-2 ring-background shadow-lg">
+          <AvatarImage src={getAvatar() || undefined} className="object-cover" />
+          <AvatarFallback className={`text-lg font-bold text-white bg-gradient-to-br ${gradient}`}>
+            {getInitials(displayName)}
           </AvatarFallback>
         </Avatar>
         {room.unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 h-5 w-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 h-6 w-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center ring-2 ring-background shadow-md">
             {room.unreadCount > 9 ? "9+" : room.unreadCount}
           </span>
         )}
@@ -473,17 +491,17 @@ export function MobileRoomListItem({
       {/* Content */}
       <div className="flex-1 min-w-0 text-left">
         <div className="flex items-center justify-between gap-2">
-          <span className={`font-semibold text-[15px] truncate ${room.unreadCount > 0 ? "text-foreground" : "text-foreground/90"}`}>
-            {getDisplayName()}
+          <span className={`font-semibold text-[15px] truncate ${room.unreadCount > 0 ? "text-foreground" : "text-foreground/80"}`}>
+            {displayName}
           </span>
           {room.lastMessage && (
-            <span className="text-xs text-muted-foreground shrink-0">
+            <span className={`text-xs shrink-0 ${room.unreadCount > 0 ? "text-primary font-semibold" : "text-muted-foreground"}`}>
               {formatTime(new Date(room.lastMessage.createdAt))}
             </span>
           )}
         </div>
         {room.lastMessage && (
-          <p className={`text-sm truncate mt-0.5 ${room.unreadCount > 0 ? "text-foreground/80 font-medium" : "text-muted-foreground"}`}>
+          <p className={`text-sm truncate mt-1 leading-relaxed ${room.unreadCount > 0 ? "text-foreground/80 font-medium" : "text-muted-foreground"}`}>
             {room.lastMessage.content.replace(/@\[.*?\]\(\d+\)/g, (match) => {
               const nameMatch = match.match(/@\[(.*?)\]/);
               return nameMatch ? `@${nameMatch[1]}` : match;
@@ -495,7 +513,27 @@ export function MobileRoomListItem({
   );
 }
 
-// Horizontal Avatar Bar for Quick Access
+// Avatar gradient colors based on name hash
+const AVATAR_GRADIENTS = [
+  "from-orange-400 to-orange-600",
+  "from-blue-400 to-blue-600",
+  "from-green-400 to-green-600",
+  "from-purple-400 to-purple-600",
+  "from-pink-400 to-pink-600",
+  "from-teal-400 to-teal-600",
+  "from-amber-400 to-amber-600",
+  "from-indigo-400 to-indigo-600",
+];
+
+function getAvatarGradient(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length];
+}
+
+// Horizontal Avatar Bar for Quick Access - Premium Design
 export function MobileAvatarBar({
   rooms,
   currentUserId,
@@ -522,45 +560,46 @@ export function MobileAvatarBar({
     .slice(0, 8);
 
   return (
-    <div className="px-3 py-4 border-b overflow-x-auto">
+    <div className="px-3 py-4 border-b bg-gradient-to-b from-muted/30 to-transparent overflow-x-auto">
       <div className="flex gap-4">
-        {/* New Chat Button */}
+        {/* New Chat Button - Premium Style */}
         <button
           onClick={onNewChat}
-          className="flex flex-col items-center gap-1 shrink-0"
+          className="flex flex-col items-center gap-2 shrink-0 group"
         >
-          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center border-2 border-dashed border-primary/30">
+          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center border-2 border-dashed border-primary/40 group-hover:border-primary/60 group-active:scale-95 transition-all shadow-sm">
             <Plus className="h-7 w-7 text-primary" />
           </div>
-          <span className="text-xs text-muted-foreground font-medium">Neu</span>
+          <span className="text-xs text-muted-foreground font-semibold">Neu</span>
         </button>
 
-        {/* Recent Contacts */}
+        {/* Recent Contacts - Premium Avatars */}
         {recentDMs.map((room) => {
           const otherUser = room.participants?.find((p) => p.id !== currentUserId);
           const name = otherUser?.name || "Chat";
           const firstName = name.split(" ")[0];
+          const gradient = getAvatarGradient(name);
           
           return (
             <button
               key={room.id}
               onClick={() => onRoomSelect(room.id)}
-              className="flex flex-col items-center gap-1 shrink-0"
+              className="flex flex-col items-center gap-2 shrink-0 group"
             >
-              <div className="relative">
-                <Avatar className="h-16 w-16 ring-2 ring-background shadow-md">
-                  <AvatarImage src={otherUser?.avatarUrl || undefined} />
-                  <AvatarFallback className="text-lg font-medium bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
+              <div className="relative group-active:scale-95 transition-transform">
+                <Avatar className="h-16 w-16 ring-2 ring-background shadow-lg">
+                  <AvatarImage src={otherUser?.avatarUrl || undefined} className="object-cover" />
+                  <AvatarFallback className={`text-lg font-bold text-white bg-gradient-to-br ${gradient}`}>
                     {getInitials(name)}
                   </AvatarFallback>
                 </Avatar>
                 {room.unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 h-5 w-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center ring-2 ring-background">
+                  <span className="absolute -top-1 -right-1 h-6 w-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center ring-2 ring-background shadow-md">
                     {room.unreadCount > 9 ? "9+" : room.unreadCount}
                   </span>
                 )}
               </div>
-              <span className="text-xs text-muted-foreground font-medium truncate max-w-[64px]">
+              <span className="text-xs text-muted-foreground font-semibold truncate max-w-[64px]">
                 {firstName}
               </span>
             </button>

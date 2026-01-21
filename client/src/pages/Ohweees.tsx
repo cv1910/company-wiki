@@ -1393,15 +1393,20 @@ export default function OhweeesPage() {
         {mobileView === "list" ? (
           // Mobile Room List View
           <>
-            {/* Mobile Header */}
-            <div className="px-4 pt-4 pb-2 safe-area-top">
-              <div className="flex items-center justify-between mb-3">
-                <h1 className="text-2xl font-bold">Ohweees</h1>
+            {/* Mobile Header - Premium Design */}
+            <div className="px-4 pt-4 pb-3 safe-area-top bg-gradient-to-b from-primary/5 to-transparent">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg">
+                    <MessageCircle className="h-5 w-5 text-white" />
+                  </div>
+                  <h1 className="text-2xl font-bold">Ohweees</h1>
+                </div>
                 <div className="flex items-center gap-1">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-10 w-10"
+                    className="h-11 w-11 rounded-xl hover:bg-primary/10"
                     onClick={() => setShowSearchDialog(true)}
                   >
                     <Search className="h-5 w-5" />
@@ -1409,12 +1414,12 @@ export default function OhweeesPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-10 w-10 relative"
+                    className="h-11 w-11 rounded-xl hover:bg-primary/10 relative"
                     onClick={() => setShowTasksPanel(true)}
                   >
                     <ListTodo className={`h-5 w-5 ${dueTasks && dueTasks.length > 0 ? "text-red-500" : ""}`} />
                     {dueTasks && dueTasks.length > 0 && (
-                      <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />
+                      <span className="absolute top-2 right-2 h-2.5 w-2.5 bg-red-500 rounded-full ring-2 ring-background" />
                     )}
                   </Button>
                 </div>
@@ -2014,16 +2019,21 @@ export default function OhweeesPage() {
   return (
     <div className="flex h-[calc(100vh-120px)] -m-6">
       {/* Sidebar - Chat List */}
-      <div className="w-80 border-r bg-muted/30 flex flex-col">
-        {/* Header */}
-        <div className="p-4 border-b">
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="text-xl font-semibold">Ohweees</h1>
-            <div className="flex items-center gap-2">
+      <div className="w-80 border-r bg-muted/20 flex flex-col">
+        {/* Header - Premium Design */}
+        <div className="p-4 border-b bg-gradient-to-b from-primary/5 to-transparent">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg">
+                <MessageCircle className="h-5 w-5 text-white" />
+              </div>
+              <h1 className="text-xl font-bold">Ohweees</h1>
+            </div>
+            <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-9 w-9 rounded-xl hover:bg-primary/10"
                 onClick={() => setSoundEnabled(!soundEnabled)}
                 title={soundEnabled ? "Benachrichtigungston deaktivieren" : "Benachrichtigungston aktivieren"}
               >
@@ -2032,13 +2042,13 @@ export default function OhweeesPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 relative"
+                className="h-9 w-9 rounded-xl hover:bg-primary/10 relative"
                 onClick={() => setShowTasksPanel(true)}
                 title={dueTasks && dueTasks.length > 0 ? `${dueTasks.length} fällige Aufgabe${dueTasks.length > 1 ? "n" : ""}` : "Aufgaben anzeigen"}
               >
                 <ListTodo className={`h-4 w-4 ${dueTasks && dueTasks.length > 0 ? "text-red-500" : ""}`} />
                 {(tasks && tasks.filter(t => !t.task.isCompleted).length > 0) || (dueTasks && dueTasks.length > 0) ? (
-                  <span className={`absolute -top-1 -right-1 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center ${dueTasks && dueTasks.length > 0 ? "bg-red-500 animate-pulse" : "bg-amber-500"}`}>
+                  <span className={`absolute -top-0.5 -right-0.5 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center ring-2 ring-background ${dueTasks && dueTasks.length > 0 ? "bg-red-500 animate-pulse" : "bg-amber-500"}`}>
                     {dueTasks && dueTasks.length > 0 ? dueTasks.length : tasks?.filter(t => !t.task.isCompleted).length}
                   </span>
                 ) : null}
@@ -2046,24 +2056,24 @@ export default function OhweeesPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-9 w-9 rounded-xl hover:bg-primary/10"
                 onClick={() => setShowSearchDialog(true)}
                 title="Nachrichten durchsuchen"
               >
                 <Search className="h-4 w-4" />
               </Button>
               {unreadCount && unreadCount > 0 && (
-                <Badge variant="destructive">{unreadCount}</Badge>
+                <Badge className="bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground shadow-md">{unreadCount}</Badge>
               )}
             </div>
           </div>
 
-          {/* Search */}
+          {/* Search - Premium Style */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Privaten Chat starten mit..."
-              className="pl-9"
+              className="pl-9 h-10 rounded-xl bg-background/80 border-border/50 focus:bg-background transition-colors"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setShowNewChatDialog(true)}
@@ -2071,12 +2081,12 @@ export default function OhweeesPage() {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="p-2 border-b flex gap-2">
+        {/* Quick Actions - Premium Style */}
+        <div className="p-3 border-b flex gap-2">
           <Button
             variant="outline"
             size="sm"
-            className="flex-1"
+            className="flex-1 h-10 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all"
             onClick={() => setShowNewChatDialog(true)}
           >
             <User className="h-4 w-4 mr-2" />
@@ -2085,7 +2095,7 @@ export default function OhweeesPage() {
           <Button
             variant="outline"
             size="sm"
-            className="flex-1"
+            className="flex-1 h-10 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all"
             onClick={() => setShowNewGroupDialog(true)}
           >
             <Users className="h-4 w-4 mr-2" />
