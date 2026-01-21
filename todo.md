@@ -805,3 +805,27 @@
 - [x] Suche nach Mitarbeitern/Positionen
 - [x] Expand/Collapse für Unterebenen
 - [x] Navigation im Sidebar hinzugefügt
+
+## Organigramm Beispiel-Daten
+- [x] CEO-Position erstellen (Geschäftsführer)
+- [x] Abteilungsleiter-Positionen (HR, IT, Marketing, Vertrieb, Finanzen)
+- [x] Team-Lead-Positionen unter Abteilungsleitern
+- [x] Seed-Button im leeren Zustand für Beispieldaten
+
+## Organigramm Drag-and-Drop
+- [x] Drag-and-Drop-Bibliothek integriert (@dnd-kit/core, @dnd-kit/sortable)
+- [x] Position-Cards draggable (useDraggable Hook)
+- [x] Drop-Zonen für Neupositionierung (useDroppable Hook)
+- [x] Visuelles Feedback beim Ziehen (ring-4, scale-105, opacity-50)
+- [x] Backend-Update bei Position-Änderung (movePosition Mutation)
+
+## Team-Verzeichnis
+- [x] Neue Seite für Team-Verzeichnis erstellen (/team)
+- [x] Mitarbeiter-Cards mit Avatar, Name, Position, Abteilung
+- [x] Kontaktdaten (E-Mail, Telefon)
+- [x] Direktnachricht-Button (Link zu Ohweees mit ?dm=userId)
+- [x] Filter nach Abteilung/Team
+- [x] Suche nach Namen, E-Mail, Position
+- [x] Navigation im Sidebar hinzugefügt
+- [x] Grid- und Listen-Ansicht mit Toggle
+- [x] Premium-Design mit Gradient-Avataren

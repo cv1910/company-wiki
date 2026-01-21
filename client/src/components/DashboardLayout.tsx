@@ -78,6 +78,7 @@ const menuItems = [
   { icon: Mail, label: "Ohweees", path: "/ohweees" },
   { icon: CalendarDays, label: "Kalender", path: "/calendar" },
   { icon: Building2, label: "Organigramm", path: "/orgchart" },
+  { icon: Users, label: "Team", path: "/team" },
   { icon: Calendar, label: "Urlaub", path: "/leave" },
   { icon: AtSign, label: "Erwähnungen", path: "/mentions" },
 ];

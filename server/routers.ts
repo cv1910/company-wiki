@@ -5231,6 +5231,13 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
       .query(async ({ input }) => {
         return db.getPositionHierarchy(input.positionId);
       }),
+
+    // Seed example data (admin only)
+    seedExampleData: adminProcedure.mutation(async ({ ctx }) => {
+      const { seedOrgChart } = await import("./seed-orgchart");
+      await seedOrgChart(ctx.user.id);
+      return { success: true };
+    }),
   }),
 });
 

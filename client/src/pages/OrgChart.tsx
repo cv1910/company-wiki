@@ -33,6 +33,18 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+} from "@dnd-kit/core";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
+import {
   Building2,
   Plus,
   MoreHorizontal,
@@ -47,6 +59,7 @@ import {
   Maximize2,
   Search,
   Settings,
+  GripVertical,
 } from "lucide-react";
 
 // Position colors
@@ -121,8 +134,8 @@ function buildTree(positions: Position[]): TreeNode[] {
   return roots;
 }
 
-// Position Card Component
-function PositionCard({
+// Draggable Position Card Component
+function DraggablePositionCard({
   node,
   isAdmin,
   onEdit,
@@ -131,6 +144,7 @@ function PositionCard({
   onAddChild,
   onToggleExpand,
   zoom,
+  isDragging,
 }: {
   node: TreeNode;
   isAdmin: boolean;
@@ -140,10 +154,32 @@ function PositionCard({
   onAddChild: (parentId: number) => void;
   onToggleExpand: (id: number) => void;
   zoom: number;
+  isDragging?: boolean;
 }) {
+  const { attributes, listeners, setNodeRef: setDragRef, transform } = useDraggable({
+    id: `position-${node.position.id}`,
+    data: { position: node.position },
+    disabled: !isAdmin,
+  });
+
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: `drop-${node.position.id}`,
+    data: { position: node.position },
+  });
+
+  const style = transform ? {
+    transform: CSS.Translate.toString(transform),
+  } : undefined;
+
   const colors = POSITION_COLORS[node.position.color || "blue"] || POSITION_COLORS.blue;
   const hasChildren = node.children.length > 0;
   const isVacant = !node.user;
+
+  // Combine refs
+  const setRefs = (element: HTMLDivElement | null) => {
+    setDragRef(element);
+    setDropRef(element);
+  };
 
   const initials = node.user?.name
     ?.split(" ")
@@ -153,15 +189,27 @@ function PositionCard({
     .slice(0, 2) || "?";
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center" style={style}>
       {/* Position Card */}
       <div
-        className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 ${colors.border} transition-all hover:shadow-xl hover:-translate-y-1`}
+        ref={setRefs}
+        className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 ${colors.border} transition-all hover:shadow-xl hover:-translate-y-1 ${isOver ? 'ring-4 ring-primary/50 scale-105' : ''} ${isDragging ? 'opacity-50' : ''}`}
         style={{
           width: `${220 * (zoom / 100)}px`,
           minHeight: `${120 * (zoom / 100)}px`,
         }}
       >
+        {/* Drag Handle */}
+        {isAdmin && (
+          <div
+            {...attributes}
+            {...listeners}
+            className="absolute top-2 left-2 cursor-grab active:cursor-grabbing p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
+          </div>
+        )}
+
         {/* Color Header */}
         <div className={`h-2 rounded-t-xl bg-gradient-to-r ${colors.bg}`} />
 
@@ -270,7 +318,7 @@ function PositionCard({
                 {/* Vertical Line to Child */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-6 bg-gray-300 dark:bg-gray-600" />
                 <div className="pt-6">
-                  <PositionCard
+                  <DraggablePositionCard
                     node={child}
                     isAdmin={isAdmin}
                     onEdit={onEdit}
@@ -309,6 +357,16 @@ export default function OrgChart() {
   const [formDepartment, setFormDepartment] = useState("");
   const [formColor, setFormColor] = useState("blue");
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  // DnD Sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   // Queries
   const { data: positions, isLoading, refetch } = trpc.orgChart.getPositions.useQuery();
@@ -348,6 +406,22 @@ export default function OrgChart() {
       toast.success("Mitarbeiter zugewiesen");
       refetch();
       setIsAssignDialogOpen(false);
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const seedData = trpc.orgChart.seedExampleData.useMutation({
+    onSuccess: () => {
+      toast.success("Beispieldaten erstellt");
+      refetch();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const movePosition = trpc.orgChart.movePosition.useMutation({
+    onSuccess: () => {
+      toast.success("Position verschoben");
+      refetch();
     },
     onError: (error) => toast.error(error.message),
   });
@@ -485,6 +559,34 @@ export default function OrgChart() {
     });
   };
 
+  // DnD Handlers
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over || active.id === over.id) return;
+
+    const activeData = active.data.current as { position: Position["position"] } | undefined;
+    const overData = over.data.current as { position: Position["position"] } | undefined;
+
+    if (!activeData?.position || !overData?.position) return;
+
+    // Don't allow dropping on self or own children
+    const activeId = activeData.position.id;
+    const overId = overData.position.id;
+
+    // Move the position to be a child of the drop target
+    movePosition.mutate({
+      id: activeId,
+      newParentId: overId,
+      sortOrder: 0,
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -571,9 +673,15 @@ export default function OrgChart() {
       </Card>
 
       {/* Org Chart */}
-      <Card className="card-shadow rounded-2xl overflow-hidden">
-        <CardContent className="p-8 overflow-x-auto">
-          {filteredTree.length === 0 ? (
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <Card className="card-shadow rounded-2xl overflow-hidden">
+          <CardContent className="p-8 overflow-x-auto">
+            {filteredTree.length === 0 ? (
             <div className="text-center py-16">
               <Building2 className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
               <h3 className="text-lg font-semibold mb-2">
@@ -585,22 +693,32 @@ export default function OrgChart() {
                   : "Erstelle die erste Position, um das Organigramm aufzubauen."}
               </p>
               {isAdmin && !searchQuery && (
-                <Button
-                  onClick={() => {
-                    resetForm();
-                    setIsCreateDialogOpen(true);
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Erste Position erstellen
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button
+                    onClick={() => {
+                      resetForm();
+                      setIsCreateDialogOpen(true);
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Erste Position erstellen
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => seedData.mutate()}
+                    disabled={seedData.isPending}
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    {seedData.isPending ? "Wird erstellt..." : "Beispieldaten laden"}
+                  </Button>
+                </div>
               )}
             </div>
           ) : (
             <div className="flex justify-center min-w-max">
               <div className="flex flex-col items-center gap-4">
                 {filteredTree.map((node) => (
-                  <PositionCard
+                  <DraggablePositionCard
                     key={node.position.id}
                     node={node}
                     isAdmin={isAdmin}
@@ -614,9 +732,10 @@ export default function OrgChart() {
                 ))}
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      </DndContext>
 
       {/* Create Position Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>

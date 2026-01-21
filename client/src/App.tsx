@@ -62,6 +62,9 @@ import Profile from "./pages/Profile";
 // OrgChart
 import OrgChart from "./pages/OrgChart";
 
+// Team Directory
+import TeamDirectory from "./pages/TeamDirectory";
+
 function Router() {
   return (
     <DashboardLayout>
@@ -111,6 +114,9 @@ function Router() {
         
         {/* OrgChart */}
         <Route path="/orgchart" component={OrgChart} />
+        
+        {/* Team Directory */}
+        <Route path="/team" component={TeamDirectory} />
         
         {/* Admin Routes */}
         <Route path="/admin/teams" component={Teams} />
