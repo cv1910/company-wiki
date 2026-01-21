@@ -706,3 +706,13 @@
 - [x] Splash-Screen für App-Start (Meta-Tags vorbereitet)
 - [x] iOS-spezifische Meta-Tags
 - [x] Add-to-Homescreen Unterstützung
+
+## Mobile Chat-Design (Basecamp/Hey-Stil)
+- [ ] Chat-Übersicht: Horizontale Avatar-Leiste für Schnellzugriff
+- [ ] Chat-Übersicht: Benachrichtigungs-Liste mit Avatar, Badge, Vorschau
+- [ ] Chat-Ansicht: Minimalistischer Header (Zurück, Name zentriert, Menü)
+- [ ] Chat-Ansicht: Datums-Trenner als Pill ("YESTERDAY")
+- [ ] Chat-Ansicht: Große runde Avatare, Name+Zeit+Menü in einer Zeile
+- [ ] Chat-Ansicht: Nachrichten ohne Bubble-Hintergrund
+- [ ] Chat-Ansicht: Reaktionen als Avatar+Emoji unter Nachricht
+- [ ] Eingabefeld: Attachment-Icon links, abgerundetes Textfeld

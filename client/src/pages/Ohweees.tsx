@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
   MessageCircle,
@@ -66,6 +68,14 @@ import { MessageContent } from "@/components/MessageContent";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { VoiceRecorder, VoiceMessagePlayer } from "@/components/VoiceRecorder";
 import { PollDisplay } from "@/components/PollDisplay";
+import {
+  MobileChatHeader,
+  MobileChatInput,
+  MobileRoomListItem,
+  MobileAvatarBar,
+  MobileDateSeparator,
+  MobileMessage,
+} from "@/components/MobileChatView";
 
 // Date separator component
 function DateSeparator({ date }: { date: Date }) {
@@ -670,6 +680,30 @@ export default function OhweeesPage() {
   const [newTaskPriority, setNewTaskPriority] = useState<"low" | "medium" | "high">("medium");
   const [newTaskDueDate, setNewTaskDueDate] = useState<string>("");
   const [newTaskAssigneeId, setNewTaskAssigneeId] = useState<number | null>(null);
+  
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  const [mobileView, setMobileView] = useState<"list" | "chat">("list");
+  
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      // Reset to list view when switching to mobile without a selected room
+      if (mobile && !selectedRoomId) {
+        setMobileView("list");
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [selectedRoomId]);
+  
+  // When room is selected on mobile, switch to chat view
+  useEffect(() => {
+    if (isMobile && selectedRoomId) {
+      setMobileView("chat");
+    }
+  }, [isMobile, selectedRoomId]);
   
   // Initialize notification sound
   useEffect(() => {
@@ -1352,6 +1386,631 @@ export default function OhweeesPage() {
     );
   }
 
+  // Mobile View
+  if (isMobile) {
+    return (
+      <div className="flex flex-col h-[calc(100vh-60px)] -m-6 bg-background">
+        {mobileView === "list" ? (
+          // Mobile Room List View
+          <>
+            {/* Mobile Header */}
+            <div className="px-4 pt-4 pb-2 safe-area-top">
+              <div className="flex items-center justify-between mb-3">
+                <h1 className="text-2xl font-bold">Ohweees</h1>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10"
+                    onClick={() => setShowSearchDialog(true)}
+                  >
+                    <Search className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 relative"
+                    onClick={() => setShowTasksPanel(true)}
+                  >
+                    <ListTodo className={`h-5 w-5 ${dueTasks && dueTasks.length > 0 ? "text-red-500" : ""}`} />
+                    {dueTasks && dueTasks.length > 0 && (
+                      <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Horizontal Avatar Bar */}
+            <MobileAvatarBar
+              rooms={rooms?.map(r => ({
+                id: r.id,
+                name: r.name,
+                type: r.type as "direct" | "group" | "team",
+                participants: r.participants?.map(p => ({
+                  id: p.id,
+                  name: p.name,
+                  avatarUrl: p.avatarUrl,
+                })),
+                unreadCount: r.unreadCount,
+                lastMessage: r.lastMessage ? {
+                  content: r.lastMessage.content,
+                  createdAt: r.lastMessage.createdAt,
+                  senderId: r.lastMessage.senderId,
+                  senderName: r.lastMessage.senderName,
+                } : undefined,
+              })) || []}
+              currentUserId={user?.id || 0}
+              onRoomSelect={(roomId) => {
+                setSelectedRoomId(roomId);
+                setLocation(`/ohweees/${roomId}`);
+              }}
+              onNewChat={() => setShowNewChatDialog(true)}
+            />
+
+            {/* Room List */}
+            <ScrollArea className="flex-1">
+              <div className="divide-y divide-border/50">
+                {rooms?.map((room) => (
+                  <MobileRoomListItem
+                    key={room.id}
+                    room={{
+                      id: room.id,
+                      name: room.name,
+                      type: room.type as "direct" | "group" | "team",
+                      participants: room.participants?.map(p => ({
+                        id: p.id,
+                        name: p.name,
+                        avatarUrl: p.avatarUrl,
+                      })),
+                      unreadCount: room.unreadCount,
+                      lastMessage: room.lastMessage ? {
+                        content: room.lastMessage.content,
+                        createdAt: room.lastMessage.createdAt,
+                        senderId: room.lastMessage.senderId,
+                        senderName: room.lastMessage.senderName,
+                      } : undefined,
+                    }}
+                    currentUserId={user?.id || 0}
+                    isSelected={selectedRoomId === room.id}
+                    onClick={() => {
+                      setSelectedRoomId(room.id);
+                      setLocation(`/ohweees/${room.id}`);
+                    }}
+                  />
+                ))}
+
+                {(!rooms || rooms.length === 0) && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                    <p className="font-medium">Noch keine Chats</p>
+                    <p className="text-sm mt-1">Tippe auf + um einen Chat zu starten</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </>
+        ) : (
+          // Mobile Chat View
+          <>
+            {/* Mobile Chat Header */}
+            {currentRoom && (
+              <MobileChatHeader
+                room={{
+                  id: currentRoom.id,
+                  name: currentRoom.name,
+                  type: currentRoom.type as "direct" | "group" | "team",
+                  participants: currentRoom.participants?.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    avatarUrl: p.avatarUrl,
+                  })),
+                  unreadCount: 0,
+                }}
+                currentUserId={user?.id || 0}
+                onBack={() => {
+                  setMobileView("list");
+                  setSelectedRoomId(null);
+                  setLocation("/ohweees");
+                }}
+                onMenuClick={() => {
+                  // Show room options menu
+                  setShowPinnedMessages(true);
+                }}
+              />
+            )}
+
+            {/* Messages */}
+            <ScrollArea className="flex-1">
+              <div className="py-2">
+                {currentRoom?.messages?.map((message, index) => {
+                  const prevMessage = currentRoom.messages?.[index - 1];
+                  const showDateSeparator = !prevMessage || 
+                    !isSameDay(new Date(message.ohweee.createdAt), new Date(prevMessage.ohweee.createdAt));
+                  const isOwn = message.sender.id === user?.id;
+                  const messageReactions = reactionsData?.[message.ohweee.id] || [];
+
+                  return (
+                    <div key={message.ohweee.id} id={`message-${message.ohweee.id}`}>
+                      {showDateSeparator && (
+                        <MobileDateSeparator date={new Date(message.ohweee.createdAt)} />
+                      )}
+                      <MobileMessage
+                        message={message}
+                        isOwn={isOwn}
+                        currentUserId={user?.id || 0}
+                        reactions={messageReactions}
+                        onReply={() => {
+                          setThreadParentId(message.ohweee.id);
+                          setShowThreadDialog(true);
+                        }}
+                        onEdit={() => {
+                          setEditingMessageId(message.ohweee.id);
+                          setEditContent(message.ohweee.content);
+                        }}
+                        onDelete={() => {
+                          deleteMessage.mutate({ id: message.ohweee.id });
+                        }}
+                        onPin={() => {
+                          togglePin.mutate({ id: message.ohweee.id });
+                        }}
+                        onAddReaction={(emoji) => {
+                          addReaction.mutate({ ohweeeId: message.ohweee.id, emoji });
+                        }}
+                        onCreateTask={() => {
+                          setTaskFromMessageId(message.ohweee.id);
+                          setNewTaskTitle(message.ohweee.content.substring(0, 100));
+                          setShowCreateTaskDialog(true);
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+
+            {/* Typing Indicator */}
+            {typingUsers && typingUsers.length > 0 && (
+              <div className="px-4 py-2 text-sm text-muted-foreground flex items-center gap-2">
+                <div className="flex gap-1">
+                  <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                </div>
+                <span>
+                  {typingUsers.length === 1
+                    ? `${typingUsers[0].userName} schreibt...`
+                    : `${typingUsers.length} Personen schreiben...`}
+                </span>
+              </div>
+            )}
+
+            {/* Mobile Input */}
+            <MobileChatInput
+              value={messageInput}
+              onChange={(value) => {
+                setMessageInput(value);
+                // Trigger typing indicator
+                if (selectedRoomId) {
+                  const now = Date.now();
+                  if (now - lastTypingTime > 2000) {
+                    setLastTypingTime(now);
+                    setTyping.mutate({ roomId: selectedRoomId });
+                  }
+                }
+              }}
+              onSend={handleSendMessage}
+              onAttachment={() => fileInputRef.current?.click()}
+              onEmoji={() => setShowInputEmojiPicker(true)}
+              onVoice={() => setIsRecordingVoice(true)}
+              disabled={sendMessage.isPending}
+            />
+          </>
+        )}
+
+        {/* Hidden file input */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          multiple
+          accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+          onChange={handleFileSelect}
+        />
+
+        {/* Dialogs - reuse from desktop */}
+        {/* New Chat Dialog */}
+        <Dialog open={showNewChatDialog} onOpenChange={setShowNewChatDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Neuer Chat</DialogTitle>
+              <DialogDescription>
+                Wähle einen Benutzer für einen Direktchat
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Input
+                placeholder="Nach Benutzer suchen..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="mb-4"
+              />
+              <ScrollArea className="h-[300px]">
+                <div className="space-y-2">
+                  {allUsers
+                    ?.filter(
+                      (u) =>
+                        u.id !== user?.id &&
+                        (u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
+                    )
+                    .map((u) => (
+                      <button
+                        key={u.id}
+                        onClick={() => startDM.mutate({ userId: u.id })}
+                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
+                      >
+                        <Avatar>
+                          <AvatarImage src={u.avatarUrl || undefined} />
+                          <AvatarFallback>{getInitials(u.name || "")}</AvatarFallback>
+                        </Avatar>
+                        <div className="text-left">
+                          <p className="font-medium">{u.name}</p>
+                          <p className="text-sm text-muted-foreground">{u.email}</p>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </ScrollArea>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Emoji Picker Dialog for Mobile */}
+        <Dialog open={showInputEmojiPicker} onOpenChange={setShowInputEmojiPicker}>
+          <DialogContent className="max-w-md p-0">
+            <EmojiPicker
+              onSelect={(emoji) => {
+                setMessageInput((prev) => prev + emoji);
+                setShowInputEmojiPicker(false);
+              }}
+              onClose={() => setShowInputEmojiPicker(false)}
+            />
+          </DialogContent>
+        </Dialog>
+
+        {/* Voice Recording Dialog */}
+        <Dialog open={isRecordingVoice} onOpenChange={setIsRecordingVoice}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Sprachnachricht</DialogTitle>
+            </DialogHeader>
+            <VoiceRecorder
+              onRecordingComplete={async (blob, duration) => {
+                // Upload the blob to storage first
+                const formData = new FormData();
+                formData.append("file", blob, "voice-message.webm");
+                try {
+                  const response = await fetch("/api/upload", {
+                    method: "POST",
+                    body: formData,
+                  });
+                  if (response.ok) {
+                    const { url } = await response.json();
+                    sendMessage.mutate({
+                      roomId: selectedRoomId!,
+                      content: "[Sprachnachricht]",
+                      attachments: [{
+                        url,
+                        filename: "voice-message.webm",
+                        mimeType: "audio/webm",
+                        size: blob.size,
+                      }],
+                    });
+                  }
+                } catch (error) {
+                  toast.error("Fehler beim Hochladen der Sprachnachricht");
+                }
+                setIsRecordingVoice(false);
+              }}
+              onCancel={() => setIsRecordingVoice(false)}
+            />
+          </DialogContent>
+        </Dialog>
+
+        {/* Search Dialog */}
+        <Dialog open={showSearchDialog} onOpenChange={setShowSearchDialog}>
+          <DialogContent className="max-w-md max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>Suchen</DialogTitle>
+            </DialogHeader>
+            <div className="py-2">
+              <div className="flex gap-2 mb-4">
+                <Input
+                  placeholder="Suchbegriff..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSearch();
+                  }}
+                />
+                <Button onClick={handleSearch} disabled={isSearching || !searchInput.trim()} size="icon">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
+              <ScrollArea className="h-[300px]">
+                {searchResults && searchResults.length > 0 ? (
+                  <div className="space-y-2">
+                    {searchResults.map((result: { ohweee: { id: number; content: string; createdAt: Date }; sender: { id: number; name: string | null; avatarUrl: string | null }; room: { id: number; name: string | null; type: string } }) => (
+                      <button
+                        key={result.ohweee.id}
+                        className="w-full text-left p-3 rounded-lg border hover:bg-muted/50"
+                        onClick={() => {
+                          setSelectedRoomId(result.room.id);
+                          setMobileView("chat");
+                          setShowSearchDialog(false);
+                          setSearchInput("");
+                        }}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={result.sender.avatarUrl || undefined} />
+                            <AvatarFallback className="text-xs">
+                              {(result.sender.name || "?")[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium text-sm truncate">{result.sender.name}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {result.ohweee.content.substring(0, 100)}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Search className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">Suche nach Nachrichten</p>
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Tasks Panel Dialog */}
+        <Dialog open={showTasksPanel} onOpenChange={setShowTasksPanel}>
+          <DialogContent className="max-w-md max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ListTodo className="h-5 w-5" />
+                Aufgaben
+              </DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="h-[400px]">
+              {tasks && tasks.length > 0 ? (
+                <div className="space-y-2">
+                  {tasks.map((t) => (
+                    <div
+                      key={t.task.id}
+                      className={`p-3 rounded-lg border ${t.task.isCompleted ? "opacity-60" : ""}`}
+                    >
+                      <div className="flex items-start gap-2">
+                        <Checkbox
+                          checked={t.task.isCompleted}
+                          onCheckedChange={() => {
+                            toggleTask.mutate({ taskId: t.task.id });
+                          }}
+                          className="mt-1"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-medium ${t.task.isCompleted ? "line-through" : ""}`}>
+                            {t.task.title}
+                          </p>
+                          {t.task.dueDate && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Fällig: {format(new Date(t.task.dueDate), "dd.MM.yyyy")}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <ListTodo className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                  <p>Keine Aufgaben</p>
+                </div>
+              )}
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+
+        {/* Pinned Messages Dialog */}
+        <Dialog open={showPinnedMessages} onOpenChange={setShowPinnedMessages}>
+          <DialogContent className="max-w-md max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Pin className="h-5 w-5" />
+                Angepinnt
+              </DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="h-[300px]">
+              {pinnedMessages && pinnedMessages.length > 0 ? (
+                <div className="space-y-2">
+                  {pinnedMessages.map((pinned) => (
+                    <div key={pinned.ohweee.id} className="p-3 rounded-lg border">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={pinned.sender.avatarUrl || undefined} />
+                          <AvatarFallback className="text-xs">
+                            {(pinned.sender.name || "?")[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium text-sm">{pinned.sender.name}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {pinned.ohweee.content}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Pin className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                  <p>Keine angepinnten Nachrichten</p>
+                </div>
+              )}
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+
+        {/* Thread Dialog */}
+        <Dialog open={showThreadDialog} onOpenChange={setShowThreadDialog}>
+          <DialogContent className="max-w-md max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>Thread</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="h-[300px]">
+              {threadReplies && threadReplies.length > 0 ? (
+                <div className="space-y-2">
+                  {threadReplies.map((reply) => (
+                    <div key={reply.ohweee.id} className="p-2 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Avatar className="h-5 w-5">
+                          <AvatarImage src={reply.sender.avatarUrl || undefined} />
+                          <AvatarFallback className="text-[10px]">
+                            {(reply.sender.name || "?")[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium text-xs">{reply.sender.name}</span>
+                      </div>
+                      <p className="text-sm">{reply.ohweee.content}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-muted-foreground text-sm">
+                  Noch keine Antworten
+                </div>
+              )}
+            </ScrollArea>
+            <div className="flex gap-2 mt-2">
+              <Input
+                placeholder="Antworten..."
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey && messageInput.trim() && threadParentId) {
+                    e.preventDefault();
+                    sendMessage.mutate(
+                      {
+                        roomId: selectedRoomId!,
+                        content: messageInput.trim(),
+                        parentId: threadParentId,
+                      },
+                      {
+                        onSuccess: () => {
+                          setMessageInput("");
+                          utils.ohweees.getReplies.invalidate({ parentId: threadParentId });
+                        },
+                      }
+                    );
+                  }
+                }}
+              />
+              <Button
+                size="icon"
+                onClick={() => {
+                  if (messageInput.trim() && threadParentId) {
+                    sendMessage.mutate(
+                      {
+                        roomId: selectedRoomId!,
+                        content: messageInput.trim(),
+                        parentId: threadParentId,
+                      },
+                      {
+                        onSuccess: () => {
+                          setMessageInput("");
+                          utils.ohweees.getReplies.invalidate({ parentId: threadParentId });
+                        },
+                      }
+                    );
+                  }
+                }}
+                disabled={!messageInput.trim()}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Task Dialog */}
+        <Dialog open={showCreateTaskDialog} onOpenChange={setShowCreateTaskDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Neue Aufgabe</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label>Titel</Label>
+                <Input
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  placeholder="Aufgabentitel..."
+                />
+              </div>
+              <div>
+                <Label>Beschreibung</Label>
+                <Textarea
+                  value={newTaskDescription}
+                  onChange={(e) => setNewTaskDescription(e.target.value)}
+                  placeholder="Beschreibung..."
+                  rows={3}
+                />
+              </div>
+              <div>
+                <Label>Fälligkeitsdatum</Label>
+                <Input
+                  type="date"
+                  value={newTaskDueDate}
+                  onChange={(e) => setNewTaskDueDate(e.target.value)}
+                />
+              </div>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  if (newTaskTitle.trim() && selectedRoomId) {
+                    createTask.mutate({
+                      roomId: selectedRoomId,
+                      title: newTaskTitle.trim(),
+                      description: newTaskDescription.trim() || undefined,
+                      priority: newTaskPriority,
+                      dueDate: newTaskDueDate ? new Date(newTaskDueDate) : undefined,
+                      assigneeId: newTaskAssigneeId || undefined,
+                      sourceOhweeeId: taskFromMessageId || undefined,
+                    });
+                    setShowCreateTaskDialog(false);
+                    setNewTaskTitle("");
+                    setNewTaskDescription("");
+                    setNewTaskDueDate("");
+                    setTaskFromMessageId(null);
+                  }
+                }}
+                disabled={!newTaskTitle.trim()}
+              >
+                Aufgabe erstellen
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  // Desktop View
   return (
     <div className="flex h-[calc(100vh-120px)] -m-6">
       {/* Sidebar - Chat List */}
