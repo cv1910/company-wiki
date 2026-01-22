@@ -687,11 +687,28 @@ export default function OrgChart() {
 
             {/* Zoom Controls */}
             <div className="flex items-center gap-2">
+              {/* Zoom Stufen Buttons */}
+              <div className="flex items-center border rounded-lg overflow-hidden">
+                {[50, 75, 100, 125, 150].map((level) => (
+                  <Button
+                    key={level}
+                    variant={zoom === level ? "default" : "ghost"}
+                    size="sm"
+                    className={`rounded-none px-3 h-9 ${zoom === level ? '' : 'hover:bg-muted'}`}
+                    onClick={() => setZoom(level)}
+                  >
+                    {level}%
+                  </Button>
+                ))}
+              </div>
+              <div className="w-px h-6 bg-border" />
+              {/* Fine-tune Buttons */}
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => setZoom(Math.max(50, zoom - 10))}
-                disabled={zoom <= 50}
+                onClick={() => setZoom(Math.max(25, zoom - 10))}
+                disabled={zoom <= 25}
+                title="Verkleinern (-10%)"
               >
                 <ZoomOut className="h-4 w-4" />
               </Button>
@@ -699,8 +716,9 @@ export default function OrgChart() {
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => setZoom(Math.min(150, zoom + 10))}
-                disabled={zoom >= 150}
+                onClick={() => setZoom(Math.min(200, zoom + 10))}
+                disabled={zoom >= 200}
+                title="Vergrößern (+10%)"
               >
                 <ZoomIn className="h-4 w-4" />
               </Button>
@@ -708,6 +726,7 @@ export default function OrgChart() {
                 variant="outline"
                 size="icon"
                 onClick={() => setZoom(100)}
+                title="Zurücksetzen (100%)"
               >
                 <Maximize2 className="h-4 w-4" />
               </Button>

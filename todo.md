@@ -940,3 +940,6 @@
 
 ## Organigramm Bug (Januar 2026)
 - [x] React Error #301: Maximum update depth exceeded - setExpandedNodes aus useMemo entfernt
+
+## Organigramm Zoom (Januar 2026)
+- [x] Zoom-Stufen-Buttons für schrittweise Verkleinerung/Vergrößerung (50%, 75%, 100%, 125%, 150% + Feinabstimmung)
