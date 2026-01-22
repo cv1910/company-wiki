@@ -955,3 +955,9 @@
 - [x] Positions-Fokus: Doppeltipp zentriert die angeklickte Position im Viewport (mit Zoom-Wechsel und Smooth-Scroll)
 - [x] Minimap: Übersichtskarte im Vollbildmodus für bessere Navigation in großen Organigrammen (zeigt alle Positionen hierarchisch mit Farbcodierung)
 - [x] Tastaturnavigation: Pfeiltasten zum Navigieren zwischen Positionen im Vollbildmodus (↑↓←→ + Enter/Esc, mit Hilfe-Panel)
+
+## Touch-Gesten für Organigramm-Navigation (Januar 2026)
+- [x] Swipe-Gesten für Navigation zwischen Positionen auf Mobilgeräten (im Vollbildmodus mit fokussierter Position)
+- [x] Swipe links/rechts für Geschwister-Navigation
+- [x] Swipe hoch/runter für Eltern/Kind-Navigation
+- [x] Visuelles Feedback bei Swipe-Gesten (Position wird zentriert und fokussiert)

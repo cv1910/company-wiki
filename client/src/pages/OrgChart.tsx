@@ -820,6 +820,86 @@ export default function OrgChart() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen, focusedPositionId, flattenedPositions, centerPosition, toggleFullscreen]);
 
+  // Touch swipe navigation state
+  const swipeStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const SWIPE_THRESHOLD = 50; // minimum distance for swipe
+  const SWIPE_TIMEOUT = 300; // maximum time for swipe in ms
+
+  // Touch swipe navigation handler for position navigation
+  const handleSwipeStart = useCallback((e: React.TouchEvent) => {
+    if (!isFullscreen || !focusedPositionId) return;
+    const touch = e.touches[0];
+    swipeStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now()
+    };
+  }, [isFullscreen, focusedPositionId]);
+
+  const handleSwipeEnd = useCallback((e: React.TouchEvent) => {
+    if (!isFullscreen || !focusedPositionId || !swipeStartRef.current) return;
+    
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - swipeStartRef.current.x;
+    const deltaY = touch.clientY - swipeStartRef.current.y;
+    const deltaTime = Date.now() - swipeStartRef.current.time;
+    
+    // Check if it's a valid swipe
+    if (deltaTime > SWIPE_TIMEOUT) {
+      swipeStartRef.current = null;
+      return;
+    }
+    
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+    
+    // Determine swipe direction
+    if (absX < SWIPE_THRESHOLD && absY < SWIPE_THRESHOLD) {
+      swipeStartRef.current = null;
+      return;
+    }
+    
+    const currentIndex = flattenedPositions.findIndex(p => p.id === focusedPositionId);
+    if (currentIndex === -1) {
+      swipeStartRef.current = null;
+      return;
+    }
+    
+    const current = flattenedPositions[currentIndex];
+    let nextId: number | null = null;
+    
+    if (absX > absY) {
+      // Horizontal swipe - navigate between siblings
+      const siblingIndex = current.siblings.indexOf(focusedPositionId);
+      if (deltaX > SWIPE_THRESHOLD && siblingIndex > 0) {
+        // Swipe right - previous sibling
+        nextId = current.siblings[siblingIndex - 1];
+      } else if (deltaX < -SWIPE_THRESHOLD && siblingIndex < current.siblings.length - 1) {
+        // Swipe left - next sibling
+        nextId = current.siblings[siblingIndex + 1];
+      }
+    } else {
+      // Vertical swipe - navigate parent/child
+      if (deltaY > SWIPE_THRESHOLD && current.parentId) {
+        // Swipe down - go to parent
+        nextId = current.parentId;
+      } else if (deltaY < -SWIPE_THRESHOLD) {
+        // Swipe up - go to first child
+        const children = flattenedPositions.filter(p => p.parentId === focusedPositionId);
+        if (children.length > 0) {
+          nextId = children[0].id;
+        }
+      }
+    }
+    
+    if (nextId) {
+      setFocusedPositionId(nextId);
+      centerPosition(nextId);
+    }
+    
+    swipeStartRef.current = null;
+  }, [isFullscreen, focusedPositionId, flattenedPositions, centerPosition]);
+
   const handleToggleExpand = (id: number) => {
     setExpandedNodes((prev) => {
       const next = new Set(prev);
@@ -1202,6 +1282,8 @@ export default function OrgChart() {
               style={{ touchAction: 'pan-x pan-y' }}
               onClick={handleDoubleTap}
               onTouchEnd={handleDoubleTap}
+              onTouchStart={handleSwipeStart}
+              onTouchEndCapture={handleSwipeEnd}
             >
             {filteredTree.length === 0 ? (
             <div className="text-center py-16">
