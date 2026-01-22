@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Bell, Check, CheckCheck, FileText, MessageSquare } from "lucide-react";
+import { Bell, Check, CheckCheck, FileText, MessageSquare, Calendar, GraduationCap, Users, ExternalLink } from "lucide-react";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
@@ -32,13 +32,62 @@ export default function Notifications() {
       markAsRead.mutate({ id: notification.id });
     }
     
-    if (notification.resourceType && notification.resourceId) {
-      if (notification.resourceType === "article") {
-        // We'd need the slug, but for now just go to wiki
-        setLocation("/wiki");
-      } else if (notification.resourceType === "sop") {
-        setLocation("/sops");
+    // Navigate based on notification type and resource
+    const type = notification.type;
+    const resourceType = notification.resourceType;
+    const resourceId = notification.resourceId;
+    
+    // Leave/vacation related notifications
+    if (type === "leave_request" || type === "leave_approved" || type === "leave_rejected") {
+      // Admins go to leave management, users go to their leave page
+      if (type === "leave_request") {
+        setLocation("/admin/leave");
+      } else {
+        setLocation("/leave");
       }
+      return;
+    }
+    
+    // Assignment notifications (onboarding, wiki articles assigned)
+    if (type === "assignment" || type === "article_assigned") {
+      if (resourceType === "article" && resourceId) {
+        // Navigate to the assigned article
+        setLocation(`/wiki/article/${resourceId}`);
+      } else {
+        setLocation("/onboarding");
+      }
+      return;
+    }
+    
+    // Article/SOP related notifications
+    if (resourceType && resourceId) {
+      if (resourceType === "article") {
+        setLocation(`/wiki/article/${resourceId}`);
+      } else if (resourceType === "sop") {
+        setLocation(`/sops/view/${resourceId}`);
+      } else if (resourceType === "leave") {
+        setLocation("/leave");
+      }
+      return;
+    }
+    
+    // Mention notifications
+    if (type === "mention") {
+      setLocation("/mentions");
+      return;
+    }
+    
+    // Comment notifications
+    if (type === "comment" && resourceType === "article" && resourceId) {
+      setLocation(`/wiki/article/${resourceId}`);
+      return;
+    }
+    
+    // Default fallback based on type
+    if (type.includes("article")) {
+      setLocation("/wiki");
+    } else if (type.includes("sop")) {
+      setLocation("/wiki"); // SOPs are now in Wissensdatenbank
     }
   };
 
@@ -47,7 +96,16 @@ export default function Notifications() {
       case "comment":
         return <MessageSquare className="h-4 w-4" />;
       case "article":
+      case "article_assigned":
         return <FileText className="h-4 w-4" />;
+      case "leave_request":
+      case "leave_approved":
+      case "leave_rejected":
+        return <Calendar className="h-4 w-4" />;
+      case "assignment":
+        return <GraduationCap className="h-4 w-4" />;
+      case "mention":
+        return <Users className="h-4 w-4" />;
       default:
         return <Bell className="h-4 w-4" />;
     }

@@ -1,0 +1,1194 @@
+{
+  "query": "SELECT id, name, description, LEFT(content, 500) as content_preview FROM articleTemplates;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute SELECT id, name, description, LEFT(content, 500) as content_preview FROM articleTemplates;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Leere Seite",
+      "description": "Eine leere Seite ohne Vorlage",
+      "content_preview": ""
+    },
+    {
+      "id": "2",
+      "name": "Onboarding-Guide",
+      "description": "Vorlage für Mitarbeiter-Onboarding",
+      "content_preview": "# Onboarding: [Name des Bereichs]"
+    },
+    {
+      "id": "3",
+      "name": "Prozessbeschreibung",
+      "description": "Vorlage für Prozess- und Workflow-Dokumentation",
+      "content_preview": "# Prozess: [Name des Prozesses]"
+    },
+    {
+      "id": "4",
+      "name": "Meeting-Protokoll",
+      "description": "Vorlage für Meeting-Notizen und Protokolle",
+      "content_preview": "# Meeting-Protokoll: [Titel]"
+    },
+    {
+      "id": "5",
+      "name": "FAQ-Dokument",
+      "description": "Vorlage für häufig gestellte Fragen",
+      "content_preview": "# FAQ: [Thema]"
+    },
+    {
+      "id": "6",
+      "name": "Technische Dokumentation",
+      "description": "Vorlage für technische Anleitungen und Dokumentation",
+      "content_preview": "# [Titel der Dokumentation]"
+    },
+    {
+      "id": "150029",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "150030",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "150031",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "150032",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "180001",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "180002",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "180003",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "180004",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "180005",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "180006",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210001",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210002",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210003",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210004",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210005",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210006",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210007",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210008",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210009",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210010",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210011",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210012",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210013",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210014",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210015",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210016",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210017",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210018",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210019",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210020",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210021",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210022",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210023",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210024",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210025",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210026",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210027",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210028",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210029",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210030",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210031",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210032",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210033",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210034",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210035",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210036",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210037",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210038",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210039",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210040",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210041",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210042",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210043",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210044",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210045",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210046",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210047",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210048",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210049",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210050",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210051",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210052",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210053",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210054",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210055",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210056",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210057",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210058",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210059",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210060",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210061",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210062",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210063",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210064",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210065",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210066",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210067",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210068",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210069",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210070",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210071",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210072",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210073",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210074",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210075",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210076",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210077",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210078",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210079",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210080",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210081",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210082",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210083",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210084",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "210085",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "210086",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "240001",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "240002",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "240003",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "240004",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "240005",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "240006",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "270001",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "270002",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "270003",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "270004",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "270005",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "270006",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "270007",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "270008",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "270009",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "270010",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "270011",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "270012",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "270013",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "270014",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "300001",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "300002",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "300003",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "300004",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "300005",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "300006",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330001",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330002",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330003",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330004",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330005",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330006",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330007",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330008",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330009",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330010",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330011",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330012",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330013",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330014",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330015",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330016",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330017",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330018",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330019",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330020",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330021",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330022",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330023",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330024",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330025",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330026",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330027",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330028",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330029",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330030",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330031",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330032",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330033",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330034",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330035",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330036",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330037",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330038",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    },
+    {
+      "id": "330039",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test Content"
+    },
+    {
+      "id": "330040",
+      "name": "Test Template",
+      "description": "A test template",
+      "content_preview": "# Test"
+    }
+  ],
+  "messages": [
+    "## Willkommen im Team!",
+    "Herzlich willkommen bei [Unternehmen]. Diese Anleitung hilft dir, dich schnell einzuarbeiten.",
+    "## Erste Schritte",
+    "### Tag 1",
+    "- [ ] Arbeitsplatz einrichten",
+    "- [ ] Zugänge erhalten",
+    "- [ ] Team kennenlernen",
+    "### Woche 1",
+    "- [ ] Einführung in die Tools",
+    "- [ ] Erste Aufgaben übernehmen",
+    "- [ ] Mentor-Gespräch",
+    "## Wichtige Kontakte",
+    "| Rolle | Name | E-Mail |",
+    "|-------|------|--------|",
+    "| Teamleiter | | |",
+    "| HR | | |",
+    "| IT-Support | | |",
+    "## Nützliche Links",
+    "## Übersicht",
+    "**Verantwortlich:** [Name/Rolle]  ",
+    "**Letzte Aktualisierung:** [Datum]  ",
+    "**Version:** 1.0",
+    "## Zweck",
+    "Beschreiben Sie hier den Zweck dieses Prozesses.",
+    "## Geltungsbereich",
+    "Für wen gilt dieser Prozess?",
+    "## Voraussetzungen",
+    "- Voraussetzung 1",
+    "- Voraussetzung 2",
+    "## Prozessschritte",
+    "### Schritt 1: [Titel]",
+    "Beschreibung des ersten Schritts.",
+    "### Schritt 2: [Titel]",
+    "Beschreibung des zweiten Schritts.",
+    "### Schritt 3: [Titel]",
+    "Beschreibung des dritten Schritts.",
+    "**Datum:** [Datum]  ",
+    "**Uhrzeit:** [Uhrzeit]  ",
+    "**Ort/Link:** [Ort oder Meeting-Link]",
+    "## Teilnehmer",
+    "- [ ] [Name 1]",
+    "- [ ] [Name 2]",
+    "- [ ] [Name 3]",
+    "## Agenda",
+    "1. Thema 1",
+    "2. Thema 2",
+    "3. Thema 3",
+    "## Besprochene Punkte",
+    "### Thema 1",
+    "Zusammenfassung der Diskussion.",
+    "### Thema 2",
+    "Zusammenfassung der Diskussion.",
+    "## Beschlüsse",
+    "| Beschluss | Verantwortlich | Frist |",
+    "|-----------|----------------|-------|",
+    "| | | |",
+    "| | | |",
+    "## Action Items",
+    "- [ ] **[Name]:** Aufgabe 1 (Frist: [Da",
+    "## Allgemeine Fragen",
+    "### Frage 1?",
+    "Antwort auf Frage 1.",
+    "### Frage 2?",
+    "Antwort auf Frage 2.",
+    "### Frage 3?",
+    "Antwort auf Frage 3.",
+    "## Technische Fragen",
+    "### Frage 1?",
+    "Antwort auf Frage 1.",
+    "### Frage 2?",
+    "Antwort auf Frage 2.",
+    "## Kontakt",
+    "Bei weiteren Fragen wenden Sie sich bitte an:",
+    "- **E-Mail:** [email]",
+    "- **Slack:** [channel]",
+    "## Übersicht",
+    "Kurze Beschreibung des dokumentierten Systems/Features.",
+    "## Voraussetzungen",
+    "- Voraussetzung 1",
+    "- Voraussetzung 2",
+    "## Installation / Setup",
+    "```bash",
+    "# Befehle hier einfügen",
+    "```",
+    "## Konfiguration",
+    "| Parameter | Beschreibung | Standardwert |",
+    "|-----------|--------------|--------------|",
+    "| | | |",
+    "## Verwendung",
+    "### Grundlegende Verwendung",
+    "Beschreibung der grundlegenden Verwendung.",
+    "### Erweiterte Optionen",
+    "Beschreibung erweiterter Optionen.",
+    "## Fehlerbehebung",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template.",
+    "This is a test template."
+  ],
+  "stdout": "id\tname\tdescription\tcontent_preview\n1\tLeere Seite\tEine leere Seite ohne Vorlage\t\n2\tOnboarding-Guide\tVorlage für Mitarbeiter-Onboarding\t# Onboarding: [Name des Bereichs]\n\n## Willkommen im Team!\n\nHerzlich willkommen bei [Unternehmen]. Diese Anleitung hilft dir, dich schnell einzuarbeiten.\n\n## Erste Schritte\n\n### Tag 1\n- [ ] Arbeitsplatz einrichten\n- [ ] Zugänge erhalten\n- [ ] Team kennenlernen\n\n### Woche 1\n- [ ] Einführung in die Tools\n- [ ] Erste Aufgaben übernehmen\n- [ ] Mentor-Gespräch\n\n## Wichtige Kontakte\n\n| Rolle | Name | E-Mail |\n|-------|------|--------|\n| Teamleiter | | |\n| HR | | |\n| IT-Support | | |\n\n## Nützliche Links\n3\tProzessbeschreibung\tVorlage für Prozess- und Workflow-Dokumentation\t# Prozess: [Name des Prozesses]\n\n## Übersicht\n\n**Verantwortlich:** [Name/Rolle]  \n**Letzte Aktualisierung:** [Datum]  \n**Version:** 1.0\n\n## Zweck\n\nBeschreiben Sie hier den Zweck dieses Prozesses.\n\n## Geltungsbereich\n\nFür wen gilt dieser Prozess?\n\n## Voraussetzungen\n\n- Voraussetzung 1\n- Voraussetzung 2\n\n## Prozessschritte\n\n### Schritt 1: [Titel]\nBeschreibung des ersten Schritts.\n\n### Schritt 2: [Titel]\nBeschreibung des zweiten Schritts.\n\n### Schritt 3: [Titel]\nBeschreibung des dritten Schritts.\n\n\n4\tMeeting-Protokoll\tVorlage für Meeting-Notizen und Protokolle\t# Meeting-Protokoll: [Titel]\n\n**Datum:** [Datum]  \n**Uhrzeit:** [Uhrzeit]  \n**Ort/Link:** [Ort oder Meeting-Link]\n\n## Teilnehmer\n\n- [ ] [Name 1]\n- [ ] [Name 2]\n- [ ] [Name 3]\n\n## Agenda\n\n1. Thema 1\n2. Thema 2\n3. Thema 3\n\n## Besprochene Punkte\n\n### Thema 1\nZusammenfassung der Diskussion.\n\n### Thema 2\nZusammenfassung der Diskussion.\n\n## Beschlüsse\n\n| Beschluss | Verantwortlich | Frist |\n|-----------|----------------|-------|\n| | | |\n| | | |\n\n## Action Items\n\n- [ ] **[Name]:** Aufgabe 1 (Frist: [Da\n5\tFAQ-Dokument\tVorlage für häufig gestellte Fragen\t# FAQ: [Thema]\n\n## Allgemeine Fragen\n\n### Frage 1?\nAntwort auf Frage 1.\n\n### Frage 2?\nAntwort auf Frage 2.\n\n### Frage 3?\nAntwort auf Frage 3.\n\n## Technische Fragen\n\n### Frage 1?\nAntwort auf Frage 1.\n\n### Frage 2?\nAntwort auf Frage 2.\n\n## Kontakt\n\nBei weiteren Fragen wenden Sie sich bitte an:\n- **E-Mail:** [email]\n- **Slack:** [channel]\n6\tTechnische Dokumentation\tVorlage für technische Anleitungen und Dokumentation\t# [Titel der Dokumentation]\n\n## Übersicht\n\nKurze Beschreibung des dokumentierten Systems/Features.\n\n## Voraussetzungen\n\n- Voraussetzung 1\n- Voraussetzung 2\n\n## Installation / Setup\n\n```bash\n# Befehle hier einfügen\n```\n\n## Konfiguration\n\n| Parameter | Beschreibung | Standardwert |\n|-----------|--------------|--------------|\n| | | |\n\n## Verwendung\n\n### Grundlegende Verwendung\nBeschreibung der grundlegenden Verwendung.\n\n### Erweiterte Optionen\nBeschreibung erweiterter Optionen.\n\n## Fehlerbehebung\n\n\n150029\tTest Template\tA test template\t# Test Content\n150030\tTest Template\tA test template\t# Test\n\nThis is a test template.\n150031\tTest Template\tA test template\t# Test Content\n150032\tTest Template\tA test template\t# Test\n\nThis is a test template.\n180001\tTest Template\tA test template\t# Test\n\nThis is a test template.\n180002\tTest Template\tA test template\t# Test Content\n180003\tTest Template\tA test template\t# Test Content\n180004\tTest Template\tA test template\t# Test\n\nThis is a test template.\n180005\tTest Template\tA test template\t# Test Content\n180006\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210001\tTest Template\tA test template\t# Test Content\n210002\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210003\tTest Template\tA test template\t# Test Content\n210004\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210005\tTest Template\tA test template\t# Test Content\n210006\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210007\tTest Template\tA test template\t# Test Content\n210008\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210009\tTest Template\tA test template\t# Test Content\n210010\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210011\tTest Template\tA test template\t# Test Content\n210012\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210013\tTest Template\tA test template\t# Test Content\n210014\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210015\tTest Template\tA test template\t# Test Content\n210016\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210017\tTest Template\tA test template\t# Test Content\n210018\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210019\tTest Template\tA test template\t# Test Content\n210020\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210021\tTest Template\tA test template\t# Test Content\n210022\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210023\tTest Template\tA test template\t# Test Content\n210024\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210025\tTest Template\tA test template\t# Test Content\n210026\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210027\tTest Template\tA test template\t# Test Content\n210028\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210029\tTest Template\tA test template\t# Test Content\n210030\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210031\tTest Template\tA test template\t# Test Content\n210032\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210033\tTest Template\tA test template\t# Test Content\n210034\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210035\tTest Template\tA test template\t# Test Content\n210036\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210037\tTest Template\tA test template\t# Test Content\n210038\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210039\tTest Template\tA test template\t# Test Content\n210040\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210041\tTest Template\tA test template\t# Test Content\n210042\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210043\tTest Template\tA test template\t# Test Content\n210044\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210045\tTest Template\tA test template\t# Test Content\n210046\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210047\tTest Template\tA test template\t# Test Content\n210048\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210049\tTest Template\tA test template\t# Test Content\n210050\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210051\tTest Template\tA test template\t# Test Content\n210052\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210053\tTest Template\tA test template\t# Test Content\n210054\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210055\tTest Template\tA test template\t# Test Content\n210056\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210057\tTest Template\tA test template\t# Test Content\n210058\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210059\tTest Template\tA test template\t# Test Content\n210060\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210061\tTest Template\tA test template\t# Test Content\n210062\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210063\tTest Template\tA test template\t# Test Content\n210064\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210065\tTest Template\tA test template\t# Test Content\n210066\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210067\tTest Template\tA test template\t# Test Content\n210068\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210069\tTest Template\tA test template\t# Test Content\n210070\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210071\tTest Template\tA test template\t# Test Content\n210072\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210073\tTest Template\tA test template\t# Test Content\n210074\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210075\tTest Template\tA test template\t# Test Content\n210076\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210077\tTest Template\tA test template\t# Test Content\n210078\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210079\tTest Template\tA test template\t# Test Content\n210080\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210081\tTest Template\tA test template\t# Test Content\n210082\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210083\tTest Template\tA test template\t# Test Content\n210084\tTest Template\tA test template\t# Test\n\nThis is a test template.\n210085\tTest Template\tA test template\t# Test Content\n210086\tTest Template\tA test template\t# Test\n\nThis is a test template.\n240001\tTest Template\tA test template\t# Test Content\n240002\tTest Template\tA test template\t# Test\n\nThis is a test template.\n240003\tTest Template\tA test template\t# Test Content\n240004\tTest Template\tA test template\t# Test\n\nThis is a test template.\n240005\tTest Template\tA test template\t# Test Content\n240006\tTest Template\tA test template\t# Test\n\nThis is a test template.\n270001\tTest Template\tA test template\t# Test Content\n270002\tTest Template\tA test template\t# Test\n\nThis is a test template.\n270003\tTest Template\tA test template\t# Test Content\n270004\tTest Template\tA test template\t# Test\n\nThis is a test template.\n270005\tTest Template\tA test template\t# Test Content\n270006\tTest Template\tA test template\t# Test\n\nThis is a test template.\n270007\tTest Template\tA test template\t# Test Content\n270008\tTest Template\tA test template\t# Test\n\nThis is a test template.\n270009\tTest Template\tA test template\t# Test Content\n270010\tTest Template\tA test template\t# Test\n\nThis is a test template.\n270011\tTest Template\tA test template\t# Test Content\n270012\tTest Template\tA test template\t# Test\n\nThis is a test template.\n270013\tTest Template\tA test template\t# Test Content\n270014\tTest Template\tA test template\t# Test\n\nThis is a test template.\n300001\tTest Template\tA test template\t# Test Content\n300002\tTest Template\tA test template\t# Test\n\nThis is a test template.\n300003\tTest Template\tA test template\t# Test Content\n300004\tTest Template\tA test template\t# Test\n\nThis is a test template.\n300005\tTest Template\tA test template\t# Test Content\n300006\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330001\tTest Template\tA test template\t# Test Content\n330002\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330003\tTest Template\tA test template\t# Test Content\n330004\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330005\tTest Template\tA test template\t# Test Content\n330006\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330007\tTest Template\tA test template\t# Test Content\n330008\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330009\tTest Template\tA test template\t# Test Content\n330010\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330011\tTest Template\tA test template\t# Test Content\n330012\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330013\tTest Template\tA test template\t# Test Content\n330014\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330015\tTest Template\tA test template\t# Test Content\n330016\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330017\tTest Template\tA test template\t# Test Content\n330018\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330019\tTest Template\tA test template\t# Test Content\n330020\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330021\tTest Template\tA test template\t# Test Content\n330022\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330023\tTest Template\tA test template\t# Test Content\n330024\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330025\tTest Template\tA test template\t# Test Content\n330026\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330027\tTest Template\tA test template\t# Test Content\n330028\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330029\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330030\tTest Template\tA test template\t# Test Content\n330031\tTest Template\tA test template\t# Test Content\n330032\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330033\tTest Template\tA test template\t# Test Content\n330034\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330035\tTest Template\tA test template\t# Test Content\n330036\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330037\tTest Template\tA test template\t# Test Content\n330038\tTest Template\tA test template\t# Test\n\nThis is a test template.\n330039\tTest Template\tA test template\t# Test Content\n330040\tTest Template\tA test template\t# Test\n\nThis is a test template.\n",
+  "stderr": "",
+  "execution_time_ms": 64
+}

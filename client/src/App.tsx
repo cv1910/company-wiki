@@ -18,6 +18,7 @@ import SOPEditor from "./pages/SOPEditor";
 import SOPCategory from "./pages/SOPCategory";
 import Search from "./pages/Search";
 import Chat from "./pages/Chat";
+import SearchAssistant from "./pages/SearchAssistant";
 import Notifications from "./pages/Notifications";
 
 // Admin Pages
@@ -85,8 +86,9 @@ function Router() {
         <Route path="/sops/edit/:slug" component={SOPEditor} />
         
         {/* Other Routes */}
-        <Route path="/search" component={Search} />
-        <Route path="/chat" component={Chat} />
+        <Route path="/search" component={SearchAssistant} />
+        <Route path="/chat" component={SearchAssistant} />
+        <Route path="/search-assistant" component={SearchAssistant} />
         <Route path="/notifications" component={Notifications} />
         <Route path="/onboarding" component={Onboarding} />
         

@@ -70,11 +70,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 const menuItems = [
   { icon: Home, label: "Home", path: "/" },
-  { icon: Book, label: "Wiki", path: "/wiki" },
-  { icon: ClipboardList, label: "SOPs", path: "/sops" },
+  { icon: Book, label: "Wissensdatenbank", path: "/wiki" },
   { icon: GraduationCap, label: "Onboarding", path: "/onboarding" },
   { icon: Search, label: "Suche", path: "/search" },
-  { icon: MessageCircle, label: "AI-Assistent", path: "/chat" },
   { icon: MessageCircle, label: "Taps", path: "/taps" },
   { icon: CalendarDays, label: "Kalender", path: "/calendar" },
   { icon: Building2, label: "Organigramm", path: "/orgchart" },

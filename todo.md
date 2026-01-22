@@ -961,3 +961,11 @@
 - [x] Swipe links/rechts für Geschwister-Navigation
 - [x] Swipe hoch/runter für Eltern/Kind-Navigation
 - [x] Visuelles Feedback bei Swipe-Gesten (Position wird zentriert und fokussiert)
+
+## UI-Konsolidierung (Januar 2026)
+- [x] Wiki und SOPs zu einem Bereich "Wissensdatenbank" zusammenfassen (Tabs für Wiki/SOPs)
+- [x] Suche und AI-Assistent zu einem Feature zusammenfassen (SearchAssistant-Seite mit Tabs)
+- [x] Onboarding als eigenständigen Nav-Punkt (nicht mehr unter Wiki)
+- [x] Prozessbeschreibung-Template mit echtem Inhalt füllen (Urlaubsantrag-Beispiel)
+- [x] Benachrichtigungen klickbar machen - Navigation zum jeweiligen Inhalt (Leave, Wiki, Onboarding)
+- [x] Urlaubsverwaltung Mobile-Design verbessern (Mobile-first Layout mit Flex-Buttons)

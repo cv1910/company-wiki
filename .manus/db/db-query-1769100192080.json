@@ -1,0 +1,196 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "activityLog"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "announcements"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "articleEmbeddings"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "articleFeedback"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "articleReviews"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "articleTemplates"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "articleVersions"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "articles"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "assignments"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "auditLog"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "calendarEventSyncMap"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "calendarEvents"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "categories"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "chatHistory"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "chatRoomParticipants"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "chatRooms"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "comments"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "contentVerification"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "emailQueue"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "emailSettings"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "eventBookings"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "eventTypeAvailability"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "eventTypeDateOverrides"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "eventTypes"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "favorites"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "googleCalendarConnections"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "leaveBalances"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "leaveRequests"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "media"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "mentions"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "notifications"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "ohweeeDeliveryReceipts"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "ohweeeReactions"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "ohweeeReadReceipts"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "ohweeeTasks"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "ohweeeTypingIndicators"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "ohweeeUnreadMarkers"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "ohweee_poll_options"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "ohweee_poll_votes"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "ohweee_polls"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "ohweees"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "org_chart_settings"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "org_positions"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "pageViews"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "permissions"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "pushSubscriptions"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "recentlyViewed"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "scheduleAvailability"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "schedules"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "searchQueries"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "sopCategories"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "sopEmbeddings"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "sops"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "systemSettings"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "teamMembers"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "teams"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "userDashboardSettings"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "userPreferences"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "user_notification_settings"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "user_profiles"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff": "users"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_TkhZDUK5jrbqMP42NAV4Ff\n__drizzle_migrations\nactivityLog\nannouncements\narticleEmbeddings\narticleFeedback\narticleReviews\narticleTemplates\narticleVersions\narticles\nassignments\nauditLog\ncalendarEventSyncMap\ncalendarEvents\ncategories\nchatHistory\nchatRoomParticipants\nchatRooms\ncomments\ncontentVerification\nemailQueue\nemailSettings\neventBookings\neventTypeAvailability\neventTypeDateOverrides\neventTypes\nfavorites\ngoogleCalendarConnections\nleaveBalances\nleaveRequests\nmedia\nmentions\nnotifications\nohweeeDeliveryReceipts\nohweeeReactions\nohweeeReadReceipts\nohweeeTasks\nohweeeTypingIndicators\nohweeeUnreadMarkers\nohweee_poll_options\nohweee_poll_votes\nohweee_polls\nohweees\norg_chart_settings\norg_positions\npageViews\npermissions\npushSubscriptions\nrecentlyViewed\nscheduleAvailability\nschedules\nsearchQueries\nsopCategories\nsopEmbeddings\nsops\nsystemSettings\nteamMembers\nteams\nuserDashboardSettings\nuserPreferences\nuser_notification_settings\nuser_profiles\nusers\n",
+  "stderr": "",
+  "execution_time_ms": 51
+}

@@ -30,14 +30,15 @@ const mainNavItems: NavItem[] = [
   { icon: Book, label: "Wiki", path: "/wiki" },
   { icon: MessageCircle, label: "Taps", path: "/taps" },
   { icon: CalendarDays, label: "Kalender", path: "/calendar" },
+  { icon: Search, label: "Suche", path: "/search" },
 ];
 
 const menuItems = [
   { icon: Home, label: "Home", path: "/" },
-  { icon: Book, label: "Wiki", path: "/wiki" },
-  { icon: ClipboardList, label: "SOPs", path: "/sops" },
+  { icon: Book, label: "Wissensdatenbank", path: "/wiki" },
   { icon: MessageCircle, label: "Taps", path: "/taps" },
   { icon: CalendarDays, label: "Kalender", path: "/calendar" },
+  { icon: Search, label: "Suche", path: "/search" },
   { icon: Bell, label: "Benachrichtigungen", path: "/notifications" },
 ];
 

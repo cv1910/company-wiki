@@ -1,0 +1,15 @@
+{
+  "query": "SELECT id, name, description FROM articleTemplates WHERE name LIKE '%Prozess%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute SELECT id, name, description FROM articleTemplates WHERE name LIKE '%Prozess%';",
+  "rows": [
+    {
+      "id": "3",
+      "name": "Prozessbeschreibung",
+      "description": "Vorlage für Prozess- und Workflow-Dokumentation"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tdescription\n3\tProzessbeschreibung\tVorlage für Prozess- und Workflow-Dokumentation\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

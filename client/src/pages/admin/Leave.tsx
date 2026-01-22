@@ -102,62 +102,73 @@ export default function AdminLeave() {
     const StatusIcon = status.icon;
 
     return (
-      <div className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
-        <div className="flex items-center gap-4">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={item.user?.avatarUrl || undefined} />
-            <AvatarFallback>
-              {item.user?.name?.charAt(0) || item.user?.email?.charAt(0) || "?"}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-medium">{item.user?.name || item.user?.email || "Unbekannt"}</span>
-              <Badge className={leaveType?.color}>{leaveType?.label}</Badge>
-              <Badge variant="outline" className={status.color}>
-                <StatusIcon className="w-3 h-3 mr-1" />
-                {status.label}
-              </Badge>
+      <div className="p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+        {/* Mobile-first layout */}
+        <div className="flex flex-col gap-3">
+          {/* Header: Avatar + Name + Badges */}
+          <div className="flex items-start gap-3">
+            <Avatar className="h-10 w-10 shrink-0">
+              <AvatarImage src={item.user?.avatarUrl || undefined} />
+              <AvatarFallback>
+                {item.user?.name?.charAt(0) || item.user?.email?.charAt(0) || "?"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium truncate">{item.user?.name || item.user?.email || "Unbekannt"}</p>
+              <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                <Badge className={`${leaveType?.color} text-xs`}>{leaveType?.label}</Badge>
+                <Badge variant="outline" className={`${status.color} text-xs`}>
+                  <StatusIcon className="w-3 h-3 mr-1" />
+                  {status.label}
+                </Badge>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {format(new Date(item.request.startDate), "dd. MMM yyyy", { locale: de })} -{" "}
-              {format(new Date(item.request.endDate), "dd. MMM yyyy", { locale: de })}
-              <span className="mx-2">•</span>
+          </div>
+          
+          {/* Date and Duration */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground pl-13">
+            <span>
+              {format(new Date(item.request.startDate), "dd. MMM yyyy", { locale: de })} - {format(new Date(item.request.endDate), "dd. MMM yyyy", { locale: de })}
+            </span>
+            <span className="font-medium text-foreground">
               {item.request.totalDays} {item.request.totalDays === 1 ? "Tag" : "Tage"}
-            </p>
-            {item.request.reason && (
-              <p className="text-xs text-muted-foreground mt-1">{item.request.reason}</p>
-            )}
+            </span>
           </div>
+          
+          {/* Reason if present */}
+          {item.request.reason && (
+            <p className="text-xs text-muted-foreground pl-13 line-clamp-2">{item.request.reason}</p>
+          )}
+          
+          {/* Action buttons - full width on mobile */}
+          {showActions && item.request.status === "pending" && (
+            <div className="flex gap-2 pt-2 border-t mt-1">
+              <Button
+                size="sm"
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => {
+                  setSelectedRequest(item);
+                  setActionType("approve");
+                }}
+              >
+                <CheckCircle className="w-4 h-4 mr-1.5" />
+                Genehmigen
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                onClick={() => {
+                  setSelectedRequest(item);
+                  setActionType("reject");
+                }}
+              >
+                <XCircle className="w-4 h-4 mr-1.5" />
+                Ablehnen
+              </Button>
+            </div>
+          )}
         </div>
-        {showActions && item.request.status === "pending" && (
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-green-600 hover:text-green-700 hover:bg-green-50"
-              onClick={() => {
-                setSelectedRequest(item);
-                setActionType("approve");
-              }}
-            >
-              <CheckCircle className="w-4 h-4 mr-1" />
-              Genehmigen
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              onClick={() => {
-                setSelectedRequest(item);
-                setActionType("reject");
-              }}
-            >
-              <XCircle className="w-4 h-4 mr-1" />
-              Ablehnen
-            </Button>
-          </div>
-        )}
       </div>
     );
   };
