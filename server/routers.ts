@@ -4289,6 +4289,20 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           }
         }
         
+        // Send push notification to other participants
+        try {
+          const { sendNewMessagePush } = await import("./pushNotifications");
+          await sendNewMessagePush(
+            input.roomId,
+            ctx.user.id,
+            ctx.user.name || "Jemand",
+            input.content,
+            ohweee.id
+          );
+        } catch (pushError) {
+          console.error("Failed to send push notification:", pushError);
+        }
+        
         return ohweee;
       }),
 

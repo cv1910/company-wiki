@@ -904,3 +904,11 @@
 - [x] Nachrichtensuche im Chat mit Sprung zur gefundenen Nachricht
 - [x] Sprachnachrichten-Transkription (automatische Textumwandlung)
 - [x] Nachrichtenweiterleitung an andere Chats
+
+## Push-Benachrichtigungen (Januar 2026)
+- [x] Service Worker für Push-Notifications erstellen
+- [x] Push-Subscription im Frontend implementieren
+- [x] Backend-Endpunkt zum Speichern von Push-Subscriptions (bereits vorhanden)
+- [x] Push-Nachrichten bei neuen Chat-Nachrichten senden
+- [x] Benutzer-Opt-in UI für Benachrichtigungen
+- [x] Benachrichtigungs-Einstellungen pro Benutzer (bereits vorhanden, erweitert)

@@ -19,6 +19,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import {
   Bell,
+  BellOff,
   MessageSquare,
   AtSign,
   Users,
@@ -27,8 +28,11 @@ import {
   FileText,
   Mail,
   Loader2,
+  Smartphone,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 interface NotificationSettingsProps {
   open: boolean;
@@ -43,6 +47,14 @@ export function NotificationSettings({
     trpc.settings.getNotificationSettings.useQuery(undefined, {
       enabled: open,
     });
+
+  const {
+    isSupported: pushSupported,
+    isSubscribed: pushSubscribed,
+    isLoading: pushLoading,
+    permission: pushPermission,
+    toggle: togglePush,
+  } = usePushNotifications();
 
   const updateSettings = trpc.settings.updateNotificationSettings.useMutation({
     onSuccess: () => {
@@ -219,6 +231,36 @@ export function NotificationSettings({
                 Zustellung
               </h3>
               <div className="space-y-1">
+                {/* Push Notifications Toggle */}
+                <div className="flex items-center justify-between py-3">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 p-2 rounded-lg bg-muted">
+                      <Smartphone className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Push-Benachrichtigungen</Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {!pushSupported
+                          ? "Nicht unterstützt in diesem Browser"
+                          : pushPermission === "denied"
+                          ? "In Browser-Einstellungen blockiert"
+                          : pushSubscribed
+                          ? "Aktiv - Du erhältst Benachrichtigungen"
+                          : "Aktivieren für sofortige Benachrichtigungen"}
+                      </p>
+                    </div>
+                  </div>
+                  {pushSupported && pushPermission !== "denied" ? (
+                    <Switch
+                      checked={pushSubscribed}
+                      onCheckedChange={togglePush}
+                      disabled={pushLoading}
+                    />
+                  ) : (
+                    <AlertCircle className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
+
                 <SettingRow
                   icon={Bell}
                   label="Browser-Benachrichtigungen"
