@@ -12,6 +12,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -56,6 +61,8 @@ import {
   ShieldCheck,
   User,
   Building2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -68,15 +75,20 @@ import { useKeyboardShortcuts, KeyboardShortcutsHelp } from "./KeyboardShortcuts
 import { FavoritesList } from "./FavoriteButton";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
+// Haupt-Navigation (immer sichtbar)
 const menuItems = [
   { icon: Home, label: "Home", path: "/" },
+  { icon: Search, label: "AI Suche", path: "/search" },
   { icon: Book, label: "Wissensdatenbank", path: "/wiki" },
-  { icon: GraduationCap, label: "Onboarding", path: "/onboarding" },
-  { icon: Search, label: "Suche", path: "/search" },
-  { icon: MessageCircle, label: "Taps", path: "/taps" },
   { icon: CalendarDays, label: "Kalender", path: "/calendar" },
-  { icon: Building2, label: "Organigramm", path: "/orgchart" },
   { icon: Users, label: "Team", path: "/team" },
+];
+
+// Weitere Menüpunkte (unter "Mehr")
+const moreMenuItems = [
+  { icon: GraduationCap, label: "Onboarding", path: "/onboarding" },
+  { icon: MessageCircle, label: "Taps", path: "/taps" },
+  { icon: Building2, label: "Organigramm", path: "/orgchart" },
   { icon: Calendar, label: "Urlaub", path: "/leave" },
   { icon: AtSign, label: "Erwähnungen", path: "/mentions" },
 ];
@@ -183,6 +195,7 @@ function DashboardLayoutContent({
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   
   // Spotlight search
@@ -312,6 +325,54 @@ function DashboardLayoutContent({
                 })}
               </SidebarMenu>
             </div>
+
+            {/* Mehr-Navigation (aufklappbar) */}
+            <Collapsible open={moreOpen} onOpenChange={setMoreOpen} className="mt-2">
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-2 w-full px-3 py-2.5 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-widest hover:text-muted-foreground transition-colors">
+                  <span>Mehr</span>
+                  {moreOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <SidebarMenu className="space-y-1">
+                  {moreMenuItems.map((item) => {
+                    const isActive =
+                      location === item.path ||
+                      (item.path !== "/" && location.startsWith(item.path));
+                    return (
+                      <SidebarMenuItem key={item.path}>
+                        <SidebarMenuButton
+                          isActive={isActive}
+                          onClick={() => setLocation(item.path)}
+                          tooltip={item.label}
+                          className={`h-11 transition-all duration-200 rounded-xl group ${
+                            isActive 
+                              ? "sidebar-item-active shadow-sm" 
+                              : "hover:bg-accent/60"
+                          }`}
+                        >
+                          <div className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 ${
+                            isActive 
+                              ? "bg-primary/10" 
+                              : "group-hover:bg-accent"
+                          }`}>
+                            <item.icon
+                              className={`h-[18px] w-[18px] transition-colors duration-200 ${
+                                isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                              }`}
+                            />
+                          </div>
+                          <span className={`text-[14px] ${
+                            isActive ? "font-semibold" : "font-medium"
+                          }`}>{item.label}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </CollapsibleContent>
+            </Collapsible>
 
             {/* Admin Navigation */}
             {isAdmin && (

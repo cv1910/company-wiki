@@ -27,18 +27,16 @@ interface NavItem {
 
 const mainNavItems: NavItem[] = [
   { icon: Home, label: "Home", path: "/" },
-  { icon: Book, label: "Wiki", path: "/wiki" },
+  { icon: Search, label: "AI Suche", path: "/search" },
   { icon: MessageCircle, label: "Taps", path: "/taps" },
   { icon: CalendarDays, label: "Kalender", path: "/calendar" },
-  { icon: Search, label: "Suche", path: "/search" },
+  { icon: Menu, label: "Mehr", path: "#menu" },
 ];
 
 const menuItems = [
-  { icon: Home, label: "Home", path: "/" },
   { icon: Book, label: "Wissensdatenbank", path: "/wiki" },
   { icon: MessageCircle, label: "Taps", path: "/taps" },
   { icon: CalendarDays, label: "Kalender", path: "/calendar" },
-  { icon: Search, label: "Suche", path: "/search" },
   { icon: Bell, label: "Benachrichtigungen", path: "/notifications" },
 ];
 
@@ -54,6 +52,10 @@ export function MobileNavigation() {
   });
 
   const handleNavClick = (path: string) => {
+    if (path === "#menu") {
+      setMenuOpen(true);
+      return;
+    }
     navigate(path);
     setMenuOpen(false);
   };
@@ -107,17 +109,6 @@ export function MobileNavigation() {
               </button>
             );
           })}
-
-          {/* Search Button */}
-          <button
-            onClick={() => setSpotlightOpen(true)}
-            className="flex flex-col items-center justify-center min-w-[68px] min-h-[52px] py-2 gap-1 text-muted-foreground transition-all duration-300 rounded-2xl active:scale-90 active:bg-accent/40"
-          >
-            <div className="flex items-center justify-center w-11 h-11 rounded-xl">
-              <Search className="h-6 w-6 stroke-[1.5px]" />
-            </div>
-            <span className="text-[10px] font-medium">Suche</span>
-          </button>
 
           {/* Menu Button */}
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>

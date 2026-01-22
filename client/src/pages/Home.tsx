@@ -307,49 +307,22 @@ export default function Home() {
 
   const navigationItems = [
     { 
-      icon: Book, 
-      label: "Wiki", 
-      description: "Wissensdatenbank durchsuchen",
-      path: "/wiki", 
-      color: "from-blue-500 to-blue-600",
-      bgColor: "bg-blue-500/10",
-      textColor: "text-blue-600 dark:text-blue-400"
-    },
-    { 
-      icon: ClipboardList, 
-      label: "SOPs", 
-      description: "Standard Operating Procedures",
-      path: "/sops", 
-      color: "from-green-500 to-green-600",
-      bgColor: "bg-green-500/10",
-      textColor: "text-green-600 dark:text-green-400"
-    },
-    { 
-      icon: Search, 
-      label: "Suche", 
-      description: "Inhalte finden",
+      icon: Sparkles, 
+      label: "AI Suche", 
+      description: "Finde alles mit KI-Unterstützung",
       path: "/search", 
-      color: "from-purple-500 to-purple-600",
+      color: "from-purple-500 to-pink-500",
       bgColor: "bg-purple-500/10",
       textColor: "text-purple-600 dark:text-purple-400"
     },
     { 
-      icon: MessageCircle, 
-      label: "AI-Assistent", 
-      description: "Fragen stellen",
-      path: "/chat", 
-      color: "from-pink-500 to-pink-600",
-      bgColor: "bg-pink-500/10",
-      textColor: "text-pink-600 dark:text-pink-400"
-    },
-    { 
-      icon: Calendar, 
-      label: "Urlaub", 
-      description: "Abwesenheiten verwalten",
-      path: "/leave", 
-      color: "from-orange-500 to-orange-600",
-      bgColor: "bg-orange-500/10",
-      textColor: "text-orange-600 dark:text-orange-400"
+      icon: Book, 
+      label: "Wissensdatenbank", 
+      description: "Wiki & SOPs durchsuchen",
+      path: "/wiki", 
+      color: "from-blue-500 to-blue-600",
+      bgColor: "bg-blue-500/10",
+      textColor: "text-blue-600 dark:text-blue-400"
     },
     { 
       icon: GraduationCap, 
@@ -359,6 +332,33 @@ export default function Home() {
       color: "from-indigo-500 to-indigo-600",
       bgColor: "bg-indigo-500/10",
       textColor: "text-indigo-600 dark:text-indigo-400"
+    },
+    { 
+      icon: Calendar, 
+      label: "Kalender", 
+      description: "Termine & Urlaub",
+      path: "/calendar", 
+      color: "from-orange-500 to-orange-600",
+      bgColor: "bg-orange-500/10",
+      textColor: "text-orange-600 dark:text-orange-400"
+    },
+    { 
+      icon: Users, 
+      label: "Team", 
+      description: "Kollegen & Organigramm",
+      path: "/team", 
+      color: "from-green-500 to-green-600",
+      bgColor: "bg-green-500/10",
+      textColor: "text-green-600 dark:text-green-400"
+    },
+    { 
+      icon: MessageCircle, 
+      label: "Taps", 
+      description: "Schnelle Nachrichten",
+      path: "/taps", 
+      color: "from-pink-500 to-pink-600",
+      bgColor: "bg-pink-500/10",
+      textColor: "text-pink-600 dark:text-pink-400"
     },
   ];
 

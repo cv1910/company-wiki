@@ -974,3 +974,9 @@
 - [x] Wissensdatenbank-Suche: Suchfeld innerhalb der Wissensdatenbank für Wiki und SOPs (mit Treffer-Anzeige)
 - [x] Benachrichtigungs-Badge: Ungelesene Benachrichtigungen als Badge auf dem Glocken-Icon (Desktop + Mobile)
 - [x] Urlaubskalender-Integration: Genehmigte Urlaube automatisch im Kalender als ganztägige Events anzeigen (bereits implementiert)
+
+## Navigation Vereinfachung (Januar 2026)
+- [x] Home-Seite: Wiki+SOPs Karten zu einer "Wissensdatenbank" Karte zusammenfassen
+- [x] Home-Seite: Suche+AI-Assistent zu "AI Suche" umbenennen
+- [x] Navigation: Fokussierte Navigation mit "Mehr"-Menü für zusätzliche Punkte
+- [x] Sidebar und Mobile-Navigation entsprechend anpassen (Home, AI Suche, Wissensdatenbank, Kalender, Team + Mehr)
