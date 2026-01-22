@@ -8,6 +8,47 @@ interface PullToRefreshProps {
   children: ReactNode;
   className?: string;
   threshold?: number;
+  skeleton?: ReactNode;
+  enableHaptics?: boolean;
+}
+
+// Default skeleton component
+function DefaultSkeleton() {
+  return (
+    <div className="space-y-4 p-4 animate-pulse">
+      {/* Header skeleton */}
+      <div className="flex items-center gap-4">
+        <div className="h-12 w-12 rounded-xl bg-muted/60" />
+        <div className="space-y-2 flex-1">
+          <div className="h-4 w-32 rounded bg-muted/60" />
+          <div className="h-3 w-48 rounded bg-muted/40" />
+        </div>
+      </div>
+      
+      {/* Content skeletons */}
+      <div className="space-y-3">
+        <div className="h-24 rounded-xl bg-muted/50" />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="h-20 rounded-xl bg-muted/40" />
+          <div className="h-20 rounded-xl bg-muted/40" />
+        </div>
+        <div className="h-16 rounded-xl bg-muted/30" />
+      </div>
+      
+      {/* List skeletons */}
+      <div className="space-y-2">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/20">
+            <div className="h-10 w-10 rounded-full bg-muted/50" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-3/4 rounded bg-muted/40" />
+              <div className="h-2 w-1/2 rounded bg-muted/30" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function PullToRefresh({
@@ -15,11 +56,14 @@ export function PullToRefresh({
   children,
   className,
   threshold = 80,
+  skeleton,
+  enableHaptics = true,
 }: PullToRefreshProps) {
   const { containerRef, pullDistance, isRefreshing, progress, shouldTrigger } =
     usePullToRefresh({
       onRefresh,
       threshold,
+      enableHaptics,
     });
 
   return (
@@ -66,14 +110,27 @@ export function PullToRefresh({
         </div>
       </div>
 
-      {/* Content with pull offset */}
+      {/* Content with pull offset - show skeleton when refreshing */}
       <div
         style={{
           transform: `translateY(${pullDistance}px)`,
           transition: pullDistance === 0 && !isRefreshing ? "transform 0.3s ease-out" : "none",
         }}
       >
-        {children}
+        {isRefreshing ? (
+          <div className="relative">
+            {/* Skeleton overlay with fade effect */}
+            <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+              {skeleton || <DefaultSkeleton />}
+            </div>
+            {/* Keep children rendered but hidden for layout */}
+            <div className="opacity-0 pointer-events-none">
+              {children}
+            </div>
+          </div>
+        ) : (
+          children
+        )}
       </div>
     </div>
   );

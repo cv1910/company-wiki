@@ -886,3 +886,10 @@
 - [ ] Pull-to-Refresh in Ohweees/Chat-Seite integrieren (Ohweees hat eigene Scroll-Logik)
 - [x] Pull-to-Refresh in Kalender-Seite integrieren
 - [x] Mobile Ansicht testen (Screenshot verifiziert)
+
+## UX-Verbesserungen (Januar 2026)
+- [x] Haptic Feedback beim Pull-to-Refresh (Vibration auf iOS/Android)
+- [x] Skeleton Loading während des Refreshs anzeigen
+- [x] Chat-Design wie Basecamp: Beige/cremefarbene Nachrichten anderer, blaue eigene Nachrichten
+- [x] Emoji-Reaktionen mit Avatar wie Basecamp (Avatar + Emoji in Pill-Form)
+- [x] Datums-Separator wie Basecamp (TODAY Badge)

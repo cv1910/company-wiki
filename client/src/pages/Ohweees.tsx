@@ -1477,8 +1477,7 @@ export default function OhweeesPage() {
                       } : undefined,
                     }}
                     currentUserId={user?.id || 0}
-                    isSelected={selectedRoomId === room.id}
-                    onClick={() => {
+                    onSelect={() => {
                       setSelectedRoomId(room.id);
                       setLocation(`/ohweees/${room.id}`);
                     }}
@@ -1605,10 +1604,10 @@ export default function OhweeesPage() {
                 }
               }}
               onSend={handleSendMessage}
-              onAttachment={() => fileInputRef.current?.click()}
+              onAttach={() => fileInputRef.current?.click()}
               onEmoji={() => setShowInputEmojiPicker(true)}
               onVoice={() => setIsRecordingVoice(true)}
-              disabled={sendMessage.isPending}
+              isLoading={sendMessage.isPending}
             />
           </>
         )}
