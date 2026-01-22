@@ -992,3 +992,7 @@
 
 ## Schnellaktions-Buttons (Januar 2026)
 - [x] Schnellaktions-Buttons unter AI-Suchfeld: "Urlaub beantragen" (grün) und "Neues Tap erstellen" (blau)
+
+## UI-Bereinigung (Januar 2026)
+- [x] "Neuer Artikel"-Button aus Willkommens-Banner entfernen
+- [x] "Neues Tap erstellen" umbenennen in "Chat"

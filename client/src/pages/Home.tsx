@@ -398,16 +398,6 @@ export default function Home() {
                 Hier findest du alle wichtigen Informationen, Prozesse und Anleitungen für deinen Arbeitsalltag.
               </p>
             </div>
-            {isEditor && (
-              <Button 
-                onClick={() => setLocation("/wiki/new")} 
-                size="lg"
-                className="btn-gradient rounded-xl px-6 h-12 text-base font-semibold shrink-0"
-              >
-                <Plus className="h-5 w-5 mr-2" />
-                Neuer Artikel
-              </Button>
-            )}
           </div>
           
           {/* AI Search Field */}
@@ -460,7 +450,7 @@ export default function Home() {
               className="rounded-xl border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 gap-2"
             >
               <MessageSquarePlus className="h-4 w-4" />
-              Neues Tap erstellen
+              Chat
             </Button>
           </div>
         </div>
