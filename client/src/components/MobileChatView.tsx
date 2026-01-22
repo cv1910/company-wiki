@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,14 +16,14 @@ import {
   Send,
   Plus,
   Smile,
-  Mic,
   Reply,
   Pencil,
   Trash2,
   Pin,
-  BookmarkPlus,
   CheckSquare,
   Sparkles,
+  Check,
+  CheckCheck,
 } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
 import { de } from "date-fns/locale";
@@ -66,6 +66,68 @@ type Room = {
   };
 };
 
+type ReadReceipt = {
+  id: number;
+  name: string | null;
+  avatarUrl: string | null;
+  readAt: Date;
+};
+
+// Swipe gesture hook for message actions
+function useSwipeGesture(
+  onSwipeLeft?: () => void,
+  onSwipeRight?: () => void,
+  threshold = 80
+) {
+  const startX = useRef(0);
+  const currentX = useRef(0);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+    currentX.current = e.touches[0].clientX;
+    setIsSwiping(true);
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isSwiping) return;
+    currentX.current = e.touches[0].clientX;
+    const diff = currentX.current - startX.current;
+    // Limit swipe distance with rubber band effect
+    const limitedDiff = Math.sign(diff) * Math.min(Math.abs(diff), threshold * 1.5);
+    setSwipeOffset(limitedDiff);
+  }, [isSwiping, threshold]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!isSwiping) return;
+    const diff = currentX.current - startX.current;
+    
+    if (diff > threshold && onSwipeRight) {
+      // Haptic feedback
+      if (navigator.vibrate) navigator.vibrate(10);
+      onSwipeRight();
+    } else if (diff < -threshold && onSwipeLeft) {
+      // Haptic feedback
+      if (navigator.vibrate) navigator.vibrate(10);
+      onSwipeLeft();
+    }
+    
+    setSwipeOffset(0);
+    setIsSwiping(false);
+  }, [isSwiping, threshold, onSwipeLeft, onSwipeRight]);
+
+  return {
+    swipeOffset,
+    isSwiping,
+    handlers: {
+      onTouchStart: handleTouchStart,
+      onTouchMove: handleTouchMove,
+      onTouchEnd: handleTouchEnd,
+    },
+  };
+}
+
 // Mobile Date Separator (Basecamp style - amber pill with lines)
 function MobileDateSeparator({ date }: { date: Date }) {
   let label = format(date, "EEEE, d. MMMM", { locale: de });
@@ -90,12 +152,13 @@ function MobileDateSeparator({ date }: { date: Date }) {
   );
 }
 
-// Mobile Message Component (Basecamp style - bubble backgrounds)
+// Mobile Message Component (Basecamp style - bubble backgrounds with swipe gestures)
 function MobileMessage({
   message,
   isOwn,
   currentUserId,
   reactions,
+  readReceipts,
   onReply,
   onEdit,
   onDelete,
@@ -107,6 +170,7 @@ function MobileMessage({
   isOwn: boolean;
   currentUserId: number;
   reactions: ReactionData[];
+  readReceipts?: ReadReceipt[];
   onReply: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -114,6 +178,12 @@ function MobileMessage({
   onAddReaction: (emoji: string) => void;
   onCreateTask: () => void;
 }) {
+  // Swipe gestures: right = reply, left = delete (own) or react (others)
+  const { swipeOffset, handlers } = useSwipeGesture(
+    isOwn ? onDelete : () => onAddReaction(""),
+    onReply,
+    60
+  );
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -182,9 +252,54 @@ function MobileMessage({
     ? "bg-[#D4E5F7] dark:bg-blue-900/40" // Light blue for own messages
     : "bg-[#F5F0E8] dark:bg-amber-900/20"; // Beige/cream for others
 
+  // Read receipt display logic
+  const showReadReceipts = isOwn && readReceipts && readReceipts.length > 0;
+  const readByOthers = readReceipts?.filter(r => r.id !== currentUserId) || [];
+
   return (
-    <div className={`px-4 py-2 ${isOwn ? "flex justify-end" : ""}`}>
-      <div className={`flex gap-3 max-w-[85%] ${isOwn ? "flex-row-reverse" : ""}`}>
+    <div 
+      className={`px-4 py-2 ${isOwn ? "flex justify-end" : ""} relative overflow-hidden`}
+      {...handlers}
+    >
+      {/* Swipe action indicators */}
+      {swipeOffset !== 0 && (
+        <>
+          {/* Reply indicator (swipe right) */}
+          {swipeOffset > 20 && (
+            <div 
+              className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-2 text-primary transition-opacity"
+              style={{ opacity: Math.min(Math.abs(swipeOffset) / 60, 1) }}
+            >
+              <Reply className="h-5 w-5" />
+              <span className="text-xs font-medium">Antworten</span>
+            </div>
+          )}
+          {/* Delete/React indicator (swipe left) */}
+          {swipeOffset < -20 && (
+            <div 
+              className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2 transition-opacity ${isOwn ? "text-destructive" : "text-amber-500"}`}
+              style={{ opacity: Math.min(Math.abs(swipeOffset) / 60, 1) }}
+            >
+              {isOwn ? (
+                <>
+                  <Trash2 className="h-5 w-5" />
+                  <span className="text-xs font-medium">Löschen</span>
+                </>
+              ) : (
+                <>
+                  <Smile className="h-5 w-5" />
+                  <span className="text-xs font-medium">Reagieren</span>
+                </>
+              )}
+            </div>
+          )}
+        </>
+      )}
+      
+      <div 
+        className={`flex gap-3 max-w-[85%] ${isOwn ? "flex-row-reverse" : ""} transition-transform`}
+        style={{ transform: `translateX(${swipeOffset * 0.3}px)` }}
+      >
         {/* Avatar */}
         <Avatar className="h-10 w-10 shrink-0 ring-2 ring-white dark:ring-gray-800 shadow-sm">
           <AvatarImage src={message.sender.avatarUrl || undefined} className="object-cover" />
@@ -302,6 +417,34 @@ function MobileMessage({
               >
                 <Sparkles className="h-3 w-3 text-gray-400" />
               </button>
+            </div>
+          )}
+          
+          {/* Read Receipts (WhatsApp style) */}
+          {showReadReceipts && (
+            <div className={`flex items-center gap-1 mt-1.5 ${isOwn ? "justify-end" : ""}`}>
+              {readByOthers.length === 0 ? (
+                // Sent but not read - single check
+                <Check className="h-3.5 w-3.5 text-gray-400" />
+              ) : (
+                // Read by others - double check + avatars
+                <>
+                  <CheckCheck className="h-3.5 w-3.5 text-blue-500" />
+                  <div className="flex -space-x-1.5">
+                    {readByOthers.slice(0, 3).map((reader) => (
+                      <Avatar key={reader.id} className="h-4 w-4 ring-1 ring-white dark:ring-gray-800">
+                        <AvatarImage src={reader.avatarUrl || undefined} className="object-cover" />
+                        <AvatarFallback className="text-[6px] font-semibold bg-gray-200 dark:bg-gray-700">
+                          {(reader.name || "").charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                    {readByOthers.length > 3 && (
+                      <span className="text-[10px] text-gray-500 ml-1">+{readByOthers.length - 3}</span>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

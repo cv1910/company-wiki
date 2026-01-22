@@ -1533,6 +1533,7 @@ export default function OhweeesPage() {
                     !isSameDay(new Date(message.ohweee.createdAt), new Date(prevMessage.ohweee.createdAt));
                   const isOwn = message.sender.id === user?.id;
                   const messageReactions = reactionsData?.[message.ohweee.id] || [];
+                  const msgReadReceipts = readReceiptsData?.[message.ohweee.id] || [];
 
                   return (
                     <div key={message.ohweee.id} id={`message-${message.ohweee.id}`}>
@@ -1544,6 +1545,12 @@ export default function OhweeesPage() {
                         isOwn={isOwn}
                         currentUserId={user?.id || 0}
                         reactions={messageReactions}
+                        readReceipts={msgReadReceipts?.map((r: { userId: number; userName: string | null; userAvatar: string | null }) => ({
+                          id: r.userId,
+                          name: r.userName,
+                          avatarUrl: r.userAvatar,
+                          readAt: new Date(),
+                        }))}
                         onReply={() => {
                           setThreadParentId(message.ohweee.id);
                           setShowThreadDialog(true);

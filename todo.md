@@ -893,3 +893,8 @@
 - [x] Chat-Design wie Basecamp: Beige/cremefarbene Nachrichten anderer, blaue eigene Nachrichten
 - [x] Emoji-Reaktionen mit Avatar wie Basecamp (Avatar + Emoji in Pill-Form)
 - [x] Datums-Separator wie Basecamp (TODAY Badge)
+
+## Chat-Features (Januar 2026)
+- [x] Emoji-Picker: Vollständiger Emoji-Picker für Reaktionen (bereits vorhanden)
+- [x] Lesebestätigungen: Anzeige wer die Nachricht gelesen hat (WhatsApp-Style mit Doppel-Haken + Avatare)
+- [x] Swipe-Gesten: Wischen nach links/rechts für schnelle Aktionen (rechts = Antworten, links = Löschen/Reagieren)
