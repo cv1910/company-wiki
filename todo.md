@@ -871,3 +871,10 @@
 - [x] Tipps welche Felder noch fehlen (erstes fehlendes Feld)
 - [x] Belohnung/Badge bei 100% Vollständigkeit (Award-Icon + Erfolgsmeldung)
 - [x] Klickbare fehlende Felder öffnen Edit-Dialog
+
+## Mobile UI-Bugs (Januar 2026)
+- [x] Ohweees-Icon: Brief-Symbol zu Sprechblase (MessageCircle) ändern
+- [x] Wiki "Neuer Artikel": Buttons umbrechen statt abschneiden (responsive mit Icon-only auf Mobile)
+- [x] Jahreskalender: Komplett unleserlich - Zahlen überlappen (neue Mobile-Ansicht mit 12 Mini-Kalender-Karten)
+- [x] Suche X-Button: Wird vom Suchfeld überdeckt (pr-12 Padding + Button hinzugefügt)
+- [x] Wochenansicht: Sonntag-Spalte wird abgeschnitten (horizontales Scrollen + kompaktere Darstellung)

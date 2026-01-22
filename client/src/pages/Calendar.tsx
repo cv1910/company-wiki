@@ -684,16 +684,16 @@ export default function Calendar() {
 
     return (
       <div className="flex flex-col h-full overflow-hidden">
-        {/* Header with days */}
-        <div className="flex border-b">
-          <div className="w-16 flex-shrink-0" />
+        {/* Header with days - horizontal scroll on mobile */}
+        <div className="flex border-b overflow-x-auto">
+          <div className="w-12 md:w-16 flex-shrink-0" />
           {days.map((day) => {
             const isDropTarget = dragOverDate && isSameDay(day, dragOverDate);
             return (
               <div
                 key={day.toISOString()}
                 className={cn(
-                  "flex-1 p-2 text-center border-l transition-colors",
+                  "min-w-[48px] md:min-w-0 flex-1 p-1 md:p-2 text-center border-l transition-colors",
                   isToday(day) && "bg-primary/5",
                   isDropTarget && isDragging && "bg-primary/20"
                 )}
@@ -701,12 +701,12 @@ export default function Calendar() {
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(day, e)}
               >
-                <div className="text-sm text-muted-foreground">
-                  {format(day, "EEE", { locale: de })}
+                <div className="text-xs md:text-sm text-muted-foreground">
+                  {format(day, "EEEEE", { locale: de })}
                 </div>
                 <div
                   className={cn(
-                    "text-lg font-semibold w-8 h-8 flex items-center justify-center mx-auto rounded-full",
+                    "text-sm md:text-lg font-semibold w-6 h-6 md:w-8 md:h-8 flex items-center justify-center mx-auto rounded-full",
                     isToday(day) && "bg-primary text-primary-foreground"
                   )}
                 >
@@ -718,9 +718,9 @@ export default function Calendar() {
         </div>
 
         {/* All-day events */}
-        <div className="flex border-b bg-muted/30">
-          <div className="w-16 flex-shrink-0 p-1 text-xs text-muted-foreground text-right pr-2">
-            Ganztägig
+        <div className="flex border-b bg-muted/30 overflow-x-auto">
+          <div className="w-12 md:w-16 flex-shrink-0 p-1 text-[10px] md:text-xs text-muted-foreground text-right pr-1 md:pr-2">
+            Ganzt.
           </div>
           {days.map((day) => {
             const allDayEvents = getEventsForDay(day).filter((e) => e.isAllDay);
@@ -729,7 +729,7 @@ export default function Calendar() {
               <div
                 key={day.toISOString()}
                 className={cn(
-                  "flex-1 p-1 border-l min-h-[40px] transition-colors",
+                  "min-w-[48px] md:min-w-0 flex-1 p-0.5 md:p-1 border-l min-h-[32px] md:min-h-[40px] transition-colors",
                   isDropTarget && isDragging && "bg-primary/20"
                 )}
                 onDragOver={(e) => handleDragOver(day, e)}
@@ -743,7 +743,7 @@ export default function Calendar() {
                     onDragStart={(e) => handleDragStart(event, e)}
                     onDragEnd={handleDragEnd}
                     className={cn(
-                      "text-xs px-1 py-0.5 rounded truncate mb-0.5 cursor-pointer border group flex items-center gap-1",
+                      "text-[10px] md:text-xs px-0.5 md:px-1 py-0.5 rounded truncate mb-0.5 cursor-pointer border group flex items-center gap-0.5 md:gap-1",
                       getColorClass(event.color),
                       event.id > 0 && "cursor-grab active:cursor-grabbing",
                       draggedEvent?.id === event.id && "opacity-50"
@@ -751,13 +751,13 @@ export default function Calendar() {
                     onClick={() => openEditEventDialog(event)}
                   >
                     {event.id > 0 && (
-                      <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-50 flex-shrink-0" />
+                      <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-50 flex-shrink-0 hidden md:block" />
                     )}
                     <span className="truncate">{event.title}</span>
                   </div>
                 ))}
                 {allDayEvents.length > 2 && (
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-[10px] md:text-xs text-muted-foreground">
                     +{allDayEvents.length - 2}
                   </div>
                 )}
@@ -768,10 +768,10 @@ export default function Calendar() {
 
         {/* Time grid */}
         <div className="flex-1 overflow-auto">
-          <div className="relative">
+          <div className="relative min-w-[384px] md:min-w-0">
             {hours.map((hour) => (
-              <div key={hour} className="flex h-12 border-b">
-                <div className="w-16 flex-shrink-0 text-xs text-muted-foreground text-right pr-2 -mt-2">
+              <div key={hour} className="flex h-10 md:h-12 border-b">
+                <div className="w-12 md:w-16 flex-shrink-0 text-[10px] md:text-xs text-muted-foreground text-right pr-1 md:pr-2 -mt-2">
                   {hour.toString().padStart(2, "0")}:00
                 </div>
                 {days.map((day) => {
@@ -782,7 +782,7 @@ export default function Calendar() {
                     <div
                       key={day.toISOString()}
                       className={cn(
-                        "flex-1 border-l cursor-pointer transition-colors",
+                        "min-w-[48px] md:min-w-0 flex-1 border-l cursor-pointer transition-colors",
                         isDropTarget && isDragging ? "bg-primary/20" : "hover:bg-muted/30"
                       )}
                       onClick={() => {

@@ -10,6 +10,9 @@ import {
   getMonth,
   getDay,
   subDays,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
 } from "date-fns";
 import { de } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -53,8 +56,9 @@ const MONTH_COLORS: Record<number, string> = {
   11: "bg-blue-600",   // DEC
 };
 
-const MONTH_ABBREVS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-const WEEKDAY_ABBREVS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+const MONTH_ABBREVS = ["JAN", "FEB", "MAR", "APR", "MAI", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DEZ"];
+const MONTH_NAMES = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+const WEEKDAY_ABBREVS = ["SO", "MO", "DI", "MI", "DO", "FR", "SA"];
 
 const getEventBgColor = (color: string) => {
   const colors: Record<string, string> = {
@@ -71,7 +75,166 @@ const getEventBgColor = (color: string) => {
   return colors[color] || "bg-gray-400";
 };
 
-export function YearCalendarView({
+// Mobile Year View - Shows months as a grid of mini calendars
+function MobileYearView({
+  currentDate,
+  events,
+  onDayClick,
+  onEventClick,
+}: YearCalendarViewProps) {
+  const year = currentDate.getFullYear();
+  
+  // Get events for a specific day
+  const getEventsForDay = (day: Date) => {
+    if (!events || events.length === 0) return [];
+    return events.filter(event => {
+      const eventStart = new Date(event.startDate);
+      const eventEnd = new Date(event.endDate);
+      return day >= eventStart && day <= eventEnd;
+    });
+  };
+
+  // Generate months
+  const months = useMemo(() => {
+    return Array.from({ length: 12 }, (_, i) => {
+      const monthDate = new Date(year, i, 1);
+      const monthStart = startOfMonth(monthDate);
+      const monthEnd = endOfMonth(monthDate);
+      const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+      
+      // Get the day of week for the first day (0=Sun, 1=Mon, ...)
+      const firstDayOfWeek = getDay(monthStart);
+      // Adjust for Monday start (0=Mon, 6=Sun)
+      const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+      
+      return {
+        index: i,
+        name: MONTH_NAMES[i],
+        abbrev: MONTH_ABBREVS[i],
+        days,
+        startOffset,
+        color: MONTH_COLORS[i],
+      };
+    });
+  }, [year]);
+
+  return (
+    <div className="h-full flex flex-col bg-white dark:bg-gray-950 overflow-hidden">
+      {/* Header */}
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => window.history.back()}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+          >
+            <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{year}</h2>
+        </div>
+        <button
+          onClick={() => onDayClick(new Date())}
+          className="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+        >
+          Heute
+        </button>
+      </div>
+      
+      {/* Months grid - 2 columns on mobile, 3 on tablet */}
+      <div className="flex-1 overflow-y-auto p-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {months.map((month) => (
+            <div
+              key={month.index}
+              className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm"
+            >
+              {/* Month header */}
+              <div className={cn("px-2 py-1.5 text-center", month.color)}>
+                <span className="text-xs font-bold text-white">{month.abbrev}</span>
+              </div>
+              
+              {/* Weekday headers */}
+              <div className="grid grid-cols-7 border-b border-gray-100 dark:border-gray-800">
+                {["M", "D", "M", "D", "F", "S", "S"].map((day, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      "text-center py-0.5 text-[8px] font-medium",
+                      i >= 5 ? "text-gray-400 bg-gray-50 dark:bg-gray-800/50" : "text-gray-500"
+                    )}
+                  >
+                    {day}
+                  </div>
+                ))}
+              </div>
+              
+              {/* Days grid */}
+              <div className="grid grid-cols-7 gap-px bg-gray-100 dark:bg-gray-800">
+                {/* Empty cells for offset */}
+                {Array.from({ length: month.startOffset }).map((_, i) => (
+                  <div key={`empty-${i}`} className="bg-white dark:bg-gray-900 aspect-square" />
+                ))}
+                
+                {/* Day cells */}
+                {month.days.map((day) => {
+                  const dayIsToday = isToday(day);
+                  const dayOfWeek = getDay(day);
+                  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                  const dayEvents = getEventsForDay(day);
+                  const hasEvents = dayEvents.length > 0;
+                  
+                  return (
+                    <div
+                      key={day.toISOString()}
+                      className={cn(
+                        "aspect-square flex flex-col items-center justify-center cursor-pointer transition-colors relative",
+                        isWeekend ? "bg-gray-50 dark:bg-gray-800/30" : "bg-white dark:bg-gray-900",
+                        "hover:bg-gray-100 dark:hover:bg-gray-800"
+                      )}
+                      onClick={() => onDayClick(day)}
+                    >
+                      <span
+                        className={cn(
+                          "text-[10px] font-medium leading-none",
+                          dayIsToday 
+                            ? "bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center" 
+                            : isWeekend 
+                              ? "text-gray-400" 
+                              : "text-gray-700 dark:text-gray-300"
+                        )}
+                      >
+                        {day.getDate()}
+                      </span>
+                      
+                      {/* Event indicator dots */}
+                      {hasEvents && !dayIsToday && (
+                        <div className="flex gap-0.5 mt-0.5">
+                          {dayEvents.slice(0, 3).map((event, i) => (
+                            <div
+                              key={i}
+                              className={cn(
+                                "w-1 h-1 rounded-full",
+                                getEventBgColor(event.color)
+                              )}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Desktop Year View - Original Hey Calendar style with 28 days per row
+function DesktopYearView({
   currentDate,
   events,
   onDayClick,
@@ -408,4 +571,25 @@ export function YearCalendarView({
       </div>
     </div>
   );
+}
+
+// Main component - switches between mobile and desktop views
+export function YearCalendarView(props: YearCalendarViewProps) {
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  if (isMobile) {
+    return <MobileYearView {...props} />;
+  }
+  
+  return <DesktopYearView {...props} />;
 }

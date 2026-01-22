@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
-import { FileText, FolderOpen, Plus, Search } from "lucide-react";
+import { FileText, FolderOpen, Plus, Search, X } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
@@ -62,8 +62,17 @@ export default function Wiki() {
           placeholder="Artikel suchen..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-12 h-12 rounded-xl text-base card-shadow focus:shadow-lg transition-shadow"
+          className="pl-12 pr-12 h-12 rounded-xl text-base card-shadow focus:shadow-lg transition-shadow"
         />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery("")}
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors"
+            aria-label="Suche löschen"
+          >
+            <X className="h-4 w-4 text-muted-foreground" />
+          </button>
+        )}
       </div>
 
       {/* Categories - Premium Design */}

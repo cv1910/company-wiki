@@ -153,7 +153,7 @@ describe("chat.send", () => {
       // LLM API might not be available in test environment
       console.log("Chat test skipped - LLM API not available");
     }
-  });
+  }, 30000); // 30 second timeout for LLM calls
 });
 
 describe("chat.getHistory", () => {

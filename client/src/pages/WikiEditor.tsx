@@ -347,43 +347,47 @@ export default function WikiEditor() {
             {isEditing && getStatusBadge()}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {!isEditing && (
-            <Button variant="outline" onClick={() => setShowTemplateSelector(true)}>
-              <Sparkles className="h-4 w-4 mr-2" />
-              Vorlage
+            <Button variant="outline" size="sm" className="h-9" onClick={() => setShowTemplateSelector(true)}>
+              <Sparkles className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Vorlage</span>
             </Button>
           )}
-          <Button variant="outline" onClick={() => setActiveTab("preview")}>
-            <Eye className="h-4 w-4 mr-2" />
-            Vorschau
+          <Button variant="outline" size="sm" className="h-9" onClick={() => setActiveTab("preview")}>
+            <Eye className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Vorschau</span>
           </Button>
           <Button 
             variant="outline"
+            size="sm"
+            className="h-9"
             onClick={() => handleSave("draft")} 
             disabled={isSaving}
           >
-            <Clock className="h-4 w-4 mr-2" />
-            Als Entwurf
+            <Clock className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Als Entwurf</span>
           </Button>
           {isEditing && status !== "published" && user?.role !== "admin" && (
             <Button 
+              size="sm"
+              className="h-9 card-shadow"
               onClick={() => setReviewDialogOpen(true)} 
               disabled={isSaving}
-              className="card-shadow"
             >
-              <Send className="h-4 w-4 mr-2" />
-              Zur Review
+              <Send className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Zur Review</span>
             </Button>
           )}
           {(user?.role === "admin" || user?.role === "editor") && (
             <Button 
+              size="sm"
+              className="h-9 card-shadow bg-green-600 hover:bg-green-700"
               onClick={() => handleSave("published")} 
-              disabled={isSaving} 
-              className="card-shadow bg-green-600 hover:bg-green-700"
+              disabled={isSaving}
             >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Veröffentlichen
+              <CheckCircle className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Veröffentlichen</span>
             </Button>
           )}
         </div>

@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import {
   Home,
   Book,
-  Mail,
+  MessageCircle,
   Search,
   Menu,
   Bell,
@@ -28,7 +28,7 @@ interface NavItem {
 const mainNavItems: NavItem[] = [
   { icon: Home, label: "Home", path: "/" },
   { icon: Book, label: "Wiki", path: "/wiki" },
-  { icon: Mail, label: "Ohweees", path: "/ohweees" },
+  { icon: MessageCircle, label: "Ohweees", path: "/ohweees" },
   { icon: CalendarDays, label: "Kalender", path: "/calendar" },
 ];
 
@@ -36,7 +36,7 @@ const menuItems = [
   { icon: Home, label: "Home", path: "/" },
   { icon: Book, label: "Wiki", path: "/wiki" },
   { icon: ClipboardList, label: "SOPs", path: "/sops" },
-  { icon: Mail, label: "Ohweees", path: "/ohweees" },
+  { icon: MessageCircle, label: "Ohweees", path: "/ohweees" },
   { icon: CalendarDays, label: "Kalender", path: "/calendar" },
   { icon: Bell, label: "Benachrichtigungen", path: "/notifications" },
 ];
