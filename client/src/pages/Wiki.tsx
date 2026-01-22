@@ -5,19 +5,31 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 import { FileText, FolderOpen, Plus, Search, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
+import { PullToRefresh } from "@/components/PullToRefresh";
+import { toast } from "sonner";
 
 export default function Wiki() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const isEditor = user?.role === "editor" || user?.role === "admin";
+  const utils = trpc.useUtils();
 
   const { data: categories, isLoading: categoriesLoading } = trpc.categories.list.useQuery();
   const { data: articles, isLoading: articlesLoading } = trpc.articles.list.useQuery({ status: "published" });
+
+  // Pull-to-refresh handler
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      utils.categories.list.invalidate(),
+      utils.articles.list.invalidate(),
+    ]);
+    toast.success("Aktualisiert");
+  }, [utils]);
 
   const filteredArticles = articles?.filter(
     (article) =>
@@ -26,6 +38,7 @@ export default function Wiki() {
   );
 
   return (
+    <PullToRefresh onRefresh={handleRefresh} className="min-h-screen md:hidden">
     <div className="space-y-8">
       {/* Premium Header */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/10 p-6 md:p-8">
@@ -214,5 +227,6 @@ export default function Wiki() {
         )}
       </div>
     </div>
+    </PullToRefresh>
   );
 }

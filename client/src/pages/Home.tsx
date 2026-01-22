@@ -36,7 +36,7 @@ import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   DndContext,
   closestCenter,
@@ -65,6 +65,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { PullToRefresh } from "@/components/PullToRefresh";
 
 // Widget size options
 type WidgetSize = "small" | "medium" | "large";
@@ -880,6 +881,20 @@ export default function Home() {
     return elements;
   };
 
+  // Pull-to-refresh handler
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      utils.articles.list.invalidate(),
+      utils.sops.list.invalidate(),
+      utils.announcements.getActive.invalidate(),
+      utils.dashboardSettings.get.invalidate(),
+      utils.activity.getRecent.invalidate(),
+      utils.favorites.list.invalidate(),
+      utils.assignments.getMyAssignments.invalidate(),
+    ]);
+    toast.success("Aktualisiert");
+  }, [utils]);
+
   if (settingsLoading) {
     return (
       <div className="space-y-8 animate-fade-in">
@@ -895,6 +910,7 @@ export default function Home() {
   }
 
   return (
+    <PullToRefresh onRefresh={handleRefresh} className="min-h-screen md:hidden">
     <div className="space-y-8 animate-fade-in">
       {/* Settings Button */}
       <div className="flex justify-end">
@@ -953,5 +969,6 @@ export default function Home() {
       {/* Render all visible widgets */}
       {renderWidgets()}
     </div>
+    </PullToRefresh>
   );
 }

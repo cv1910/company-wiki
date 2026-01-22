@@ -89,6 +89,8 @@ import {
 import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { PullToRefresh } from "@/components/PullToRefresh";
+import { useCallback } from "react";
 
 type ViewMode = "day" | "week" | "month" | "year";
 
@@ -194,6 +196,12 @@ export default function Calendar() {
   const [isDragging, setIsDragging] = useState(false);
 
   const utils = trpc.useUtils();
+
+  // Pull-to-refresh handler
+  const handleRefresh = useCallback(async () => {
+    await utils.calendar.getEvents.invalidate();
+    toast.success("Aktualisiert");
+  }, [utils]);
 
   // Calculate date range based on view mode
   const dateRange = useMemo(() => {
@@ -1262,6 +1270,7 @@ export default function Calendar() {
   const isYearView = viewMode === "year";
 
   return (
+    <PullToRefresh onRefresh={handleRefresh} className="min-h-screen md:hidden">
     <div className={cn(
       "flex flex-col",
       isYearView ? "h-[calc(100vh-60px)]" : "h-[calc(100vh-120px)]"
@@ -1857,5 +1866,6 @@ export default function Calendar() {
         </DialogContent>
       </Dialog>
     </div>
+    </PullToRefresh>
   );
 }

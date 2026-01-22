@@ -878,3 +878,11 @@
 - [x] Jahreskalender: Komplett unleserlich - Zahlen überlappen (neue Mobile-Ansicht mit 12 Mini-Kalender-Karten)
 - [x] Suche X-Button: Wird vom Suchfeld überdeckt (pr-12 Padding + Button hinzugefügt)
 - [x] Wochenansicht: Sonntag-Spalte wird abgeschnitten (horizontales Scrollen + kompaktere Darstellung)
+
+## Pull-to-Refresh (Januar 2026)
+- [x] PullToRefresh-Komponente prüfen und anpassen (bereits vorhanden und funktional)
+- [x] Pull-to-Refresh in Home-Seite integrieren
+- [x] Pull-to-Refresh in Wiki-Seite integrieren
+- [ ] Pull-to-Refresh in Ohweees/Chat-Seite integrieren (Ohweees hat eigene Scroll-Logik)
+- [x] Pull-to-Refresh in Kalender-Seite integrieren
+- [x] Mobile Ansicht testen (Screenshot verifiziert)
