@@ -375,82 +375,99 @@ export default function Home() {
     }
   };
 
+  // Personalisierte Begrüßung basierend auf Tageszeit
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return "Guten Morgen";
+    if (hour >= 12 && hour < 18) return "Guten Tag";
+    return "Guten Abend";
+  };
+
   const renderWelcomeHero = () => (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/8 to-secondary/5 border border-primary/15 p-8 md:p-10 shadow-lg">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/8 to-secondary/5 border border-primary/15 p-5 sm:p-8 md:p-10 shadow-lg">
       {/* Decorative elements */}
       <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
       <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-secondary-accent/10 to-transparent rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
       
       <div className="relative">
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2.5 mb-3">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/15">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                </div>
-                <span className="text-sm font-semibold text-primary tracking-wide">ohwee</span>
+        <div className="flex flex-col gap-5 sm:gap-6">
+          <div>
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/15">
+                <Sparkles className="h-4 w-4 text-primary" />
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                Willkommen zurück, {user?.name?.split(" ")[0] || "Benutzer"}!
-              </h1>
-              <p className="text-muted-foreground mt-3 max-w-xl text-base leading-relaxed">
-                Hier findest du alle wichtigen Informationen, Prozesse und Anleitungen für deinen Arbeitsalltag.
-              </p>
+              <span className="text-sm font-semibold text-primary tracking-wide">ohwee</span>
             </div>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+              {getGreeting()}, {user?.name?.split(" ")[0] || "Benutzer"}!
+            </h1>
+            <p className="text-muted-foreground mt-2 sm:mt-3 max-w-xl text-sm sm:text-base leading-relaxed">
+              Hier findest du alle wichtigen Informationen, Prozesse und Anleitungen für deinen Arbeitsalltag.
+            </p>
           </div>
           
-          {/* AI Search Field */}
-          <form onSubmit={handleSearch} className="relative max-w-2xl">
+          {/* AI Search Field - Mobile optimiert */}
+          <form onSubmit={handleSearch} className="relative w-full">
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center bg-background/80 backdrop-blur-sm border border-border/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary/50">
-                <div className="flex items-center gap-2 pl-5 pr-2">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10">
-                    <Sparkles className="h-4 w-4 text-purple-500" />
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl sm:rounded-2xl blur-xl opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex flex-col sm:flex-row sm:items-center bg-background/80 backdrop-blur-sm border border-border/50 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary/50 overflow-hidden">
+                <div className="flex items-center flex-1">
+                  <div className="flex items-center gap-2 pl-4 pr-2">
+                    <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10">
+                      <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-purple-500" />
+                    </div>
                   </div>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Frag mich alles..."
+                    className="flex-1 h-12 sm:h-14 bg-transparent border-0 text-sm sm:text-base placeholder:text-muted-foreground/60 focus:outline-none focus:ring-0 min-w-0"
+                  />
                 </div>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Frag mich alles... Wiki, SOPs, Prozesse durchsuchen"
-                  className="flex-1 h-14 bg-transparent border-0 text-base placeholder:text-muted-foreground/60 focus:outline-none focus:ring-0"
-                />
                 <Button 
                   type="submit"
                   size="sm"
-                  className="mr-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-5 h-10 font-medium"
+                  className="m-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 sm:px-5 h-9 sm:h-10 font-medium text-sm shrink-0"
                 >
-                  <Search className="h-4 w-4 mr-2" />
-                  Suchen
+                  <Search className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Suchen</span>
                 </Button>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground/70 mt-2 ml-1">
+            <p className="text-[10px] sm:text-xs text-muted-foreground/70 mt-2 ml-1 hidden sm:block">
               Tipp: Drücke <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-[10px]">Cmd/Ctrl + K</kbd> für die Schnellsuche
             </p>
           </form>
           
-          {/* Schnellaktions-Buttons */}
-          <div className="flex flex-wrap gap-3 mt-6">
+          {/* Schnellaktions-Buttons - Mobile optimiert */}
+          <div className="flex flex-wrap gap-2 sm:gap-3 mt-1 sm:mt-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setLocation("/leave/new")}
-              className="rounded-xl border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 hover:bg-green-100 dark:hover:bg-green-900/50 text-green-700 dark:text-green-400 gap-2"
+              className="rounded-lg sm:rounded-xl border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 hover:bg-green-100 dark:hover:bg-green-900/50 text-green-700 dark:text-green-400 gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4"
             >
-              <Palmtree className="h-4 w-4" />
-              Urlaub beantragen
+              <Palmtree className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              Urlaub
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setLocation("/taps/new")}
-              className="rounded-xl border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 gap-2"
+              className="rounded-lg sm:rounded-xl border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4"
             >
-              <MessageSquarePlus className="h-4 w-4" />
+              <MessageSquarePlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Chat
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLocation("/calendar?new=true")}
+              className="rounded-lg sm:rounded-xl border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 text-orange-700 dark:text-orange-400 gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4"
+            >
+              <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              Termin
             </Button>
           </div>
         </div>

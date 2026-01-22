@@ -996,3 +996,9 @@
 ## UI-Bereinigung (Januar 2026)
 - [x] "Neuer Artikel"-Button aus Willkommens-Banner entfernen
 - [x] "Neues Tap erstellen" umbenennen in "Chat"
+
+## Mobile-Layout & Schnellaktionen (Januar 2026)
+- [x] Mobile-Layout des Willkommens-Banners korrigieren (Suchfeld bündig, responsive Padding)
+- [x] Kalender-Termin erstellen als Schnellaktion hinzufügen (orange Button)
+- [x] Personalisierte Begrüßung (Guten Morgen/Tag/Abend basierend auf Uhrzeit)
+- [x] Mobile-Layout komplett geprüft und optimiert
