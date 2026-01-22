@@ -138,7 +138,7 @@ export async function sendNewMessagePush(
       badge: "/badge-72.png",
       tag: `chat-${roomId}`,
       data: {
-        url: `/ohweees?room=${roomId}`,
+        url: `/taps?room=${roomId}`,
         roomId,
         messageId,
       },

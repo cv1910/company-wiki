@@ -150,10 +150,10 @@ export function NotificationSettings({
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Ohweees Section */}
+            {/* Taps Section */}
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-2">
-                Ohweees Chat
+                Taps Chat
               </h3>
               <div className="space-y-1">
                 <SettingRow

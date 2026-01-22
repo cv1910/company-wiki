@@ -889,7 +889,7 @@ export default function OhweeesPage() {
   const startDM = trpc.ohweees.startDM.useMutation({
     onSuccess: (room) => {
       setSelectedRoomId(room.id);
-      setLocation(`/ohweees/${room.id}`);
+      setLocation(`/taps/${room.id}`);
       setShowNewChatDialog(false);
       utils.ohweees.rooms.invalidate();
     },
@@ -901,7 +901,7 @@ export default function OhweeesPage() {
   const createGroup = trpc.ohweees.createGroup.useMutation({
     onSuccess: (room) => {
       setSelectedRoomId(room.id);
-      setLocation(`/ohweees/${room.id}`);
+      setLocation(`/taps/${room.id}`);
       setShowNewGroupDialog(false);
       setGroupName("");
       setSelectedUserIds([]);
@@ -1101,7 +1101,7 @@ export default function OhweeesPage() {
   // Update URL when room changes
   useEffect(() => {
     if (selectedRoomId && !roomId) {
-      setLocation(`/ohweees/${selectedRoomId}`, { replace: true });
+      setLocation(`/taps/${selectedRoomId}`, { replace: true });
     }
   }, [selectedRoomId, roomId, setLocation]);
 
@@ -1452,7 +1452,7 @@ export default function OhweeesPage() {
               currentUserId={user?.id || 0}
               onRoomSelect={(roomId) => {
                 setSelectedRoomId(roomId);
-                setLocation(`/ohweees/${roomId}`);
+                setLocation(`/taps/${roomId}`);
               }}
               onNewChat={() => setShowNewChatDialog(true)}
             />
@@ -1483,7 +1483,7 @@ export default function OhweeesPage() {
                     currentUserId={user?.id || 0}
                     onSelect={() => {
                       setSelectedRoomId(room.id);
-                      setLocation(`/ohweees/${room.id}`);
+                      setLocation(`/taps/${room.id}`);
                     }}
                   />
                 ))}
@@ -1519,7 +1519,7 @@ export default function OhweeesPage() {
                 onBack={() => {
                   setMobileView("list");
                   setSelectedRoomId(null);
-                  setLocation("/ohweees");
+                  setLocation("/taps");
                 }}
                 onMenuClick={() => {
                   setShowChatSearch(true);
@@ -2134,7 +2134,7 @@ export default function OhweeesPage() {
                 key={room.id}
                 onClick={() => {
                   setSelectedRoomId(room.id);
-                  setLocation(`/ohweees/${room.id}`);
+                  setLocation(`/taps/${room.id}`);
                 }}
                 className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${
                   selectedRoomId === room.id
@@ -2549,7 +2549,7 @@ export default function OhweeesPage() {
                   )}
                   <Textarea
                     ref={textareaRef}
-                    placeholder="Schreibe ein Ohweee... (@ für Erwähnung)"
+                    placeholder="Schreibe ein Tap... (@ für Erwähnung)"
                     value={editingMessageId ? editContent : messageInput}
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDown}

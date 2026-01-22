@@ -218,6 +218,13 @@
       "when": 1769077239695,
       "tag": "0030_tranquil_firebrand",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "5",
+      "when": 1769083169634,
+      "tag": "0031_brainy_radioactive_man",
+      "breakpoints": true
     }
   ]
 }

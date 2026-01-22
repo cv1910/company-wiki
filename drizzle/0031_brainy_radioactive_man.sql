@@ -1,0 +1,1 @@
+ALTER TABLE `mentions` MODIFY COLUMN `contextType` enum('article','comment','sop','ohweee','tap') NOT NULL;

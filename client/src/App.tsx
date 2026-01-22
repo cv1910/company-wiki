@@ -52,9 +52,9 @@ import CalendarSettings from "./pages/CalendarSettings";
 import Scheduling from "./pages/Scheduling";
 import Book from "./pages/Book";
 
-// Teams & Ohweees
+// Teams & Taps
 import Teams from "./pages/Teams";
-import Ohweees from "./pages/Ohweees";
+import Taps from "./pages/Ohweees";
 
 // Profile
 import Profile from "./pages/Profile";
@@ -101,9 +101,9 @@ function Router() {
         <Route path="/scheduling" component={Scheduling} />
         <Route path="/book/:slug" component={Book} />
         
-        {/* Ohweees (Chat) */}
-        <Route path="/ohweees" component={Ohweees} />
-        <Route path="/ohweees/:roomId" component={Ohweees} />
+        {/* Taps (Chat) */}
+        <Route path="/taps" component={Taps} />
+        <Route path="/taps/:roomId" component={Taps} />
         
         {/* Settings & Mentions */}
         <Route path="/settings/email" component={EmailSettings} />

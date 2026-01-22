@@ -4253,7 +4253,7 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           await db.createMention({
             mentionedUserId,
             mentionedByUserId: ctx.user.id,
-            contextType: "ohweee",
+            contextType: "tap",
             contextId: ohweee.id,
             contextTitle: roomName,
           });
@@ -4277,9 +4277,9 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
                   recipientEmail: mentionedUser.email,
                   recipientName: mentionedUser.name || "Kollege",
                   mentionedByName: ctx.user.name || "Jemand",
-                  contextType: "Ohweee",
+                  contextType: "Tap",
                   contextTitle: roomName,
-                  contextLink: `/ohweees?room=${input.roomId}`,
+                  contextLink: `/taps?room=${input.roomId}`,
                   excerpt: input.content.substring(0, 300),
                 });
               }

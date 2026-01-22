@@ -470,7 +470,7 @@ export const mentions = mysqlTable("mentions", {
   id: int("id").autoincrement().primaryKey(),
   mentionedUserId: int("mentionedUserId").notNull(),
   mentionedByUserId: int("mentionedByUserId").notNull(),
-  contextType: mysqlEnum("contextType", ["article", "comment", "sop", "ohweee"]).notNull(),
+  contextType: mysqlEnum("contextType", ["article", "comment", "sop", "ohweee", "tap"]).notNull(),
   contextId: int("contextId").notNull(),
   contextTitle: varchar("contextTitle", { length: 500 }),
   isRead: boolean("isRead").default(false).notNull(),

@@ -75,7 +75,7 @@ const menuItems = [
   { icon: GraduationCap, label: "Onboarding", path: "/onboarding" },
   { icon: Search, label: "Suche", path: "/search" },
   { icon: MessageCircle, label: "AI-Assistent", path: "/chat" },
-  { icon: Mail, label: "Ohweees", path: "/ohweees" },
+  { icon: Mail, label: "Taps", path: "/taps" },
   { icon: CalendarDays, label: "Kalender", path: "/calendar" },
   { icon: Building2, label: "Organigramm", path: "/orgchart" },
   { icon: Users, label: "Team", path: "/team" },

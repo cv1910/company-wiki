@@ -917,3 +917,6 @@
 - [x] VAPID-Keys generieren
 - [x] Keys als Secrets konfigurieren (hardcoded als Fallback)
 - [x] Frontend VAPID Public Key einbinden
+
+## Umbenennung (Januar 2026)
+- [x] Ohweees → Taps umbenennen (Navigation, Texte, UI)
