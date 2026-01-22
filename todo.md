@@ -937,3 +937,6 @@
 ## SOP PDF-Upload & Scribe (Januar 2026)
 - [x] PDF-Upload für SOPs ermöglichen (Datenbankfeld, Upload-Funktion, Anzeige)
 - [x] Scribe-Vorschau ohne Login-Anforderung (Embed-URL wird automatisch aus Share-URL generiert)
+
+## Organigramm Bug (Januar 2026)
+- [x] React Error #301: Maximum update depth exceeded - setExpandedNodes aus useMemo entfernt

@@ -444,6 +444,17 @@ export default function OrgChart() {
     setSelectedUserId(null);
   };
 
+  // Initialize expanded nodes when positions load
+  const [initialized, setInitialized] = useState(false);
+  
+  // Initialize all nodes as expanded on first load
+  if (positions && positions.length > 0 && !initialized) {
+    const allIds = new Set<number>();
+    positions.forEach((pos) => allIds.add(pos.position.id));
+    setExpandedNodes(allIds);
+    setInitialized(true);
+  }
+
   // Build tree with expansion state
   const tree = useMemo(() => {
     if (!positions) return [];
@@ -452,28 +463,15 @@ export default function OrgChart() {
     // Apply expansion state
     const applyExpansion = (nodes: TreeNode[]) => {
       nodes.forEach((node) => {
-        // Default to expanded, unless explicitly collapsed
-        node.isExpanded = !expandedNodes.has(node.position.id) || expandedNodes.size === 0;
+        // Default to expanded if in expandedNodes set, or if not initialized yet
+        node.isExpanded = expandedNodes.has(node.position.id) || !initialized;
         applyExpansion(node.children);
       });
     };
 
-    // Initialize all as expanded on first load
-    if (expandedNodes.size === 0) {
-      const allIds = new Set<number>();
-      const collectIds = (nodes: TreeNode[]) => {
-        nodes.forEach((node) => {
-          allIds.add(node.position.id);
-          collectIds(node.children);
-        });
-      };
-      collectIds(builtTree);
-      setExpandedNodes(allIds);
-    }
-
     applyExpansion(builtTree);
     return builtTree;
-  }, [positions, expandedNodes]);
+  }, [positions, expandedNodes, initialized]);
 
   // Filter tree by search
   const filteredTree = useMemo(() => {
