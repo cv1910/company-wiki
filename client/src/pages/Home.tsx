@@ -363,6 +363,15 @@ export default function Home() {
   ];
 
   // Widget components
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      setLocation(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
   const renderWelcomeHero = () => (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/8 to-secondary/5 border border-primary/15 p-8 md:p-10 shadow-lg">
       {/* Decorative elements */}
@@ -370,31 +379,65 @@ export default function Home() {
       <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-secondary-accent/10 to-transparent rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
       
       <div className="relative">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/15">
-                <Sparkles className="h-4 w-4 text-primary" />
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2.5 mb-3">
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/15">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-sm font-semibold text-primary tracking-wide">ohwee</span>
               </div>
-              <span className="text-sm font-semibold text-primary tracking-wide">ohwee</span>
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                Willkommen zurück, {user?.name?.split(" ")[0] || "Benutzer"}!
+              </h1>
+              <p className="text-muted-foreground mt-3 max-w-xl text-base leading-relaxed">
+                Hier findest du alle wichtigen Informationen, Prozesse und Anleitungen für deinen Arbeitsalltag.
+              </p>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-              Willkommen zurück, {user?.name?.split(" ")[0] || "Benutzer"}!
-            </h1>
-            <p className="text-muted-foreground mt-3 max-w-xl text-base leading-relaxed">
-              Hier findest du alle wichtigen Informationen, Prozesse und Anleitungen für deinen Arbeitsalltag.
-            </p>
+            {isEditor && (
+              <Button 
+                onClick={() => setLocation("/wiki/new")} 
+                size="lg"
+                className="btn-gradient rounded-xl px-6 h-12 text-base font-semibold shrink-0"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Neuer Artikel
+              </Button>
+            )}
           </div>
-          {isEditor && (
-            <Button 
-              onClick={() => setLocation("/wiki/new")} 
-              size="lg"
-              className="btn-gradient rounded-xl px-6 h-12 text-base font-semibold"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Neuer Artikel
-            </Button>
-          )}
+          
+          {/* AI Search Field */}
+          <form onSubmit={handleSearch} className="relative max-w-2xl">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center bg-background/80 backdrop-blur-sm border border-border/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary/50">
+                <div className="flex items-center gap-2 pl-5 pr-2">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10">
+                    <Sparkles className="h-4 w-4 text-purple-500" />
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Frag mich alles... Wiki, SOPs, Prozesse durchsuchen"
+                  className="flex-1 h-14 bg-transparent border-0 text-base placeholder:text-muted-foreground/60 focus:outline-none focus:ring-0"
+                />
+                <Button 
+                  type="submit"
+                  size="sm"
+                  className="mr-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-5 h-10 font-medium"
+                >
+                  <Search className="h-4 w-4 mr-2" />
+                  Suchen
+                </Button>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground/70 mt-2 ml-1">
+              Tipp: Drücke <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-[10px]">Cmd/Ctrl + K</kbd> für die Schnellsuche
+            </p>
+          </form>
         </div>
       </div>
     </div>

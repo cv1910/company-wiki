@@ -980,3 +980,6 @@
 - [x] Home-Seite: Suche+AI-Assistent zu "AI Suche" umbenennen
 - [x] Navigation: Fokussierte Navigation mit "Mehr"-Menü für zusätzliche Punkte
 - [x] Sidebar und Mobile-Navigation entsprechend anpassen (Home, AI Suche, Wissensdatenbank, Kalender, Team + Mehr)
+
+## AI-Suchfeld auf Home-Seite (Januar 2026)
+- [x] Prominentes AI-Suchfeld direkt auf der Home-Seite für schnellen Zugriff (mit Gradient-Design und Tastatur-Hinweis)
