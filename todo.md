@@ -943,3 +943,6 @@
 
 ## Organigramm Zoom (Januar 2026)
 - [x] Zoom-Stufen-Buttons für schrittweise Verkleinerung/Vergrößerung (50%, 75%, 100%, 125%, 150% + Feinabstimmung)
+
+## Organigramm Pinch-to-Zoom (Januar 2026)
+- [x] Pinch-to-Zoom Touch-Gesten für Mobilgeräte aktivieren

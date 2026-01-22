@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -66,7 +66,7 @@ import {
   Loader2,
 } from "lucide-react";
 import html2canvas from "html2canvas";
-import { useRef } from "react";
+// useRef already imported above
 
 // Position colors
 const POSITION_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -352,7 +352,12 @@ export default function OrgChart() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const orgChartRef = useRef<HTMLDivElement>(null);
+  const pinchContainerRef = useRef<HTMLDivElement>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<number>>(new Set());
+  
+  // Pinch-to-Zoom state
+  const initialPinchDistance = useRef<number | null>(null);
+  const initialZoom = useRef<number>(100);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -443,6 +448,54 @@ export default function OrgChart() {
     setParentIdForNew(null);
     setSelectedUserId(null);
   };
+
+  // Pinch-to-Zoom handlers
+  const getDistance = useCallback((touches: TouchList) => {
+    if (touches.length < 2) return 0;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }, []);
+
+  const handleTouchStart = useCallback((e: TouchEvent) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      initialPinchDistance.current = getDistance(e.touches);
+      initialZoom.current = zoom;
+    }
+  }, [zoom, getDistance]);
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (e.touches.length === 2 && initialPinchDistance.current !== null) {
+      e.preventDefault();
+      const currentDistance = getDistance(e.touches);
+      const scale = currentDistance / initialPinchDistance.current;
+      const newZoom = Math.min(200, Math.max(25, Math.round(initialZoom.current * scale)));
+      setZoom(newZoom);
+    }
+  }, [getDistance]);
+
+  const handleTouchEnd = useCallback(() => {
+    initialPinchDistance.current = null;
+  }, []);
+
+  // Attach touch event listeners for pinch-to-zoom
+  useEffect(() => {
+    const container = pinchContainerRef.current;
+    if (!container) return;
+
+    container.addEventListener('touchstart', handleTouchStart, { passive: false });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd);
+    container.addEventListener('touchcancel', handleTouchEnd);
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+      container.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   // Initialize expanded nodes when positions load
   const [initialized, setInitialized] = useState(false);
@@ -762,7 +815,11 @@ export default function OrgChart() {
         onDragEnd={handleDragEnd}
       >
         <Card className="card-shadow rounded-2xl overflow-hidden">
-          <CardContent className="p-8 overflow-x-auto">
+          <CardContent 
+            ref={pinchContainerRef}
+            className="p-8 overflow-x-auto touch-none"
+            style={{ touchAction: 'pan-x pan-y' }}
+          >
             {filteredTree.length === 0 ? (
             <div className="text-center py-16">
               <Building2 className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
