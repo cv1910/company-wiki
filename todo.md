@@ -969,3 +969,8 @@
 - [x] Prozessbeschreibung-Template mit echtem Inhalt füllen (Urlaubsantrag-Beispiel)
 - [x] Benachrichtigungen klickbar machen - Navigation zum jeweiligen Inhalt (Leave, Wiki, Onboarding)
 - [x] Urlaubsverwaltung Mobile-Design verbessern (Mobile-first Layout mit Flex-Buttons)
+
+## Folge-Features (Januar 2026)
+- [x] Wissensdatenbank-Suche: Suchfeld innerhalb der Wissensdatenbank für Wiki und SOPs (mit Treffer-Anzeige)
+- [x] Benachrichtigungs-Badge: Ungelesene Benachrichtigungen als Badge auf dem Glocken-Icon (Desktop + Mobile)
+- [x] Urlaubskalender-Integration: Genehmigte Urlaube automatisch im Kalender als ganztägige Events anzeigen (bereits implementiert)

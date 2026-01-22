@@ -476,6 +476,21 @@ function DashboardLayoutContent({
               <Button
                 variant="ghost"
                 size="icon"
+                onClick={() => setLocation("/notifications")}
+                title="Benachrichtigungen"
+                className="relative"
+              >
+                <Bell className="h-4 w-4" />
+                {unreadCount && unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+                <span className="sr-only">Benachrichtigungen</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setShowShortcuts(true)}
                 title="Tastaturkürzel"
               >
@@ -498,6 +513,19 @@ function DashboardLayoutContent({
               </div>
             </div>
             <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setLocation("/notifications")}
+                className="relative h-9 w-9"
+              >
+                <Bell className="h-4 w-4" />
+                {unreadCount && unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </Button>
               <ThemeSwitcher />
             </div>
           </div>

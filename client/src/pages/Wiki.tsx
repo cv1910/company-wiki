@@ -97,23 +97,28 @@ export default function Wiki() {
           </TabsTrigger>
         </TabsList>
 
-      {/* Premium Search */}
+      {/* Premium Search - durchsucht beide Tabs */}
       <div className="relative mt-4">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
         <Input
-          placeholder={activeTab === "wiki" ? "Artikel suchen..." : "SOPs suchen..."}
+          placeholder="Wiki & SOPs durchsuchen..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-12 pr-12 h-12 rounded-xl text-base card-shadow focus:shadow-lg transition-shadow"
         />
         {searchQuery && (
-          <button
-            onClick={() => setSearchQuery("")}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors"
-            aria-label="Suche löschen"
-          >
-            <X className="h-4 w-4 text-muted-foreground" />
-          </button>
+          <>
+            <span className="absolute right-12 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+              {(filteredArticles?.length || 0) + (filteredSOPs?.length || 0)} Treffer
+            </span>
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors"
+              aria-label="Suche löschen"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
+          </>
         )}
       </div>
 
