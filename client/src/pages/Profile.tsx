@@ -38,6 +38,8 @@ import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useLocation } from "wouter";
+import { ImageCropper } from "@/components/ImageCropper";
+import { ProfileCompleteness } from "@/components/ProfileCompleteness";
 
 // Avatar gradient colors based on name hash
 const AVATAR_GRADIENTS = [
@@ -72,6 +74,8 @@ export default function Profile() {
   const [department, setDepartment] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Upload avatar mutation
@@ -80,6 +84,8 @@ export default function Profile() {
       toast.success("Profilbild erfolgreich aktualisiert");
       utils.auth.me.invalidate();
       setIsUploadingAvatar(false);
+      setCropperOpen(false);
+      setSelectedImage(null);
     },
     onError: (error) => {
       toast.error("Fehler beim Hochladen: " + error.message);
@@ -87,7 +93,7 @@ export default function Profile() {
     },
   });
   
-  // Handle file selection
+  // Handle file selection - open cropper
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -98,28 +104,51 @@ export default function Profile() {
       return;
     }
     
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Das Bild darf maximal 5MB groß sein");
+    // Validate file size (max 10MB for cropping, will be smaller after)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Das Bild darf maximal 10MB groß sein");
       return;
     }
     
+    // Read file and open cropper
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setCropperOpen(true);
+    };
+    reader.onerror = () => {
+      toast.error("Fehler beim Lesen der Datei");
+    };
+    reader.readAsDataURL(file);
+    
+    // Reset input so same file can be selected again
+    e.target.value = "";
+  };
+  
+  // Handle cropped image
+  const handleCropComplete = async (blob: Blob, mimeType: string) => {
     setIsUploadingAvatar(true);
     
-    // Convert to base64
+    // Convert blob to base64
     const reader = new FileReader();
     reader.onload = () => {
       const base64 = reader.result as string;
       uploadAvatar.mutate({
         imageData: base64,
-        mimeType: file.type,
+        mimeType: mimeType,
       });
     };
     reader.onerror = () => {
-      toast.error("Fehler beim Lesen der Datei");
+      toast.error("Fehler beim Verarbeiten des Bildes");
       setIsUploadingAvatar(false);
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(blob);
+  };
+  
+  // Cancel cropping
+  const handleCropCancel = () => {
+    setCropperOpen(false);
+    setSelectedImage(null);
   };
   
   // Update profile mutation
@@ -300,6 +329,20 @@ export default function Profile() {
           </div>
         </div>
       </Card>
+
+      {/* Profile Completeness */}
+      <ProfileCompleteness 
+        user={{
+          name: user.name,
+          avatarUrl: user.avatarUrl,
+          phone: (user as any)?.phone,
+          location: (user as any)?.location,
+          bio: (user as any)?.bio,
+          jobTitle: (user as any)?.jobTitle,
+          department: (user as any)?.department,
+        }}
+        onEditClick={openEditDialog}
+      />
 
       {/* Tabs for Activity */}
       <Tabs defaultValue="activity" className="space-y-4">
@@ -569,6 +612,16 @@ export default function Profile() {
           </div>
         </DialogContent>
       </Dialog>
+      
+      {/* Image Cropper Dialog */}
+      {selectedImage && (
+        <ImageCropper
+          imageSrc={selectedImage}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+          isOpen={cropperOpen}
+        />
+      )}
     </div>
   );
 }

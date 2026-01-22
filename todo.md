@@ -851,3 +851,23 @@
 - [x] Profil-Seite: Upload-Button beim Avatar mit Loading-Spinner
 - [x] Team-Verzeichnis: Hochgeladene Bilder anzeigen (object-cover)
 - [x] Organigramm: Hochgeladene Bilder anzeigen (object-cover)
+
+## Bild-Cropping vor Upload
+- [x] react-image-crop Bibliothek installiert
+- [x] Cropping-Dialog mit kreisförmiger Vorschau (ImageCropper-Komponente)
+- [x] Aspect Ratio 1:1 für quadratische Avatare
+- [x] Zoom-Slider für Bildausschnitt (50-200%)
+- [x] Vorschau des zugeschnittenen Bildes mit Reset-Button
+
+## WebP-Konvertierung
+- [x] Canvas-basierte Konvertierung zu WebP (in ImageCropper integriert)
+- [x] Fallback auf JPEG für ältere Browser (automatisch)
+- [x] Qualitätseinstellung (85% für gute Balance)
+- [x] Feste Ausgabegröße 256x256px für optimale Avatare
+
+## Profil-Vollständigkeits-Anzeige
+- [x] Berechnung der Profil-Vollständigkeit (7 Felder mit Gewichtung)
+- [x] Animierte Progress-Bar mit Farbverlauf (rot/gelb/orange/grün)
+- [x] Tipps welche Felder noch fehlen (erstes fehlendes Feld)
+- [x] Belohnung/Badge bei 100% Vollständigkeit (Award-Icon + Erfolgsmeldung)
+- [x] Klickbare fehlende Felder öffnen Edit-Dialog
