@@ -13,7 +13,15 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { toast } from "sonner";
@@ -32,6 +40,9 @@ export default function SOPEditor() {
   const [categoryId, setCategoryId] = useState<string>("");
   const [status, setStatus] = useState<"draft" | "published">("draft");
   const [sortOrder, setSortOrder] = useState(0);
+  const [showNewCategoryDialog, setShowNewCategoryDialog] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryDescription, setNewCategoryDescription] = useState("");
 
   const { data: sop, isLoading: sopLoading } = trpc.sops.getBySlug.useQuery(
     { slug: slug || "" },
@@ -39,6 +50,21 @@ export default function SOPEditor() {
   );
 
   const { data: categories } = trpc.sopCategories.list.useQuery();
+  const utils = trpc.useUtils();
+
+  const createCategory = trpc.sopCategories.create.useMutation({
+    onSuccess: (data) => {
+      toast.success("Kategorie erstellt");
+      utils.sopCategories.list.invalidate();
+      setCategoryId(data.id.toString());
+      setShowNewCategoryDialog(false);
+      setNewCategoryName("");
+      setNewCategoryDescription("");
+    },
+    onError: (error) => {
+      toast.error(`Fehler: ${error.message}`);
+    },
+  });
 
   const createSOP = trpc.sops.create.useMutation({
     onSuccess: (data) => {
@@ -203,29 +229,7 @@ export default function SOPEditor() {
                 </p>
               </div>
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">oder</span>
-                </div>
-              </div>
 
-              <div>
-                <Label htmlFor="scribeEmbedCode">Scribe Embed-Code</Label>
-                <Textarea
-                  id="scribeEmbedCode"
-                  value={scribeEmbedCode}
-                  onChange={(e) => setScribeEmbedCode(e.target.value)}
-                  placeholder='<iframe src="..." ...></iframe>'
-                  rows={4}
-                  className="mt-1.5 font-mono text-sm"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Der vollständige Embed-Code von Scribe (falls vorhanden)
-                </p>
-              </div>
             </CardContent>
           </Card>
         </div>
@@ -236,19 +240,30 @@ export default function SOPEditor() {
             <CardContent className="p-4 space-y-4">
               <div>
                 <Label htmlFor="category">Kategorie</Label>
-                <Select value={categoryId} onValueChange={setCategoryId}>
-                  <SelectTrigger className="mt-1.5">
-                    <SelectValue placeholder="Kategorie auswählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Keine Kategorie</SelectItem>
-                    {categories?.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id.toString()}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2 mt-1.5">
+                  <Select value={categoryId} onValueChange={setCategoryId}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Kategorie auswählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Keine Kategorie</SelectItem>
+                      {categories?.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id.toString()}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowNewCategoryDialog(true)}
+                    title="Neue Kategorie erstellen"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               <div>
@@ -294,7 +309,7 @@ export default function SOPEditor() {
                   2. Klicken Sie auf "Share"
                 </p>
                 <p>
-                  3. Kopieren Sie den Link oder Embed-Code
+                  3. Kopieren Sie den Link
                 </p>
                 <p>
                   4. Fügen Sie ihn hier ein
@@ -304,6 +319,61 @@ export default function SOPEditor() {
           </Card>
         </div>
       </div>
+
+      {/* Dialog für neue Kategorie */}
+      <Dialog open={showNewCategoryDialog} onOpenChange={setShowNewCategoryDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Neue Kategorie erstellen</DialogTitle>
+            <DialogDescription>
+              Erstellen Sie eine neue Kategorie für Ihre SOPs.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="newCategoryName">Name</Label>
+              <Input
+                id="newCategoryName"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="Kategoriename..."
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label htmlFor="newCategoryDescription">Beschreibung (optional)</Label>
+              <Textarea
+                id="newCategoryDescription"
+                value={newCategoryDescription}
+                onChange={(e) => setNewCategoryDescription(e.target.value)}
+                placeholder="Kurze Beschreibung..."
+                rows={2}
+                className="mt-1.5"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewCategoryDialog(false)}>
+              Abbrechen
+            </Button>
+            <Button
+              onClick={() => {
+                if (!newCategoryName.trim()) {
+                  toast.error("Bitte geben Sie einen Namen ein");
+                  return;
+                }
+                createCategory.mutate({
+                  name: newCategoryName,
+                  description: newCategoryDescription || undefined,
+                });
+              }}
+              disabled={createCategory.isPending}
+            >
+              {createCategory.isPending ? "Erstellen..." : "Erstellen"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

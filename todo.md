@@ -924,3 +924,8 @@
 ## Bug-Fixes (Januar 2026)
 - [x] Kalender, Home, Wiki laden nicht (PullToRefresh md:hidden fix - Desktop-Version hinzugefügt)
 - [x] Chat-Symbol (MessageCircle) für Taps in Navigation (bereits korrekt)
+
+## SOP-Editor Verbesserungen (Januar 2026)
+- [x] Kategorie erstellen: Option zum Erstellen neuer Kategorien direkt im Dropdown (Plus-Button)
+- [x] Sortierung: Sortierungsfeld war bereits sichtbar
+- [x] Scribe Embed-Code Feld entfernt (URL reicht)
