@@ -20,8 +20,18 @@ import {
   Edit,
   Settings,
   Building2,
-  Briefcase
+  Briefcase,
+  Phone,
+  MapPin,
+  Save,
+  X
 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
+import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useLocation } from "wouter";
@@ -49,6 +59,47 @@ function getAvatarGradient(name: string): string {
 export default function Profile() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
+  const utils = trpc.useUtils();
+  
+  // Edit profile dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [location, setLocationField] = useState("");
+  const [bio, setBio] = useState("");
+  const [department, setDepartment] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  
+  // Update profile mutation
+  const updateProfile = trpc.users.updateProfile.useMutation({
+    onSuccess: () => {
+      toast.success("Profil erfolgreich aktualisiert");
+      setEditDialogOpen(false);
+      utils.auth.me.invalidate();
+    },
+    onError: (error) => {
+      toast.error("Fehler beim Speichern: " + error.message);
+    },
+  });
+  
+  // Initialize form when dialog opens
+  const openEditDialog = () => {
+    setPhone((user as any)?.phone || "");
+    setLocationField((user as any)?.location || "");
+    setBio((user as any)?.bio || "");
+    setDepartment((user as any)?.department || "");
+    setJobTitle((user as any)?.jobTitle || "");
+    setEditDialogOpen(true);
+  };
+  
+  const handleSaveProfile = () => {
+    updateProfile.mutate({
+      phone: phone || undefined,
+      location: location || undefined,
+      bio: bio || undefined,
+      department: department || undefined,
+      jobTitle: jobTitle || undefined,
+    });
+  };
 
   // Fetch user statistics - get all articles and filter client-side
   const { data: allArticles, isLoading: statsLoading } = trpc.articles.list.useQuery({
@@ -102,6 +153,7 @@ export default function Profile() {
                 size="icon" 
                 variant="secondary"
                 className="absolute -bottom-2 -right-2 h-10 w-10 rounded-full shadow-lg"
+                onClick={openEditDialog}
               >
                 <Edit className="h-4 w-4" />
               </Button>
@@ -110,11 +162,32 @@ export default function Profile() {
             {/* User Info */}
             <div className="flex-1 text-center sm:text-left">
               <h1 className="text-3xl sm:text-4xl font-bold">{userName}</h1>
+              {(user as any)?.jobTitle && (
+                <p className="text-white/90 text-lg mt-1">{(user as any).jobTitle}</p>
+              )}
               <p className="text-white/80 mt-1 flex items-center justify-center sm:justify-start gap-2">
                 <Mail className="h-4 w-4" />
                 {user.email}
               </p>
+              {(user as any)?.phone && (
+                <p className="text-white/80 mt-1 flex items-center justify-center sm:justify-start gap-2">
+                  <Phone className="h-4 w-4" />
+                  {(user as any).phone}
+                </p>
+              )}
+              {(user as any)?.location && (
+                <p className="text-white/80 mt-1 flex items-center justify-center sm:justify-start gap-2">
+                  <MapPin className="h-4 w-4" />
+                  {(user as any).location}
+                </p>
+              )}
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
+                {(user as any)?.department && (
+                  <Badge className="bg-white/20 text-white border-0 hover:bg-white/30">
+                    <Building2 className="h-3 w-3 mr-1" />
+                    {(user as any).department}
+                  </Badge>
+                )}
                 <Badge className="bg-white/20 text-white border-0 hover:bg-white/30">
                   <Briefcase className="h-3 w-3 mr-1" />
                   {user.role === "admin" ? "Administrator" : "Mitarbeiter"}
@@ -346,6 +419,83 @@ export default function Profile() {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Edit Profile Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5 text-primary" />
+              Profil bearbeiten
+            </DialogTitle>
+            <DialogDescription>
+              Aktualisiere deine persönlichen Informationen
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="jobTitle">Position</Label>
+                <Input
+                  id="jobTitle"
+                  placeholder="z.B. Software Engineer"
+                  value={jobTitle}
+                  onChange={(e) => setJobTitle(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="department">Abteilung</Label>
+                <Input
+                  id="department"
+                  placeholder="z.B. IT"
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Telefon</Label>
+                <Input
+                  id="phone"
+                  placeholder="+49 123 456789"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="location">Standort</Label>
+                <Input
+                  id="location"
+                  placeholder="z.B. Berlin, Deutschland"
+                  value={location}
+                  onChange={(e) => setLocationField(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bio">Über mich</Label>
+              <Textarea
+                id="bio"
+                placeholder="Erzähle etwas über dich..."
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              <X className="h-4 w-4 mr-2" />
+              Abbrechen
+            </Button>
+            <Button onClick={handleSaveProfile} disabled={updateProfile.isPending}>
+              <Save className="h-4 w-4 mr-2" />
+              {updateProfile.isPending ? "Speichern..." : "Speichern"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

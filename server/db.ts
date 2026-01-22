@@ -213,6 +213,18 @@ export async function updateUserRole(userId: number, role: "user" | "editor" | "
   await db.update(users).set({ role }).where(eq(users.id, userId));
 }
 
+export async function updateUserProfile(userId: number, data: {
+  phone?: string;
+  location?: string;
+  bio?: string;
+  department?: string;
+  jobTitle?: string;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set(data).where(eq(users.id, userId));
+}
+
 // ==================== CATEGORY FUNCTIONS ====================
 
 export async function createCategory(data: InsertCategory) {

@@ -188,6 +188,19 @@ export const appRouter = router({
       return db.getUserById(input.id);
     }),
 
+    updateProfile: protectedProcedure
+      .input(z.object({
+        phone: z.string().optional(),
+        location: z.string().optional(),
+        bio: z.string().optional(),
+        department: z.string().optional(),
+        jobTitle: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updateUserProfile(ctx.user.id, input);
+        return { success: true };
+      }),
+
     updateRole: adminProcedure
       .input(z.object({ userId: z.number(), role: z.enum(["user", "editor", "admin"]) }))
       .mutation(async ({ input }) => {

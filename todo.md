@@ -829,3 +829,15 @@
 - [x] Navigation im Sidebar hinzugefügt
 - [x] Grid- und Listen-Ansicht mit Toggle
 - [x] Premium-Design mit Gradient-Avataren
+
+## Erweitertes Mitarbeiter-Profil
+- [x] Datenbank: Neue Felder (phone, location, bio) zur users-Tabelle
+- [x] Backend: API-Endpunkte für Profil-Update (users.updateProfile)
+- [x] Profil-Seite: Bearbeitungs-Dialog für alle Felder
+- [x] Profil-Seite: Anzeige von Telefon, Standort, Bio
+- [x] Team-Verzeichnis: Telefon und Standort in Cards anzeigen
+
+## Organigramm-Export
+- [x] Export als PNG-Bild (html2canvas)
+- [x] Export-Dropdown im Organigramm-Header
+- [x] Visuelles Feedback während Export (Loading-Spinner)

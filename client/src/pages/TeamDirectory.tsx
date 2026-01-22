@@ -64,9 +64,10 @@ interface TeamMember {
   avatarUrl: string | null;
   role: string;
   department?: string | null;
-  position?: string | null;
+  jobTitle?: string | null;
   phone?: string | null;
   location?: string | null;
+  bio?: string | null;
 }
 
 // Team Member Card Component
@@ -105,8 +106,8 @@ function TeamMemberCard({
                   </Badge>
                 )}
               </div>
-              {member.position && (
-                <p className="text-sm text-primary font-medium truncate">{member.position}</p>
+              {member.jobTitle && (
+                <p className="text-sm text-primary font-medium truncate">{member.jobTitle}</p>
               )}
               {member.department && (
                 <p className="text-sm text-muted-foreground truncate flex items-center gap-1">
@@ -180,8 +181,8 @@ function TeamMemberCard({
               </Badge>
             )}
           </div>
-          {member.position && (
-            <p className="text-sm text-primary font-medium mt-1">{member.position}</p>
+          {member.jobTitle && (
+            <p className="text-sm text-primary font-medium mt-1">{member.jobTitle}</p>
           )}
         </div>
 
@@ -285,7 +286,7 @@ export default function TeamDirectory() {
         (m) =>
           m.name?.toLowerCase().includes(query) ||
           m.email?.toLowerCase().includes(query) ||
-          m.position?.toLowerCase().includes(query) ||
+          m.jobTitle?.toLowerCase().includes(query) ||
           m.department?.toLowerCase().includes(query)
       );
     }

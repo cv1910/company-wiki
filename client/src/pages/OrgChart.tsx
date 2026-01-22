@@ -60,7 +60,13 @@ import {
   Search,
   Settings,
   GripVertical,
+  Download,
+  Image,
+  FileText,
+  Loader2,
 } from "lucide-react";
+import html2canvas from "html2canvas";
+import { useRef } from "react";
 
 // Position colors
 const POSITION_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -344,6 +350,8 @@ export default function OrgChart() {
 
   const [zoom, setZoom] = useState(100);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
+  const orgChartRef = useRef<HTMLDivElement>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<number>>(new Set());
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -587,6 +595,44 @@ export default function OrgChart() {
     });
   };
 
+  // Export functions
+  const exportAsImage = async () => {
+    if (!orgChartRef.current) return;
+    
+    setIsExporting(true);
+    try {
+      // Temporarily set zoom to 100% for export
+      const originalZoom = zoom;
+      setZoom(100);
+      
+      // Wait for re-render
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const canvas = await html2canvas(orgChartRef.current, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      
+      // Restore zoom
+      setZoom(originalZoom);
+      
+      // Download
+      const link = document.createElement("a");
+      link.download = `organigramm-${new Date().toISOString().split("T")[0]}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      
+      toast.success("Organigramm als PNG exportiert");
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Fehler beim Exportieren");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -667,6 +713,25 @@ export default function OrgChart() {
               >
                 <Maximize2 className="h-4 w-4" />
               </Button>
+              <div className="w-px h-6 bg-border" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" disabled={isExporting || filteredTree.length === 0}>
+                    {isExporting ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4 mr-2" />
+                    )}
+                    Exportieren
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={exportAsImage}>
+                    <Image className="h-4 w-4 mr-2" />
+                    Als PNG exportieren
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </CardContent>
@@ -715,7 +780,7 @@ export default function OrgChart() {
               )}
             </div>
           ) : (
-            <div className="flex justify-center min-w-max">
+            <div ref={orgChartRef} className="flex justify-center min-w-max bg-white p-4">
               <div className="flex flex-col items-center gap-4">
                 {filteredTree.map((node) => (
                   <DraggablePositionCard
