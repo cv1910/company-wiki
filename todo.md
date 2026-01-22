@@ -898,3 +898,9 @@
 - [x] Emoji-Picker: Vollständiger Emoji-Picker für Reaktionen (bereits vorhanden)
 - [x] Lesebestätigungen: Anzeige wer die Nachricht gelesen hat (WhatsApp-Style mit Doppel-Haken + Avatare)
 - [x] Swipe-Gesten: Wischen nach links/rechts für schnelle Aktionen (rechts = Antworten, links = Löschen/Reagieren)
+
+## Farbkonzept & Chat-Features (Januar 2026)
+- [x] Neues Farbkonzept: #ff614e (Primary), #f865d4 (Accent), #fdcfff (Light), #fcb52d (Warning), #ad7f11 (Muted), #2e93c1 (Info)
+- [x] Nachrichtensuche im Chat mit Sprung zur gefundenen Nachricht
+- [x] Sprachnachrichten-Transkription (automatische Textumwandlung)
+- [x] Nachrichtenweiterleitung an andere Chats

@@ -3760,6 +3760,17 @@ export async function updateOhweee(id: number, content: string) {
     .where(eq(ohweees.id, id));
 }
 
+// Update ohweee transcription
+export async function updateOhweeeTranscription(id: number, transcription: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(ohweees)
+    .set({ transcription })
+    .where(eq(ohweees.id, id));
+}
+
 // Delete ohweee (soft delete)
 export async function deleteOhweee(id: number, deletedById: number) {
   const db = await getDb();

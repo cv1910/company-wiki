@@ -211,6 +211,13 @@
       "when": 1769061518108,
       "tag": "0029_amusing_shotgun",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "5",
+      "when": 1769077239695,
+      "tag": "0030_tranquil_firebrand",
+      "breakpoints": true
     }
   ]
 }

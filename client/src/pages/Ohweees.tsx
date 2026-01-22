@@ -68,6 +68,7 @@ import { MessageContent } from "@/components/MessageContent";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { VoiceRecorder, VoiceMessagePlayer } from "@/components/VoiceRecorder";
 import { PollDisplay } from "@/components/PollDisplay";
+import { ChatSearch, ChatSearchBar } from "@/components/ChatSearch";
 import {
   MobileChatHeader,
   MobileChatInput,
@@ -663,6 +664,9 @@ export default function OhweeesPage() {
   
   // Pinned messages state
   const [showPinnedMessages, setShowPinnedMessages] = useState(false);
+  
+  // Chat search state
+  const [showChatSearch, setShowChatSearch] = useState(false);
   
   // Poll creation state
   const [showCreatePollDialog, setShowCreatePollDialog] = useState(false);
@@ -1497,8 +1501,8 @@ export default function OhweeesPage() {
         ) : (
           // Mobile Chat View
           <>
-            {/* Mobile Chat Header */}
-            {currentRoom && (
+            {/* Mobile Chat Header with Search */}
+            {currentRoom && !showChatSearch && (
               <MobileChatHeader
                 room={{
                   id: currentRoom.id,
@@ -1518,9 +1522,22 @@ export default function OhweeesPage() {
                   setLocation("/ohweees");
                 }}
                 onMenuClick={() => {
-                  // Show room options menu
-                  setShowPinnedMessages(true);
+                  setShowChatSearch(true);
                 }}
+              />
+            )}
+            
+            {/* Chat Search Bar */}
+            {currentRoom && showChatSearch && (
+              <ChatSearchBar
+                roomId={currentRoom.id}
+                onJumpToMessage={(messageId) => {
+                  setHighlightedMessageId(messageId);
+                  const element = document.getElementById(`message-${messageId}`);
+                  element?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  setTimeout(() => setHighlightedMessageId(null), 2000);
+                }}
+                onClose={() => setShowChatSearch(false)}
               />
             )}
 

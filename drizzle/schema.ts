@@ -965,6 +965,8 @@ export const ohweees = mysqlTable("ohweees", {
   isDeleted: boolean("isDeleted").default(false).notNull(),
   deletedAt: timestamp("deletedAt"),
   deletedById: int("deletedById"),
+  // Voice message transcription
+  transcription: text("transcription"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

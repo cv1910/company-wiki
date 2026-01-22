@@ -46,33 +46,42 @@
 }
 
 :root {
-  /* Premium Orange - Vibrant and modern (Asana/Monday inspired) */
-  --primary: oklch(0.68 0.21 38);
+  /* New Color Palette - Vibrant and modern */
+  /* Primary: Coral Red #ff614e */
+  --primary: oklch(0.68 0.22 15);
   --primary-foreground: oklch(1 0 0);
-  --primary-hover: oklch(0.62 0.22 38);
-  --primary-light: oklch(0.92 0.08 38);
+  --primary-hover: oklch(0.62 0.24 15);
+  --primary-light: oklch(0.92 0.08 15);
   
-  /* Secondary - Teal/Cyan for contrast */
-  --secondary-accent: oklch(0.72 0.14 195);
+  /* Secondary/Accent: Pink/Magenta #f865d4 */
+  --secondary-accent: oklch(0.72 0.2 320);
   --secondary-accent-foreground: oklch(1 0 0);
   
-  /* Tertiary - Purple for special elements */
-  --tertiary: oklch(0.65 0.18 290);
-  --tertiary-foreground: oklch(1 0 0);
+  /* Tertiary: Light Pink #fdcfff */
+  --tertiary: oklch(0.92 0.08 310);
+  --tertiary-foreground: oklch(0.3 0.02 310);
   
-  /* Success - Vibrant green */
-  --success: oklch(0.72 0.19 145);
+  /* Success/Info: Blue #2e93c1 */
+  --success: oklch(0.6 0.14 220);
   --success-foreground: oklch(1 0 0);
   
-  --sidebar-primary: oklch(0.68 0.21 38);
+  /* Warning: Orange/Yellow #fcb52d */
+  --warning: oklch(0.78 0.18 70);
+  --warning-foreground: oklch(0.2 0.02 70);
+  
+  /* Gold/Muted accent: #ad7f11 */
+  --gold: oklch(0.58 0.14 70);
+  --gold-foreground: oklch(1 0 0);
+  
+  --sidebar-primary: oklch(0.68 0.22 15);
   --sidebar-primary-foreground: oklch(1 0 0);
   
-  /* Chart colors - Vibrant palette */
-  --chart-1: oklch(0.68 0.21 38);
-  --chart-2: oklch(0.72 0.14 195);
-  --chart-3: oklch(0.65 0.18 290);
-  --chart-4: oklch(0.72 0.19 145);
-  --chart-5: oklch(0.7 0.16 60);
+  /* Chart colors - New vibrant palette */
+  --chart-1: oklch(0.68 0.22 15);  /* Coral */
+  --chart-2: oklch(0.72 0.2 320);  /* Pink */
+  --chart-3: oklch(0.6 0.14 220);  /* Blue */
+  --chart-4: oklch(0.78 0.18 70);  /* Orange */
+  --chart-5: oklch(0.58 0.14 70);  /* Gold */
   
   /* Premium radius - Slightly larger for modern feel */
   --radius: 0.875rem;
@@ -96,8 +105,8 @@
   --muted: oklch(0.955 0.005 80);
   --muted-foreground: oklch(0.45 0.02 260);
   
-  /* Accent - Subtle highlight */
-  --accent: oklch(0.96 0.008 38);
+  /* Accent - Pink highlight */
+  --accent: oklch(0.96 0.04 320);
   --accent-foreground: oklch(0.3 0.02 260);
   
   /* Destructive - Warm red */
@@ -107,15 +116,15 @@
   /* Borders - Very subtle */
   --border: oklch(0.925 0.005 80);
   --input: oklch(0.94 0.005 80);
-  --ring: oklch(0.68 0.21 38);
+  --ring: oklch(0.68 0.22 15);
   
   /* Sidebar - Clean and professional */
   --sidebar: oklch(0.975 0.003 80);
   --sidebar-foreground: oklch(0.3 0.02 260);
-  --sidebar-accent: oklch(0.95 0.01 38);
+  --sidebar-accent: oklch(0.95 0.03 15);
   --sidebar-accent-foreground: oklch(0.25 0.02 260);
   --sidebar-border: oklch(0.93 0.005 80);
-  --sidebar-ring: oklch(0.68 0.21 38);
+  --sidebar-ring: oklch(0.68 0.22 15);
   
   /* Premium font stack - Inter for modern look */
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -131,24 +140,32 @@
 
 .dark {
   /* Premium Orange for dark mode */
-  --primary: oklch(0.75 0.2 38);
-  --primary-foreground: oklch(0.15 0.02 38);
-  --primary-hover: oklch(0.7 0.21 38);
-  --primary-light: oklch(0.3 0.1 38);
+  --primary: oklch(0.72 0.2 15);
+  --primary-foreground: oklch(0.15 0.02 15);
+  --primary-hover: oklch(0.68 0.22 15);
+  --primary-light: oklch(0.3 0.1 15);
   
-  /* Secondary - Teal/Cyan */
-  --secondary-accent: oklch(0.75 0.14 195);
-  --secondary-accent-foreground: oklch(0.15 0.02 195);
+  /* Secondary/Accent: Pink/Magenta #f865d4 */
+  --secondary-accent: oklch(0.75 0.18 320);
+  --secondary-accent-foreground: oklch(0.15 0.02 320);
   
-  /* Tertiary - Purple */
-  --tertiary: oklch(0.7 0.18 290);
-  --tertiary-foreground: oklch(0.15 0.02 290);
+  /* Tertiary: Light Pink */
+  --tertiary: oklch(0.4 0.08 310);
+  --tertiary-foreground: oklch(0.9 0.02 310);
   
-  /* Success */
-  --success: oklch(0.75 0.18 145);
-  --success-foreground: oklch(0.15 0.02 145);
+  /* Success/Info: Blue #2e93c1 */
+  --success: oklch(0.65 0.12 220);
+  --success-foreground: oklch(0.15 0.02 220);
   
-  --sidebar-primary: oklch(0.75 0.2 38);
+  /* Warning: Orange/Yellow #fcb52d */
+  --warning: oklch(0.8 0.16 70);
+  --warning-foreground: oklch(0.15 0.02 70);
+  
+  /* Gold: #ad7f11 */
+  --gold: oklch(0.62 0.12 70);
+  --gold-foreground: oklch(0.15 0.02 70);
+  
+  --sidebar-primary: oklch(0.72 0.2 15);
   --sidebar-primary-foreground: oklch(1 0 0);
   
   /* Rich, deep background */
@@ -170,8 +187,8 @@
   --muted: oklch(0.22 0.01 280);
   --muted-foreground: oklch(0.6 0.01 80);
   
-  /* Accent */
-  --accent: oklch(0.22 0.015 38);
+  /* Accent - Pink */
+  --accent: oklch(0.22 0.04 320);
   --accent-foreground: oklch(0.94 0.005 80);
   
   /* Destructive */
@@ -181,22 +198,22 @@
   /* Borders */
   --border: oklch(0.26 0.01 280);
   --input: oklch(0.2 0.01 280);
-  --ring: oklch(0.75 0.2 38);
+  --ring: oklch(0.72 0.2 15);
   
-  /* Charts */
-  --chart-1: oklch(0.75 0.2 38);
-  --chart-2: oklch(0.75 0.14 195);
-  --chart-3: oklch(0.7 0.18 290);
-  --chart-4: oklch(0.75 0.18 145);
-  --chart-5: oklch(0.72 0.16 60);
+  /* Charts - New palette */
+  --chart-1: oklch(0.72 0.2 15);   /* Coral */
+  --chart-2: oklch(0.75 0.18 320); /* Pink */
+  --chart-3: oklch(0.65 0.12 220); /* Blue */
+  --chart-4: oklch(0.8 0.16 70);   /* Orange */
+  --chart-5: oklch(0.62 0.12 70);  /* Gold */
   
   /* Sidebar */
   --sidebar: oklch(0.1 0.01 280);
   --sidebar-foreground: oklch(0.88 0.005 80);
-  --sidebar-accent: oklch(0.2 0.02 38);
+  --sidebar-accent: oklch(0.2 0.04 15);
   --sidebar-accent-foreground: oklch(0.94 0.005 80);
   --sidebar-border: oklch(0.2 0.01 280);
-  --sidebar-ring: oklch(0.75 0.2 38);
+  --sidebar-ring: oklch(0.72 0.2 15);
 }
 
 @layer base {

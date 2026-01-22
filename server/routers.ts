@@ -11,6 +11,7 @@ import * as embeddings from "./embeddings";
 import DiffMatchPatch from "diff-match-patch";
 import * as googleCalendarService from "./googleCalendar";
 import { sendMentionEmail } from "./email";
+import { transcribeAudio } from "./_core/voiceTranscription";
 
 // Initialize diff-match-patch
 const dmp = new DiffMatchPatch();
@@ -4975,6 +4976,96 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         }
         
         return db.searchMessagesInRoom(input.roomId, input.query, input.limit);
+      }),
+    
+    // ============ Voice Transcription ============
+    
+    transcribeVoiceMessage: protectedProcedure
+      .input(z.object({
+        ohweeeId: z.number(),
+        audioUrl: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const message = await db.getOhweeeById(input.ohweeeId);
+        if (!message) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
+        }
+        
+        const participants = await db.getChatRoomParticipants(message.roomId);
+        const isParticipant = participants.some(p => p.user.id === ctx.user.id);
+        if (!isParticipant) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not a participant" });
+        }
+        
+        const result = await transcribeAudio({
+          audioUrl: input.audioUrl,
+          language: "de",
+          prompt: "Transkribiere diese Sprachnachricht.",
+        });
+        
+        if ("error" in result) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: result.error,
+          });
+        }
+        
+        // Update the message with transcription
+        await db.updateOhweeeTranscription(input.ohweeeId, result.text);
+        
+        return {
+          text: result.text,
+          language: result.language,
+          duration: result.duration,
+        };
+      }),
+    
+    // ============ Message Forwarding ============
+    
+    forwardMessage: protectedProcedure
+      .input(z.object({
+        ohweeeId: z.number(),
+        targetRoomIds: z.array(z.number()).min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const originalMessage = await db.getOhweeeById(input.ohweeeId);
+        if (!originalMessage) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Nachricht nicht gefunden" });
+        }
+        
+        // Verify user has access to original message
+        const originalParticipants = await db.getChatRoomParticipants(originalMessage.roomId);
+        if (!originalParticipants.some(p => p.user.id === ctx.user.id)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Kein Zugriff auf diese Nachricht" });
+        }
+        
+        // Get sender info for the forwarded message prefix
+        const sender = await db.getUserById(originalMessage.senderId);
+        const senderName = sender?.name || "Unbekannt";
+        
+        // Forward to each target room
+        const results = [];
+        for (const targetRoomId of input.targetRoomIds) {
+          // Verify user has access to target room
+          const targetParticipants = await db.getChatRoomParticipants(targetRoomId);
+          if (!targetParticipants.some(p => p.user.id === ctx.user.id)) {
+            continue; // Skip rooms user doesn't have access to
+          }
+          
+          // Create forwarded message with attribution
+          const forwardedContent = `[Weitergeleitet von ${senderName}]\n\n${originalMessage.content}`;
+          
+          const newOhweee = await db.createOhweee({
+            roomId: targetRoomId,
+            senderId: ctx.user.id,
+            content: forwardedContent,
+            attachments: originalMessage.attachments,
+          });
+          
+          results.push({ roomId: targetRoomId, ohweeeId: newOhweee.id });
+        }
+        
+        return { success: true, forwarded: results.length, results };
       }),
     
     // ============ Pinned Messages ============

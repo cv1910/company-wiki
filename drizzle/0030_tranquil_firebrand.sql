@@ -1,0 +1,1 @@
+ALTER TABLE `ohweees` ADD `transcription` text;
