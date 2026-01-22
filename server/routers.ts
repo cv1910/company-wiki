@@ -201,6 +201,36 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    uploadAvatar: protectedProcedure
+      .input(z.object({
+        imageData: z.string(), // Base64 encoded image
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { storagePut } = await import("./storage");
+        
+        // Decode base64
+        const base64Data = input.imageData.replace(/^data:image\/\w+;base64,/, "");
+        const buffer = Buffer.from(base64Data, "base64");
+        
+        // Validate size (max 5MB)
+        if (buffer.length > 5 * 1024 * 1024) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Bild darf maximal 5MB groß sein" });
+        }
+        
+        // Generate unique filename
+        const extension = input.mimeType.split("/")[1] || "jpg";
+        const fileName = `avatars/${ctx.user.id}-${nanoid(8)}.${extension}`;
+        
+        // Upload to S3
+        const { url } = await storagePut(fileName, buffer, input.mimeType);
+        
+        // Update user's avatarUrl in database
+        await db.updateUserAvatarUrl(ctx.user.id, url);
+        
+        return { url };
+      }),
+
     updateRole: adminProcedure
       .input(z.object({ userId: z.number(), role: z.enum(["user", "editor", "admin"]) }))
       .mutation(async ({ input }) => {

@@ -260,7 +260,7 @@ function DraggablePositionCard({
           {/* Avatar */}
           <div className="flex justify-center mb-3">
             <Avatar className="h-14 w-14 ring-2 ring-white shadow-md">
-              <AvatarImage src={node.user?.avatarUrl || undefined} />
+              <AvatarImage src={node.user?.avatarUrl || undefined} className="object-cover" />
               <AvatarFallback className={`bg-gradient-to-br ${colors.bg} text-white font-bold`}>
                 {initials}
               </AvatarFallback>
@@ -957,7 +957,7 @@ export default function OrgChart() {
                   <SelectItem key={u.id} value={u.id.toString()}>
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={u.avatarUrl || undefined} />
+                        <AvatarImage src={u.avatarUrl || undefined} className="object-cover" />
                         <AvatarFallback className="text-xs">
                           {u.name?.slice(0, 2).toUpperCase() || "?"}
                         </AvatarFallback>

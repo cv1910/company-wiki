@@ -90,7 +90,7 @@ function TeamMemberCard({
           <div className="flex items-center gap-4">
             {/* Avatar */}
             <Avatar className="h-14 w-14 ring-2 ring-white shadow-md flex-shrink-0">
-              <AvatarImage src={member.avatarUrl || undefined} />
+              <AvatarImage src={member.avatarUrl || undefined} className="object-cover" />
               <AvatarFallback className={`bg-gradient-to-br ${avatarColor} text-white font-bold`}>
                 {initials}
               </AvatarFallback>
@@ -162,7 +162,7 @@ function TeamMemberCard({
       <div className={`h-16 bg-gradient-to-r ${avatarColor} relative`}>
         <div className="absolute -bottom-8 left-1/2 -translate-x-1/2">
           <Avatar className="h-16 w-16 ring-4 ring-white dark:ring-gray-800 shadow-lg">
-            <AvatarImage src={member.avatarUrl || undefined} />
+            <AvatarImage src={member.avatarUrl || undefined} className="object-cover" />
             <AvatarFallback className={`bg-gradient-to-br ${avatarColor} text-white font-bold text-lg`}>
               {initials}
             </AvatarFallback>

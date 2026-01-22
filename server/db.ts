@@ -225,6 +225,12 @@ export async function updateUserProfile(userId: number, data: {
   await db.update(users).set(data).where(eq(users.id, userId));
 }
 
+export async function updateUserAvatarUrl(userId: number, avatarUrl: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ avatarUrl }).where(eq(users.id, userId));
+}
+
 // ==================== CATEGORY FUNCTIONS ====================
 
 export async function createCategory(data: InsertCategory) {

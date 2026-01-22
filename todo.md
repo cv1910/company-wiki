@@ -841,3 +841,13 @@
 - [x] Export als PNG-Bild (html2canvas)
 - [x] Export-Dropdown im Organigramm-Header
 - [x] Visuelles Feedback während Export (Loading-Spinner)
+
+## Profil-Foto-Upload
+- [x] Backend: Upload-Route für Profilbilder (S3-Integration mit storagePut)
+- [x] Backend: avatarUrl-Feld in users-Tabelle nutzen (updateUserAvatarUrl)
+- [x] Frontend: Foto-Upload-Komponente mit Vorschau
+- [x] Frontend: Klick auf Avatar zum Hochladen (Camera-Overlay)
+- [x] Frontend: Bildgröße-Validierung (max 5MB)
+- [x] Profil-Seite: Upload-Button beim Avatar mit Loading-Spinner
+- [x] Team-Verzeichnis: Hochgeladene Bilder anzeigen (object-cover)
+- [x] Organigramm: Hochgeladene Bilder anzeigen (object-cover)

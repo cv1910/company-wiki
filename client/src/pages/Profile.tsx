@@ -24,13 +24,16 @@ import {
   Phone,
   MapPin,
   Save,
-  X
+  X,
+  Camera,
+  Loader2,
+  Upload
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -68,6 +71,56 @@ export default function Profile() {
   const [bio, setBio] = useState("");
   const [department, setDepartment] = useState("");
   const [jobTitle, setJobTitle] = useState("");
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Upload avatar mutation
+  const uploadAvatar = trpc.users.uploadAvatar.useMutation({
+    onSuccess: () => {
+      toast.success("Profilbild erfolgreich aktualisiert");
+      utils.auth.me.invalidate();
+      setIsUploadingAvatar(false);
+    },
+    onError: (error) => {
+      toast.error("Fehler beim Hochladen: " + error.message);
+      setIsUploadingAvatar(false);
+    },
+  });
+  
+  // Handle file selection
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Bitte wähle ein Bild aus");
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Das Bild darf maximal 5MB groß sein");
+      return;
+    }
+    
+    setIsUploadingAvatar(true);
+    
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      uploadAvatar.mutate({
+        imageData: base64,
+        mimeType: file.type,
+      });
+    };
+    reader.onerror = () => {
+      toast.error("Fehler beim Lesen der Datei");
+      setIsUploadingAvatar(false);
+    };
+    reader.readAsDataURL(file);
+  };
   
   // Update profile mutation
   const updateProfile = trpc.users.updateProfile.useMutation({
@@ -141,14 +194,34 @@ export default function Profile() {
       <Card className="overflow-hidden border-0 shadow-xl">
         <div className="bg-gradient-to-r from-primary via-primary/90 to-orange-500 p-8 text-white">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-            {/* Large Avatar */}
-            <div className="relative">
+            {/* Large Avatar with Upload */}
+            <div className="relative group">
               <Avatar className="h-28 w-28 sm:h-32 sm:w-32 ring-4 ring-white/30 shadow-2xl">
                 <AvatarImage src={user.avatarUrl || undefined} className="object-cover" />
                 <AvatarFallback className={`text-3xl sm:text-4xl font-bold text-white bg-gradient-to-br ${gradient}`}>
                   {initials}
                 </AvatarFallback>
               </Avatar>
+              {/* Upload overlay */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleFileSelect}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer disabled:cursor-not-allowed"
+              >
+                {isUploadingAvatar ? (
+                  <Loader2 className="h-8 w-8 text-white animate-spin" />
+                ) : (
+                  <Camera className="h-8 w-8 text-white" />
+                )}
+              </button>
+              {/* Edit profile button */}
               <Button 
                 size="icon" 
                 variant="secondary"
