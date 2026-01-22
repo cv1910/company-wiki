@@ -75,23 +75,20 @@ import { useKeyboardShortcuts, KeyboardShortcutsHelp } from "./KeyboardShortcuts
 import { FavoritesList } from "./FavoriteButton";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
-// Haupt-Navigation (immer sichtbar)
+// Haupt-Navigation
 const menuItems = [
   { icon: Home, label: "Home", path: "/" },
   { icon: Search, label: "AI Suche", path: "/search" },
-  { icon: Book, label: "Wissensdatenbank", path: "/wiki" },
+  { icon: Book, label: "How to Work", path: "/wiki" },
+  { icon: MessageCircle, label: "Taps", path: "/taps" },
   { icon: CalendarDays, label: "Kalender", path: "/calendar" },
-  { icon: Users, label: "Team", path: "/team" },
+  { icon: ClipboardList, label: "Einsatzplan POS", path: "/scheduling" },
+  { icon: Building2, label: "Team", path: "/orgchart" },
+  { icon: Calendar, label: "Urlaub", path: "/leave" },
 ];
 
-// Weitere Menüpunkte (unter "Mehr")
-const moreMenuItems = [
-  { icon: GraduationCap, label: "Onboarding", path: "/onboarding" },
-  { icon: MessageCircle, label: "Taps", path: "/taps" },
-  { icon: Building2, label: "Organigramm", path: "/orgchart" },
-  { icon: Calendar, label: "Urlaub", path: "/leave" },
-  { icon: AtSign, label: "Erwähnungen", path: "/mentions" },
-];
+// Keine "Mehr"-Menüpunkte mehr nötig
+const moreMenuItems: typeof menuItems = [];
 
 const adminMenuItems = [
   { icon: CalendarClock, label: "Terminplanung", path: "/scheduling" },

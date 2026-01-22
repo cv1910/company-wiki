@@ -82,10 +82,11 @@ const SIZE_ICONS: Record<WidgetSize, typeof Minimize2> = {
   large: Maximize2,
 };
 
-// Widget definitions with size support
+// Widget definitions with size support - vereinfacht für fokussiertes Dashboard
 const WIDGET_DEFINITIONS = {
-  welcomeHero: { id: "welcomeHero", label: "Willkommens-Banner", description: "Personalisierte Begrüßung", supportsResize: false },
-  announcements: { id: "announcements", label: "Ankündigungen", description: "Unternehmensweite Mitteilungen", supportsResize: true },
+  welcomeHero: { id: "welcomeHero", label: "Willkommens-Banner", description: "Personalisierte Begrüßung mit AI-Suche", supportsResize: false },
+  announcements: { id: "announcements", label: "Ankündigungen", description: "Angepinnte Unternehmens-Mitteilungen", supportsResize: true },
+  // Folgende Widgets sind ausgeblendet, können aber über Einstellungen aktiviert werden
   navigation: { id: "navigation", label: "Navigation", description: "Schnellzugriff auf Bereiche", supportsResize: false },
   stats: { id: "stats", label: "Statistiken", description: "Übersicht der Inhalte", supportsResize: false },
   recentArticles: { id: "recentArticles", label: "Kürzlich aktualisiert", description: "Neueste Artikel", supportsResize: true },
@@ -224,16 +225,16 @@ export default function Home() {
     },
   });
 
-  // Get widget visibility settings
+  // Get widget visibility settings - Default: nur Willkommen und Ankündigungen
   const widgetVisibility = useMemo(() => ({
     welcomeHero: dashboardSettings?.showWelcomeHero ?? true,
     announcements: dashboardSettings?.showAnnouncements ?? true,
-    navigation: dashboardSettings?.showNavigation ?? true,
-    stats: dashboardSettings?.showStats ?? true,
-    recentArticles: dashboardSettings?.showRecentArticles ?? true,
-    activityFeed: dashboardSettings?.showActivityFeed ?? true,
-    favorites: dashboardSettings?.showFavorites ?? true,
-    onboardingProgress: dashboardSettings?.showOnboardingProgress ?? true,
+    navigation: dashboardSettings?.showNavigation ?? false, // Default ausgeblendet
+    stats: dashboardSettings?.showStats ?? false, // Default ausgeblendet
+    recentArticles: dashboardSettings?.showRecentArticles ?? false, // Default ausgeblendet
+    activityFeed: dashboardSettings?.showActivityFeed ?? false, // Default ausgeblendet
+    favorites: dashboardSettings?.showFavorites ?? false, // Default ausgeblendet
+    onboardingProgress: dashboardSettings?.showOnboardingProgress ?? false, // Default ausgeblendet
   }), [dashboardSettings]);
 
   // Get widget order

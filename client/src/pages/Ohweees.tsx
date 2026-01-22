@@ -25,6 +25,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
   MessageCircle,
@@ -60,6 +61,11 @@ import {
   Clock,
   Mic,
   BarChart3,
+  AtSign,
+  Check,
+  CheckCheck,
+  Loader2,
+  BookOpen,
 } from "lucide-react";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { de } from "date-fns/locale";
@@ -724,6 +730,24 @@ export default function OhweeesPage() {
   const { data: dueTasks } = trpc.ohweees.getDueTasks.useQuery(undefined, {
     refetchInterval: 60000, // Check every minute
   });
+  
+  // Mentions query
+  const { data: mentions = [], isLoading: mentionsLoading } = trpc.mentions.list.useQuery(
+    { limit: 50 },
+    { enabled: !!user }
+  );
+  
+  const markMentionRead = trpc.mentions.markRead.useMutation({
+    onSuccess: () => {
+      utils.mentions.list.invalidate();
+      utils.mentions.unreadCount.invalidate();
+    },
+  });
+  
+  const unreadMentionsCount = mentions.filter((m) => !m.isRead).length;
+  
+  // Tab state for mobile
+  const [activeTab, setActiveTab] = useState<"chats" | "mentions">("chats");
   
   // Show notification for due tasks on initial load
   const [hasShownDueTasksNotification, setHasShownDueTasksNotification] = useState(false);
@@ -1404,7 +1428,7 @@ export default function OhweeesPage() {
                   <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg">
                     <MessageCircle className="h-5 w-5 text-white" />
                   </div>
-                  <h1 className="text-2xl font-bold">Ohweees</h1>
+                  <h1 className="text-2xl font-bold">Taps</h1>
                 </div>
                 <div className="flex items-center gap-1">
                   <Button
@@ -1428,10 +1452,43 @@ export default function OhweeesPage() {
                   </Button>
                 </div>
               </div>
+              
+              {/* Tabs for Chats and Mentions */}
+              <div className="flex mt-3 bg-muted/50 rounded-xl p-1">
+                <button
+                  onClick={() => setActiveTab("chats")}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === "chats"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Chats
+                </button>
+                <button
+                  onClick={() => setActiveTab("mentions")}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-all relative ${
+                    activeTab === "mentions"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <AtSign className="h-4 w-4" />
+                  Erwähnungen
+                  {unreadMentionsCount > 0 && (
+                    <span className="ml-1 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded-full">
+                      {unreadMentionsCount}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
 
-            {/* Horizontal Avatar Bar */}
-            <MobileAvatarBar
+            {activeTab === "chats" ? (
+              <>
+                {/* Horizontal Avatar Bar */}
+                <MobileAvatarBar
               rooms={rooms?.map(r => ({
                 id: r.id,
                 name: r.name,
@@ -1497,6 +1554,77 @@ export default function OhweeesPage() {
                 )}
               </div>
             </ScrollArea>
+              </>
+            ) : (
+              // Mentions Tab Content
+              <ScrollArea className="flex-1">
+                <div className="p-4 space-y-3">
+                  {mentionsLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : mentions.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <AtSign className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                      <p className="font-medium">Keine Erwähnungen</p>
+                      <p className="text-sm mt-1">Du wurdest noch nicht erwähnt</p>
+                    </div>
+                  ) : (
+                    mentions.map((mention) => (
+                      <div
+                        key={mention.id}
+                        onClick={() => {
+                          if (!mention.isRead) {
+                            markMentionRead.mutate({ id: mention.id });
+                          }
+                          // Navigate based on context type
+                          if (mention.contextType === "article") {
+                            setLocation(`/wiki/article/${mention.contextId}`);
+                          } else if (mention.contextType === "sop") {
+                            setLocation(`/sops/${mention.contextId}`);
+                          }
+                        }}
+                        className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                          mention.isRead
+                            ? "bg-card hover:bg-muted/50"
+                            : "bg-primary/5 border-primary/20 hover:bg-primary/10"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`p-2 rounded-xl ${
+                            !mention.isRead ? "bg-primary/10" : "bg-muted/50"
+                          }`}>
+                            {mention.contextType === "article" ? (
+                              <FileText className="h-5 w-5" />
+                            ) : mention.contextType === "sop" ? (
+                              <BookOpen className="h-5 w-5" />
+                            ) : (
+                              <AtSign className="h-5 w-5" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-muted">
+                                {mention.contextType === "article" ? "Artikel" : mention.contextType === "sop" ? "SOP" : "Inhalt"}
+                              </span>
+                              {!mention.isRead && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary">Neu</span>
+                              )}
+                            </div>
+                            <p className="font-medium mt-1 line-clamp-2">
+                              {mention.contextTitle || "Unbenannter Inhalt"}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {format(new Date(mention.createdAt), "d. MMM, HH:mm", { locale: de })}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            )}
           </>
         ) : (
           // Mobile Chat View

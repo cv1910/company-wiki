@@ -983,3 +983,9 @@
 
 ## AI-Suchfeld auf Home-Seite (Januar 2026)
 - [x] Prominentes AI-Suchfeld direkt auf der Home-Seite für schnellen Zugriff (mit Gradient-Design und Tastatur-Hinweis)
+
+## Navigation & Dashboard Umstrukturierung (Januar 2026)
+- [x] Navigation: AI Suche, How to Work, Taps (mit @-Erwähnungen), Kalender, Einsatzplan POS, Team (Organigramm), Urlaub
+- [x] Wissensdatenbank umbenennen zu "How to Work"
+- [x] Taps-Seite: @-Erwähnungen als Tab integriert (Chats/Erwähnungen)
+- [x] Dashboard: Nur Willkommen-Banner mit AI-Suche und angepinnte Ankündigungen (weitere Widgets über Einstellungen aktivierbar)

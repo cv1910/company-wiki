@@ -9,6 +9,8 @@ import {
   Bell,
   CalendarDays,
   ClipboardList,
+  Building2,
+  Calendar,
 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -34,9 +36,10 @@ const mainNavItems: NavItem[] = [
 ];
 
 const menuItems = [
-  { icon: Book, label: "Wissensdatenbank", path: "/wiki" },
-  { icon: MessageCircle, label: "Taps", path: "/taps" },
-  { icon: CalendarDays, label: "Kalender", path: "/calendar" },
+  { icon: Book, label: "How to Work", path: "/wiki" },
+  { icon: ClipboardList, label: "Einsatzplan POS", path: "/scheduling" },
+  { icon: Building2, label: "Team", path: "/orgchart" },
+  { icon: Calendar, label: "Urlaub", path: "/leave" },
   { icon: Bell, label: "Benachrichtigungen", path: "/notifications" },
 ];
 
