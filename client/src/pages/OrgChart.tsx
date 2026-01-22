@@ -66,6 +66,9 @@ import {
   Loader2,
   Fullscreen,
   Minimize2,
+  Map as MapIcon,
+  X,
+  Keyboard,
 } from "lucide-react";
 import html2canvas from "html2canvas";
 // useRef already imported above
@@ -109,7 +112,7 @@ interface TreeNode extends Position {
 
 // Build tree structure from flat positions
 function buildTree(positions: Position[]): TreeNode[] {
-  const positionMap = new Map<number, TreeNode>();
+  const positionMap: Map<number, TreeNode> = new Map();
   const roots: TreeNode[] = [];
 
   // Create nodes
@@ -153,6 +156,9 @@ function DraggablePositionCard({
   onToggleExpand,
   zoom,
   isDragging,
+  isFocused,
+  onDoubleTap,
+  registerRef,
 }: {
   node: TreeNode;
   isAdmin: boolean;
@@ -163,6 +169,9 @@ function DraggablePositionCard({
   onToggleExpand: (id: number) => void;
   zoom: number;
   isDragging?: boolean;
+  isFocused?: boolean;
+  onDoubleTap?: (e: React.MouseEvent | React.TouchEvent, positionId: number) => void;
+  registerRef?: (id: number, element: HTMLDivElement | null) => void;
 }) {
   const { attributes, listeners, setNodeRef: setDragRef, transform } = useDraggable({
     id: `position-${node.position.id}`,
@@ -183,10 +192,26 @@ function DraggablePositionCard({
   const hasChildren = node.children.length > 0;
   const isVacant = !node.user;
 
-  // Combine refs
+  // Combine refs and register for keyboard navigation
   const setRefs = (element: HTMLDivElement | null) => {
     setDragRef(element);
     setDropRef(element);
+    if (registerRef) {
+      registerRef(node.position.id, element);
+    }
+  };
+
+  // Handle double-tap on this position
+  const handleClick = (e: React.MouseEvent) => {
+    if (onDoubleTap) {
+      onDoubleTap(e, node.position.id);
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (onDoubleTap) {
+      onDoubleTap(e, node.position.id);
+    }
   };
 
   const initials = node.user?.name
@@ -201,7 +226,11 @@ function DraggablePositionCard({
       {/* Position Card */}
       <div
         ref={setRefs}
-        className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 ${colors.border} transition-all hover:shadow-xl hover:-translate-y-1 ${isOver ? 'ring-4 ring-primary/50 scale-105' : ''} ${isDragging ? 'opacity-50' : ''}`}
+        role="button"
+        tabIndex={0}
+        onClick={handleClick}
+        onTouchEnd={handleTouchEnd}
+        className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 ${colors.border} transition-all hover:shadow-xl hover:-translate-y-1 ${isOver ? 'ring-4 ring-primary/50 scale-105' : ''} ${isDragging ? 'opacity-50' : ''} ${isFocused ? 'ring-4 ring-primary ring-offset-2 scale-105' : ''}`}
         style={{
           width: `${220 * (zoom / 100)}px`,
           minHeight: `${120 * (zoom / 100)}px`,
@@ -335,6 +364,9 @@ function DraggablePositionCard({
                     onAddChild={onAddChild}
                     onToggleExpand={onToggleExpand}
                     zoom={zoom}
+                    isFocused={isFocused}
+                    onDoubleTap={onDoubleTap}
+                    registerRef={registerRef}
                   />
                 </div>
               </div>
@@ -365,8 +397,19 @@ export default function OrgChart() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
   
+  // Minimap state
+  const [showMinimap, setShowMinimap] = useState(true);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  
   // Double-tap state
   const lastTapTime = useRef<number>(0);
+  
+  // Position focus state for keyboard navigation
+  const [focusedPositionId, setFocusedPositionId] = useState<number | null>(null);
+  const positionRefs = useRef(new Map<number, HTMLDivElement>());
+  
+  // Scroll offset for centering
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -541,7 +584,54 @@ export default function OrgChart() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  // Double-tap to zoom handler
+  // Helper function to center a position in the viewport
+  const centerPosition = useCallback((positionId: number) => {
+    const positionElement = positionRefs.current.get(positionId);
+    const container = scrollContainerRef.current || fullscreenContainerRef.current;
+    
+    if (positionElement && container) {
+      const posRect = positionElement.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      
+      // Calculate the scroll position to center the element
+      const scrollLeft = container.scrollLeft + (posRect.left - containerRect.left) - (containerRect.width / 2) + (posRect.width / 2);
+      const scrollTop = container.scrollTop + (posRect.top - containerRect.top) - (containerRect.height / 2) + (posRect.height / 2);
+      
+      container.scrollTo({
+        left: scrollLeft,
+        top: scrollTop,
+        behavior: 'smooth'
+      });
+    }
+  }, []);
+
+  // Double-tap to zoom handler - now also focuses on clicked position
+  const handleDoubleTapOnPosition = useCallback((e: React.MouseEvent | React.TouchEvent, positionId: number) => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+    
+    if (now - lastTapTime.current < DOUBLE_TAP_DELAY) {
+      // Double tap detected
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Set focus to this position
+      setFocusedPositionId(positionId);
+      
+      // Toggle zoom and center on position
+      if (zoom < 150) {
+        setZoom(150);
+        // Wait for zoom animation then center
+        setTimeout(() => centerPosition(positionId), 100);
+      } else {
+        setZoom(100);
+        setTimeout(() => centerPosition(positionId), 100);
+      }
+    }
+    lastTapTime.current = now;
+  }, [zoom, centerPosition]);
+
+  // Fallback double-tap handler for background
   const handleDoubleTap = useCallback((e: React.TouchEvent | React.MouseEvent) => {
     const now = Date.now();
     const DOUBLE_TAP_DELAY = 300;
@@ -610,6 +700,125 @@ export default function OrgChart() {
 
     return filterNodes(tree);
   }, [tree, searchQuery]);
+
+  // Flatten tree for keyboard navigation
+  const flattenedPositions = useMemo(() => {
+    const result: { id: number; parentId: number | null; level: number; siblings: number[] }[] = [];
+    
+    const flatten = (nodes: TreeNode[], parentId: number | null = null) => {
+      const siblingIds = nodes.map(n => n.position.id);
+      nodes.forEach((node) => {
+        result.push({
+          id: node.position.id,
+          parentId,
+          level: node.position.level,
+          siblings: siblingIds
+        });
+        if (node.isExpanded && node.children.length > 0) {
+          flatten(node.children, node.position.id);
+        }
+      });
+    };
+    
+    flatten(filteredTree);
+    return result;
+  }, [filteredTree]);
+
+  // Keyboard navigation handler
+  useEffect(() => {
+    if (!isFullscreen) return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!focusedPositionId && flattenedPositions.length > 0) {
+        // If no position is focused, focus the first one
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+          e.preventDefault();
+          const firstId = flattenedPositions[0]?.id;
+          if (firstId) {
+            setFocusedPositionId(firstId);
+            centerPosition(firstId);
+          }
+        }
+        return;
+      }
+      
+      const currentIndex = flattenedPositions.findIndex(p => p.id === focusedPositionId);
+      if (currentIndex === -1) return;
+      
+      const current = flattenedPositions[currentIndex];
+      let nextId: number | null = null;
+      
+      switch (e.key) {
+        case 'ArrowDown': {
+          // Move to first child or next sibling
+          e.preventDefault();
+          const children = flattenedPositions.filter(p => p.parentId === focusedPositionId);
+          if (children.length > 0) {
+            nextId = children[0].id;
+          } else {
+            // Find next sibling or parent's next sibling
+            const siblingIndex = current.siblings.indexOf(focusedPositionId!);
+            if (siblingIndex < current.siblings.length - 1) {
+              nextId = current.siblings[siblingIndex + 1];
+            }
+          }
+          break;
+        }
+        case 'ArrowUp': {
+          // Move to parent
+          e.preventDefault();
+          if (current.parentId) {
+            nextId = current.parentId;
+          }
+          break;
+        }
+        case 'ArrowLeft': {
+          // Move to previous sibling
+          e.preventDefault();
+          const siblingIndex = current.siblings.indexOf(focusedPositionId!);
+          if (siblingIndex > 0) {
+            nextId = current.siblings[siblingIndex - 1];
+          }
+          break;
+        }
+        case 'ArrowRight': {
+          // Move to next sibling
+          e.preventDefault();
+          const siblingIndex = current.siblings.indexOf(focusedPositionId!);
+          if (siblingIndex < current.siblings.length - 1) {
+            nextId = current.siblings[siblingIndex + 1];
+          }
+          break;
+        }
+        case 'Enter': {
+          // Toggle expand/collapse
+          e.preventDefault();
+          if (focusedPositionId) {
+            handleToggleExpand(focusedPositionId);
+          }
+          break;
+        }
+        case 'Escape': {
+          // Clear focus or exit fullscreen
+          e.preventDefault();
+          if (focusedPositionId) {
+            setFocusedPositionId(null);
+          } else {
+            toggleFullscreen();
+          }
+          break;
+        }
+      }
+      
+      if (nextId) {
+        setFocusedPositionId(nextId);
+        centerPosition(nextId);
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isFullscreen, focusedPositionId, flattenedPositions, centerPosition, toggleFullscreen]);
 
   const handleToggleExpand = (id: number) => {
     setExpandedNodes((prev) => {
@@ -882,21 +1091,103 @@ export default function OrgChart() {
         className={isFullscreen ? "fixed inset-0 z-50 bg-background overflow-auto" : ""}
       >
         {isFullscreen && (
-          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-4 flex items-center justify-between">
-            <h2 className="font-semibold">Organigramm</h2>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={() => setZoom(Math.max(25, zoom - 10))} disabled={zoom <= 25}>
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <span className="text-sm font-medium w-12 text-center">{zoom}%</span>
-              <Button variant="outline" size="icon" onClick={() => setZoom(Math.min(200, zoom + 10))} disabled={zoom >= 200}>
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="icon" onClick={toggleFullscreen}>
-                <Minimize2 className="h-4 w-4" />
-              </Button>
+          <>
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-4 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <h2 className="font-semibold">Organigramm</h2>
+                {focusedPositionId && (
+                  <Badge variant="secondary" className="text-xs">
+                    Position fokussiert - Pfeiltasten zum Navigieren
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant={showMinimap ? "default" : "outline"} 
+                  size="icon" 
+                  onClick={() => setShowMinimap(!showMinimap)}
+                  title="Minimap ein-/ausblenden"
+                >
+                  <MapIcon className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => setShowKeyboardHelp(!showKeyboardHelp)}
+                  title="Tastaturkürzel anzeigen"
+                >
+                  <Keyboard className="h-4 w-4" />
+                </Button>
+                <div className="w-px h-6 bg-border" />
+                <Button variant="outline" size="icon" onClick={() => setZoom(Math.max(25, zoom - 10))} disabled={zoom <= 25}>
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+                <span className="text-sm font-medium w-12 text-center">{zoom}%</span>
+                <Button variant="outline" size="icon" onClick={() => setZoom(Math.min(200, zoom + 10))} disabled={zoom >= 200}>
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon" onClick={toggleFullscreen}>
+                  <Minimize2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          </div>
+            
+            {/* Keyboard Help Panel */}
+            {showKeyboardHelp && (
+              <div className="absolute top-20 right-4 z-20 bg-background/95 backdrop-blur border rounded-lg shadow-lg p-4 w-64">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-sm">Tastaturkürzel</h3>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowKeyboardHelp(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between"><span className="text-muted-foreground">↑</span><span>Zur übergeordneten Position</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">↓</span><span>Zum ersten Kind / nächsten Geschwister</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">←</span><span>Vorheriger Geschwister</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">→</span><span>Nächster Geschwister</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Enter</span><span>Auf-/Zuklappen</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Esc</span><span>Fokus aufheben / Beenden</span></div>
+                </div>
+              </div>
+            )}
+            
+            {/* Minimap */}
+            {showMinimap && filteredTree.length > 0 && (
+              <div className="fixed bottom-4 right-4 z-20 bg-background/95 backdrop-blur border rounded-lg shadow-lg p-3 w-48">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-muted-foreground">Übersicht</span>
+                  <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setShowMinimap(false)}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {flattenedPositions.map((pos) => {
+                    const position = positions?.find(p => p.position.id === pos.id);
+                    const colors = POSITION_COLORS[position?.position.color || "blue"] || POSITION_COLORS.blue;
+                    return (
+                      <button
+                        key={pos.id}
+                        onClick={() => {
+                          setFocusedPositionId(pos.id);
+                          centerPosition(pos.id);
+                        }}
+                        className={`w-full text-left text-xs p-1.5 rounded transition-colors hover:bg-muted ${
+                          focusedPositionId === pos.id ? 'bg-primary/10 ring-1 ring-primary' : ''
+                        }`}
+                        style={{ paddingLeft: `${(pos.level || 0) * 8 + 6}px` }}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${colors.bg}`} />
+                          <span className="truncate">{position?.position.title || 'Position'}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </>
         )}
         <DndContext
           sensors={sensors}
@@ -959,6 +1250,15 @@ export default function OrgChart() {
                     onAddChild={handleAddChild}
                     onToggleExpand={handleToggleExpand}
                     zoom={zoom}
+                    isFocused={focusedPositionId === node.position.id}
+                    onDoubleTap={handleDoubleTapOnPosition}
+                    registerRef={(id, el) => {
+                      if (el) {
+                        positionRefs.current.set(id, el);
+                      } else {
+                        positionRefs.current.delete(id);
+                      }
+                    }}
                   />
                 ))}
               </div>

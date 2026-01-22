@@ -950,3 +950,8 @@
 ## Organigramm Vollbild & Doppeltipp (Januar 2026)
 - [x] Vollbildmodus-Button für bessere Übersicht (CSS-Fullscreen mit Zoom-Controls im Header)
 - [x] Doppeltipp zum Zoomen auf eine Position (wechselt zwischen 100% und 150%)
+
+## Erweiterte Organigramm-Navigation (Januar 2026)
+- [x] Positions-Fokus: Doppeltipp zentriert die angeklickte Position im Viewport (mit Zoom-Wechsel und Smooth-Scroll)
+- [x] Minimap: Übersichtskarte im Vollbildmodus für bessere Navigation in großen Organigrammen (zeigt alle Positionen hierarchisch mit Farbcodierung)
+- [x] Tastaturnavigation: Pfeiltasten zum Navigieren zwischen Positionen im Vollbildmodus (↑↓←→ + Enter/Esc, mit Hilfe-Panel)
