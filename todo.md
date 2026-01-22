@@ -989,3 +989,6 @@
 - [x] Wissensdatenbank umbenennen zu "How to Work"
 - [x] Taps-Seite: @-Erwähnungen als Tab integriert (Chats/Erwähnungen)
 - [x] Dashboard: Nur Willkommen-Banner mit AI-Suche und angepinnte Ankündigungen (weitere Widgets über Einstellungen aktivierbar)
+
+## Schnellaktions-Buttons (Januar 2026)
+- [x] Schnellaktions-Buttons unter AI-Suchfeld: "Urlaub beantragen" (grün) und "Neues Tap erstellen" (blau)

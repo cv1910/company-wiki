@@ -30,7 +30,9 @@ import {
   Star,
   Maximize2,
   Minimize2,
-  Square
+  Square,
+  Palmtree,
+  MessageSquarePlus
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
@@ -439,6 +441,28 @@ export default function Home() {
               Tipp: Drücke <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-[10px]">Cmd/Ctrl + K</kbd> für die Schnellsuche
             </p>
           </form>
+          
+          {/* Schnellaktions-Buttons */}
+          <div className="flex flex-wrap gap-3 mt-6">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLocation("/leave/new")}
+              className="rounded-xl border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 hover:bg-green-100 dark:hover:bg-green-900/50 text-green-700 dark:text-green-400 gap-2"
+            >
+              <Palmtree className="h-4 w-4" />
+              Urlaub beantragen
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLocation("/taps/new")}
+              className="rounded-xl border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 gap-2"
+            >
+              <MessageSquarePlus className="h-4 w-4" />
+              Neues Tap erstellen
+            </Button>
+          </div>
         </div>
       </div>
     </div>
