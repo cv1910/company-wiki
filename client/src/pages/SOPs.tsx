@@ -71,13 +71,13 @@ export default function SOPs() {
       <div>
         <h2 className="text-xl font-bold tracking-tight mb-5">Kategorien</h2>
         {categoriesLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-28 rounded-2xl" />
+              <Skeleton key={i} className="h-20 rounded-xl" />
             ))}
           </div>
         ) : sopCategories && sopCategories.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {sopCategories.filter((c) => !c.parentId).map((category, index) => {
               const categorySOPs = sops?.filter((s) => s.categoryId === category.id);
               const colors = [
@@ -90,17 +90,17 @@ export default function SOPs() {
               return (
                 <Card
                   key={category.id}
-                  className="card-shadow hover:shadow-xl transition-all duration-300 cursor-pointer group hover:-translate-y-2 rounded-xl overflow-hidden"
+                  className="card-shadow hover:shadow-xl transition-all duration-300 cursor-pointer group hover:-translate-y-1 rounded-xl overflow-hidden w-full"
                   onClick={() => setLocation(`/sops/category/${category.slug}`)}
                 >
-                  <CardContent className="p-5">
-                    <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-xl bg-gradient-to-br ${colorClass} group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg`}>
-                        <FolderOpen className="h-6 w-6 text-white" />
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2.5 rounded-xl bg-gradient-to-br ${colorClass} group-hover:scale-105 transition-all duration-300 shadow-lg flex-shrink-0`}>
+                        <FolderOpen className="h-5 w-5 text-white" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-semibold truncate text-base">{category.name}</p>
-                        <p className="text-sm text-muted-foreground mt-0.5">
+                        <p className="font-semibold text-sm truncate">{category.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
                           {categorySOPs?.length || 0} SOPs
                         </p>
                       </div>

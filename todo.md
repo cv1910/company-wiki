@@ -929,3 +929,7 @@
 - [x] Kategorie erstellen: Option zum Erstellen neuer Kategorien direkt im Dropdown (Plus-Button)
 - [x] Sortierung: Sortierungsfeld war bereits sichtbar
 - [x] Scribe Embed-Code Feld entfernt (URL reicht)
+
+## SOPs Mobile Layout Bug (Januar 2026)
+- [x] Kategorie-Karten rutschen hoch und rechts auf Mobile (grid-cols-1 auf Mobile)
+- [x] Layout nicht korrekt ausgerichtet (flex-shrink-0 für Icons, w-full für Karten)
