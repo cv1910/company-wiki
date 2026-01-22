@@ -1,11 +1,10 @@
 import webpush from "web-push";
 import * as db from "./db";
 
-// VAPID keys for web push
-// Generate with: npx web-push generate-vapid-keys
-const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "";
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "";
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:admin@example.com";
+// VAPID keys for web push - generated with: npx web-push generate-vapid-keys
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "BKwiIsKb8Asv9BIqyVVjR-3h9B86I3HNBc1bBAROfzbeW3qp6VsdikQekxrsPdGc7zIfm2DF_0rRLqL42BQlZvs";
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "aI9P-RDFdcd8pQXmkWDkiSCTYB7-p927T3lz_l-dg48";
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:admin@ohwee.app";
 
 // Initialize web-push if keys are available
 let pushEnabled = false;

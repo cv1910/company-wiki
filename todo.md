@@ -912,3 +912,8 @@
 - [x] Push-Nachrichten bei neuen Chat-Nachrichten senden
 - [x] Benutzer-Opt-in UI für Benachrichtigungen
 - [x] Benachrichtigungs-Einstellungen pro Benutzer (bereits vorhanden, erweitert)
+
+## VAPID-Keys Konfiguration (Januar 2026)
+- [x] VAPID-Keys generieren
+- [x] Keys als Secrets konfigurieren (hardcoded als Fallback)
+- [x] Frontend VAPID Public Key einbinden

@@ -2,9 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
-// VAPID public key - this should match the server's VAPID key
-// For now, we'll generate one on the server and expose it via an endpoint
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || "";
+// VAPID public key - generated with: npx web-push generate-vapid-keys
+const VAPID_PUBLIC_KEY = "BKwiIsKb8Asv9BIqyVVjR-3h9B86I3HNBc1bBAROfzbeW3qp6VsdikQekxrsPdGc7zIfm2DF_0rRLqL42BQlZvs";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
