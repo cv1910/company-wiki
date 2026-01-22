@@ -946,3 +946,7 @@
 
 ## Organigramm Pinch-to-Zoom (Januar 2026)
 - [x] Pinch-to-Zoom Touch-Gesten für Mobilgeräte aktivieren
+
+## Organigramm Vollbild & Doppeltipp (Januar 2026)
+- [x] Vollbildmodus-Button für bessere Übersicht (CSS-Fullscreen mit Zoom-Controls im Header)
+- [x] Doppeltipp zum Zoomen auf eine Position (wechselt zwischen 100% und 150%)

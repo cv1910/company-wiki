@@ -64,6 +64,8 @@ import {
   Image,
   FileText,
   Loader2,
+  Fullscreen,
+  Minimize2,
 } from "lucide-react";
 import html2canvas from "html2canvas";
 // useRef already imported above
@@ -358,6 +360,13 @@ export default function OrgChart() {
   // Pinch-to-Zoom state
   const initialPinchDistance = useRef<number | null>(null);
   const initialZoom = useRef<number>(100);
+  
+  // Fullscreen state
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const fullscreenContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Double-tap state
+  const lastTapTime = useRef<number>(0);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -496,6 +505,58 @@ export default function OrgChart() {
       container.removeEventListener('touchcancel', handleTouchEnd);
     };
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
+
+  // Fullscreen handlers
+  const toggleFullscreen = useCallback(async () => {
+    // Try native fullscreen first, fallback to CSS fullscreen
+    if (!isFullscreen) {
+      try {
+        if (fullscreenContainerRef.current?.requestFullscreen) {
+          await fullscreenContainerRef.current.requestFullscreen();
+        }
+        setIsFullscreen(true);
+      } catch (err) {
+        // Fallback to CSS fullscreen if native fails
+        console.log('Native fullscreen not available, using CSS fallback');
+        setIsFullscreen(true);
+      }
+    } else {
+      try {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        }
+        setIsFullscreen(false);
+      } catch (err) {
+        setIsFullscreen(false);
+      }
+    }
+  }, [isFullscreen]);
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  // Double-tap to zoom handler
+  const handleDoubleTap = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+    
+    if (now - lastTapTime.current < DOUBLE_TAP_DELAY) {
+      // Double tap detected - toggle between 100% and 150%
+      e.preventDefault();
+      if (zoom < 150) {
+        setZoom(150);
+      } else {
+        setZoom(100);
+      }
+    }
+    lastTapTime.current = now;
+  }, [zoom]);
 
   // Initialize expanded nodes when positions load
   const [initialized, setInitialized] = useState(false);
@@ -783,6 +844,14 @@ export default function OrgChart() {
               >
                 <Maximize2 className="h-4 w-4" />
               </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={toggleFullscreen}
+                title={isFullscreen ? "Vollbild beenden" : "Vollbild"}
+              >
+                {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Fullscreen className="h-4 w-4" />}
+              </Button>
               <div className="w-px h-6 bg-border" />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -808,18 +877,41 @@ export default function OrgChart() {
       </Card>
 
       {/* Org Chart */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
+      <div 
+        ref={fullscreenContainerRef}
+        className={isFullscreen ? "fixed inset-0 z-50 bg-background overflow-auto" : ""}
       >
-        <Card className="card-shadow rounded-2xl overflow-hidden">
-          <CardContent 
-            ref={pinchContainerRef}
-            className="p-8 overflow-x-auto touch-none"
-            style={{ touchAction: 'pan-x pan-y' }}
-          >
+        {isFullscreen && (
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-4 flex items-center justify-between">
+            <h2 className="font-semibold">Organigramm</h2>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" onClick={() => setZoom(Math.max(25, zoom - 10))} disabled={zoom <= 25}>
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <span className="text-sm font-medium w-12 text-center">{zoom}%</span>
+              <Button variant="outline" size="icon" onClick={() => setZoom(Math.min(200, zoom + 10))} disabled={zoom >= 200}>
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={toggleFullscreen}>
+                <Minimize2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <Card className={`card-shadow rounded-2xl overflow-hidden ${isFullscreen ? 'border-0 rounded-none' : ''}`}>
+            <CardContent 
+              ref={pinchContainerRef}
+              className={`p-8 overflow-x-auto touch-none ${isFullscreen ? 'min-h-[calc(100vh-80px)]' : ''}`}
+              style={{ touchAction: 'pan-x pan-y' }}
+              onClick={handleDoubleTap}
+              onTouchEnd={handleDoubleTap}
+            >
             {filteredTree.length === 0 ? (
             <div className="text-center py-16">
               <Building2 className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
@@ -875,6 +967,7 @@ export default function OrgChart() {
           </CardContent>
         </Card>
       </DndContext>
+      </div>
 
       {/* Create Position Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
