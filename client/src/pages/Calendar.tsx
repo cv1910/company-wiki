@@ -66,6 +66,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -1513,9 +1514,11 @@ export default function Calendar() {
       {/* Event Dialog - Hey Calendar Style */}
       <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
         <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden">
-          <DialogTitle className="sr-only">
-            {editingEvent ? "Termin bearbeiten" : "Neuer Termin"}
-          </DialogTitle>
+          <VisuallyHidden>
+            <DialogTitle>
+              {editingEvent ? "Termin bearbeiten" : "Neuer Termin"}
+            </DialogTitle>
+          </VisuallyHidden>
           {/* Header with category selector */}
           <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
             <Select value={eventType} onValueChange={setEventType}>

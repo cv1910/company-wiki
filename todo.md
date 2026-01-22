@@ -1002,3 +1002,6 @@
 - [x] Kalender-Termin erstellen als Schnellaktion hinzufügen (orange Button)
 - [x] Personalisierte Begrüßung (Guten Morgen/Tag/Abend basierend auf Uhrzeit)
 - [x] Mobile-Layout komplett geprüft und optimiert
+
+## Bugfix (Januar 2026)
+- [x] Kalender-Dialog: DialogTitle für Accessibility hinzufügen (VisuallyHidden)
