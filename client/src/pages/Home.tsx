@@ -910,8 +910,70 @@ export default function Home() {
   }
 
   return (
-    <PullToRefresh onRefresh={handleRefresh} className="min-h-screen md:hidden">
-    <div className="space-y-8 animate-fade-in">
+    <>
+    {/* Mobile: PullToRefresh */}
+    <div className="md:hidden">
+      <PullToRefresh onRefresh={handleRefresh} className="min-h-screen">
+        <div className="space-y-8 animate-fade-in">
+          {/* Settings Button */}
+          <div className="flex justify-end">
+            <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Settings2 className="h-4 w-4" />
+                  Dashboard anpassen
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Dashboard anpassen</DialogTitle>
+                  <DialogDescription>
+                    Wähle aus, welche Widgets auf deinem Dashboard angezeigt werden sollen.
+                  </DialogDescription>
+                </DialogHeader>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext items={widgetOrder} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-1 py-4">
+                      {widgetOrder.map((id) => {
+                        const widget = WIDGET_DEFINITIONS[id as WidgetId];
+                        if (!widget) return null;
+                        return (
+                          <SortableWidgetItem
+                            key={id}
+                            id={id}
+                            widget={widget}
+                            isVisible={widgetVisibility[id as WidgetId]}
+                            currentSize={getWidgetSize(id)}
+                            onToggle={(checked) => handleToggleWidget(id, checked)}
+                            onSizeChange={(size) => updateSize.mutate({ widgetId: id, size })}
+                          />
+                        );
+                      })}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+                <div className="flex justify-between pt-4 border-t">
+                  <Button variant="ghost" size="sm" onClick={handleResetSettings}>
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Zurücksetzen
+                  </Button>
+                  <Button size="sm" onClick={() => setSettingsOpen(false)}>
+                    Fertig
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+          {renderWidgets()}
+        </div>
+      </PullToRefresh>
+    </div>
+    {/* Desktop: Normal content */}
+    <div className="hidden md:block space-y-8 animate-fade-in">
       {/* Settings Button */}
       <div className="flex justify-end">
         <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
@@ -969,6 +1031,6 @@ export default function Home() {
       {/* Render all visible widgets */}
       {renderWidgets()}
     </div>
-    </PullToRefresh>
+    </>
   );
 }

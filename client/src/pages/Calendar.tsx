@@ -1270,8 +1270,10 @@ export default function Calendar() {
   const isYearView = viewMode === "year";
 
   return (
+    <>
+    {/* Mobile: PullToRefresh */}
     <PullToRefresh onRefresh={handleRefresh} className="min-h-screen md:hidden">
-    <div className={cn(
+      <div className={cn(
       "flex flex-col",
       isYearView ? "h-[calc(100vh-60px)]" : "h-[calc(100vh-120px)]"
     )}>
@@ -1865,7 +1867,85 @@ export default function Calendar() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
     </PullToRefresh>
+    {/* Desktop: Normal content - same as mobile but without PullToRefresh wrapper */}
+    <div className={cn(
+      "hidden md:flex flex-col",
+      isYearView ? "h-[calc(100vh-60px)]" : "h-[calc(100vh-120px)]"
+    )}>
+      {/* Header - hidden in year view for more space */}
+      <div className={cn(
+        "flex-shrink-0 mb-4",
+        isYearView && "hidden"
+      )}>
+        {/* Desktop Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigate("prev")}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigate("next")}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+            <h2 className="text-xl font-semibold">
+              {format(currentDate, "MMMM yyyy", { locale: de })}
+            </h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCurrentDate(new Date())}
+            >
+              Heute
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Select value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="day">Tag</SelectItem>
+                <SelectItem value="week">Woche</SelectItem>
+                <SelectItem value="month">Monat</SelectItem>
+                <SelectItem value="year">Jahr</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={() => setShowEventDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Neuer Termin
+            </Button>
+          </div>
+        </div>
+      </div>
+      {/* Calendar Content */}
+      <div className="flex-1 overflow-auto">
+        {viewMode === "day" && renderDayView()}
+        {viewMode === "week" && renderWeekView()}
+        {viewMode === "month" && renderMonthView()}
+        {viewMode === "year" && (
+          <YearCalendarView
+            currentDate={currentDate}
+            events={allEvents || []}
+            onDayClick={(day) => {
+              setCurrentDate(day);
+              setViewMode("day");
+            }}
+            onEventClick={openEditEventDialog}
+          />
+        )}
+      </div>
+    </div>
+    </>
   );
 }

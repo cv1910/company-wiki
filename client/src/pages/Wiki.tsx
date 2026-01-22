@@ -38,8 +38,10 @@ export default function Wiki() {
   );
 
   return (
+    <>
+    {/* Mobile: PullToRefresh */}
     <PullToRefresh onRefresh={handleRefresh} className="min-h-screen md:hidden">
-    <div className="space-y-8">
+      <div className="space-y-8">
       {/* Premium Header */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/10 p-6 md:p-8">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
@@ -226,7 +228,122 @@ export default function Wiki() {
           </Card>
         )}
       </div>
-    </div>
+      </div>
     </PullToRefresh>
+    {/* Desktop: Normal content */}
+    <div className="hidden md:block space-y-8">
+      {/* Premium Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/10 p-6 md:p-8">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
+                <FileText className="h-5 w-5 text-white" />
+              </div>
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Wiki</h1>
+            </div>
+            <p className="text-muted-foreground text-base">
+              Durchsuchen Sie die Wissensdatenbank
+            </p>
+          </div>
+          {isEditor && (
+            <Button 
+              onClick={() => setLocation("/wiki/new")} 
+              className="gap-2 shadow-sm"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Neuer Artikel</span>
+              <span className="sm:hidden">Neu</span>
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Artikel suchen..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 pr-10"
+        />
+        {searchQuery && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+            onClick={() => setSearchQuery("")}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
+      {/* Categories and Articles */}
+      <div className="space-y-6">
+        {articlesLoading ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="animate-pulse">
+                <CardHeader>
+                  <div className="h-4 bg-muted rounded w-3/4" />
+                </CardHeader>
+                <CardContent>
+                  <div className="h-3 bg-muted rounded w-full mb-2" />
+                  <div className="h-3 bg-muted rounded w-2/3" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (filteredArticles?.length ?? 0) === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground text-center">
+                {searchQuery ? "Keine Artikel gefunden" : "Noch keine Artikel vorhanden"}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Alle Artikel</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {filteredArticles?.map((article) => (
+                  <div
+                    key={article.id}
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                    onClick={() => setLocation(`/wiki/${article.slug}`)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">{article.title}</p>
+                        {article.excerpt && (
+                          <p className="text-sm text-muted-foreground line-clamp-1">
+                            {article.excerpt}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(article.updatedAt), {
+                        addSuffix: true,
+                        locale: de,
+                      })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+    </>
   );
 }

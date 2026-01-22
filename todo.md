@@ -920,3 +920,7 @@
 
 ## Umbenennung (Januar 2026)
 - [x] Ohweees → Taps umbenennen (Navigation, Texte, UI)
+
+## Bug-Fixes (Januar 2026)
+- [x] Kalender, Home, Wiki laden nicht (PullToRefresh md:hidden fix - Desktop-Version hinzugefügt)
+- [x] Chat-Symbol (MessageCircle) für Taps in Navigation (bereits korrekt)
