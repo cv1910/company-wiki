@@ -933,3 +933,7 @@
 ## SOPs Mobile Layout Bug (Januar 2026)
 - [x] Kategorie-Karten rutschen hoch und rechts auf Mobile (grid-cols-1 auf Mobile)
 - [x] Layout nicht korrekt ausgerichtet (flex-shrink-0 für Icons, w-full für Karten)
+
+## SOP PDF-Upload & Scribe (Januar 2026)
+- [x] PDF-Upload für SOPs ermöglichen (Datenbankfeld, Upload-Funktion, Anzeige)
+- [x] Scribe-Vorschau ohne Login-Anforderung (Embed-URL wird automatisch aus Share-URL generiert)

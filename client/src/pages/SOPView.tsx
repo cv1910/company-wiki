@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, ClipboardList, Edit, ExternalLink, Share2 } from "lucide-react";
+import { ArrowLeft, ClipboardList, Edit, ExternalLink, Share2, FileText, Download } from "lucide-react";
 import { Streamdown } from "streamdown";
 import { useLocation, useParams } from "wouter";
 import { formatDistanceToNow } from "date-fns";
@@ -121,6 +121,11 @@ export default function SOPView() {
                   Scribe
                 </span>
               )}
+              {sop.pdfUrl && (
+                <span className="text-xs bg-orange-500/10 text-orange-600 px-2 py-1 rounded-full">
+                  PDF
+                </span>
+              )}
             </div>
             <h1 className="text-2xl font-semibold tracking-tight">{sop.title}</h1>
             {sop.description && (
@@ -158,6 +163,46 @@ export default function SOPView() {
         </div>
       </div>
 
+      {/* PDF Content */}
+      {sop.pdfUrl && (
+        <Card className="card-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <FileText className="h-8 w-8 text-primary" />
+                <div>
+                  <h3 className="font-medium">{sop.pdfFileName || "PDF-Dokument"}</h3>
+                  <p className="text-sm text-muted-foreground">PDF-Anleitung</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" asChild>
+                  <a href={sop.pdfUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Öffnen
+                  </a>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <a href={sop.pdfUrl} download={sop.pdfFileName || "sop.pdf"}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </a>
+                </Button>
+              </div>
+            </div>
+            <div className="w-full bg-muted rounded-lg overflow-hidden">
+              <iframe
+                src={sop.pdfUrl}
+                width="100%"
+                height="600"
+                className="w-full min-h-[400px] lg:min-h-[600px]"
+                title={sop.pdfFileName || "PDF-Dokument"}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Scribe Content */}
       {scribeEmbedUrl ? (
         <Card className="card-shadow overflow-hidden">
@@ -191,15 +236,15 @@ export default function SOPView() {
           <CardContent className="p-8 text-center">
             <ClipboardList className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">
-              Kein Scribe-Inhalt für diese SOP hinterlegt.
+              {sop.pdfUrl ? "Kein zusätzlicher Scribe-Inhalt für diese SOP hinterlegt." : "Kein Inhalt für diese SOP hinterlegt."}
             </p>
-            {isEditor && (
+            {isEditor && !sop.pdfUrl && (
               <Button
                 variant="outline"
                 className="mt-4"
                 onClick={() => setLocation(`/sops/edit/${sop.slug}`)}
               >
-                Scribe-Link hinzufügen
+                Inhalt hinzufügen
               </Button>
             )}
           </CardContent>

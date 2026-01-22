@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Save, Plus } from "lucide-react";
+import { ArrowLeft, Save, Plus, Upload, FileText, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +43,9 @@ export default function SOPEditor() {
   const [showNewCategoryDialog, setShowNewCategoryDialog] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryDescription, setNewCategoryDescription] = useState("");
+  const [pdfUrl, setPdfUrl] = useState("");
+  const [pdfFileName, setPdfFileName] = useState("");
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false);
 
   const { data: sop, isLoading: sopLoading } = trpc.sops.getBySlug.useQuery(
     { slug: slug || "" },
@@ -92,6 +95,8 @@ export default function SOPEditor() {
       setDescription(sop.description || "");
       setScribeUrl(sop.scribeUrl || "");
       setScribeEmbedCode(sop.scribeEmbedCode || "");
+      setPdfUrl(sop.pdfUrl || "");
+      setPdfFileName(sop.pdfFileName || "");
       setCategoryId(sop.categoryId?.toString() || "");
       setStatus(sop.status === "archived" ? "draft" : sop.status);
       setSortOrder(sop.sortOrder);
@@ -135,6 +140,8 @@ export default function SOPEditor() {
         description,
         scribeUrl: scribeUrl || undefined,
         scribeEmbedCode: scribeEmbedCode || undefined,
+        pdfUrl: pdfUrl || null,
+        pdfFileName: pdfFileName || null,
         categoryId: categoryId ? parseInt(categoryId) : null,
         status,
         sortOrder,
@@ -145,6 +152,8 @@ export default function SOPEditor() {
         description,
         scribeUrl: scribeUrl || undefined,
         scribeEmbedCode: scribeEmbedCode || undefined,
+        pdfUrl: pdfUrl || undefined,
+        pdfFileName: pdfFileName || undefined,
         categoryId: categoryId ? parseInt(categoryId) : undefined,
         status,
         sortOrder,
@@ -230,6 +239,109 @@ export default function SOPEditor() {
               </div>
 
 
+            </CardContent>
+          </Card>
+
+          <Card className="card-shadow">
+            <CardContent className="p-6 space-y-4">
+              <h3 className="font-medium">PDF-Dokument</h3>
+              <p className="text-sm text-muted-foreground">
+                Alternativ oder zusätzlich können Sie ein PDF-Dokument hochladen.
+              </p>
+
+              {pdfUrl ? (
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  <FileText className="h-8 w-8 text-primary flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{pdfFileName || "PDF-Dokument"}</p>
+                    <a 
+                      href={pdfUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline"
+                    >
+                      PDF anzeigen
+                    </a>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setPdfUrl("");
+                      setPdfFileName("");
+                    }}
+                    className="flex-shrink-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div>
+                  <Label htmlFor="pdfUpload" className="cursor-pointer">
+                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                      {isUploadingPdf ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                          <span className="text-sm text-muted-foreground">Wird hochgeladen...</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          <Upload className="h-8 w-8 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">PDF-Datei hochladen</span>
+                          <span className="text-xs text-muted-foreground">Klicken oder Datei hierher ziehen</span>
+                        </div>
+                      )}
+                    </div>
+                  </Label>
+                  <input
+                    id="pdfUpload"
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      
+                      if (file.type !== "application/pdf") {
+                        toast.error("Bitte wählen Sie eine PDF-Datei");
+                        return;
+                      }
+                      
+                      if (file.size > 10 * 1024 * 1024) {
+                        toast.error("Die Datei ist zu groß (max. 10 MB)");
+                        return;
+                      }
+                      
+                      setIsUploadingPdf(true);
+                      try {
+                        const formData = new FormData();
+                        formData.append("file", file);
+                        
+                        const response = await fetch("/api/upload", {
+                          method: "POST",
+                          body: formData,
+                        });
+                        
+                        if (!response.ok) {
+                          throw new Error("Upload fehlgeschlagen");
+                        }
+                        
+                        const result = await response.json();
+                        setPdfUrl(result.url);
+                        setPdfFileName(file.name);
+                        toast.success("PDF erfolgreich hochgeladen");
+                      } catch (error) {
+                        console.error("PDF upload error:", error);
+                        toast.error("Fehler beim Hochladen des PDFs");
+                      } finally {
+                        setIsUploadingPdf(false);
+                        e.target.value = "";
+                      }
+                    }}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

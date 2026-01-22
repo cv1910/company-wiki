@@ -225,6 +225,13 @@
       "when": 1769083169634,
       "tag": "0031_brainy_radioactive_man",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "5",
+      "when": 1769088163058,
+      "tag": "0032_jittery_dazzler",
+      "breakpoints": true
     }
   ]
 }

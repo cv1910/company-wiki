@@ -110,6 +110,8 @@ export const sops = mysqlTable("sops", {
   description: text("description"),
   scribeUrl: text("scribeUrl"),
   scribeEmbedCode: text("scribeEmbedCode"),
+  pdfUrl: text("pdfUrl"),
+  pdfFileName: varchar("pdfFileName", { length: 500 }),
   categoryId: int("categoryId"),
   status: mysqlEnum("status", ["draft", "published", "archived"]).default("draft").notNull(),
   sortOrder: int("sortOrder").default(0).notNull(),
