@@ -1,5 +1,6 @@
 import { useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/useMobile";
+import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { 
   Home, 
   Search, 
@@ -10,7 +11,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,10 +41,21 @@ export function BottomNavigation() {
   const isMobile = useIsMobile();
   const [location, setLocation] = useLocation();
   const { toggleSidebar } = useSidebar();
+  const { lightTap, selection } = useHapticFeedback();
 
   if (!isMobile) {
     return null;
   }
+
+  const handleNavigation = (path: string) => {
+    lightTap();
+    setLocation(path);
+  };
+
+  const handleMenuToggle = () => {
+    selection();
+    toggleSidebar();
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border safe-area-bottom">
@@ -56,7 +67,7 @@ export function BottomNavigation() {
           return (
             <button
               key={item.path}
-              onClick={() => setLocation(item.path)}
+              onClick={() => handleNavigation(item.path)}
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors",
                 isActive 
@@ -81,7 +92,10 @@ export function BottomNavigation() {
         {/* Quick Action Button */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex flex-col items-center justify-center flex-1 h-full py-1 text-muted-foreground hover:text-foreground transition-colors">
+            <button 
+              onClick={() => selection()}
+              className="flex flex-col items-center justify-center flex-1 h-full py-1 text-muted-foreground hover:text-foreground transition-colors"
+            >
               <div className="relative">
                 <div className="absolute -inset-1 bg-primary/20 rounded-full blur-sm" />
                 <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground">
@@ -94,7 +108,7 @@ export function BottomNavigation() {
             {quickActions.map((action) => (
               <DropdownMenuItem
                 key={action.path}
-                onClick={() => setLocation(action.path)}
+                onClick={() => handleNavigation(action.path)}
                 className="cursor-pointer"
               >
                 <action.icon className="h-4 w-4 mr-2" />
@@ -106,7 +120,7 @@ export function BottomNavigation() {
 
         {/* Menu Button */}
         <button
-          onClick={toggleSidebar}
+          onClick={handleMenuToggle}
           className="flex flex-col items-center justify-center flex-1 h-full py-1 text-muted-foreground hover:text-foreground transition-colors"
         >
           <Menu className="h-5 w-5 mb-0.5" />

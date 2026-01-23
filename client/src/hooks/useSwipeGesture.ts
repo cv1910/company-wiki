@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from "react";
+import { triggerHaptic } from "./useHapticFeedback";
 
 interface SwipeGestureOptions {
   onSwipeLeft?: () => void;
@@ -6,6 +7,7 @@ interface SwipeGestureOptions {
   threshold?: number;
   edgeWidth?: number;
   enabled?: boolean;
+  hapticFeedback?: boolean;
 }
 
 export function useSwipeGesture({
@@ -14,6 +16,7 @@ export function useSwipeGesture({
   threshold = 50,
   edgeWidth = 30,
   enabled = true,
+  hapticFeedback = true,
 }: SwipeGestureOptions) {
   const startX = useRef(0);
   const startY = useRef(0);
@@ -60,17 +63,19 @@ export function useSwipeGesture({
     if (Math.abs(deltaX) > threshold && Math.abs(deltaX) > Math.abs(deltaY)) {
       // Swipe right (open sidebar) - must start from left edge
       if (deltaX > 0 && startX.current < edgeWidth) {
+        if (hapticFeedback) triggerHaptic("light");
         onSwipeRight?.();
       }
       // Swipe left (close sidebar) - can start from anywhere when sidebar is open
       else if (deltaX < 0 && startedFromEdge.current) {
+        if (hapticFeedback) triggerHaptic("light");
         onSwipeLeft?.();
       }
     }
     
     isSwiping.current = false;
     startedFromEdge.current = false;
-  }, [enabled, threshold, edgeWidth, onSwipeLeft, onSwipeRight]);
+  }, [enabled, threshold, edgeWidth, onSwipeLeft, onSwipeRight, hapticFeedback]);
 
   useEffect(() => {
     if (!enabled) return;

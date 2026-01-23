@@ -18,32 +18,38 @@ self.addEventListener('push', (event) => {
   console.log('[SW] Push received:', event);
   
   let data = {
-    title: 'Neue Nachricht',
-    body: 'Du hast eine neue Nachricht erhalten',
-    icon: '/icon-192.png',
-    badge: '/badge-72.png',
-    tag: 'chat-notification',
-    data: { url: '/ohweees' }
+    title: 'Company Wiki',
+    body: 'Du hast eine neue Benachrichtigung',
+    icon: '/favicon.ico',
+    badge: '/favicon.ico',
+    tag: 'general-notification',
+    data: { url: '/' }
   };
   
   if (event.data) {
     try {
-      data = { ...data, ...event.data.json() };
+      const payload = event.data.json();
+      data = { ...data, ...payload };
     } catch (e) {
-      console.error('[SW] Error parsing push data:', e);
+      // Try as text
+      try {
+        data.body = event.data.text();
+      } catch (e2) {
+        console.error('[SW] Error parsing push data:', e2);
+      }
     }
   }
   
   const options = {
     body: data.body,
-    icon: data.icon || '/icon-192.png',
-    badge: data.badge || '/badge-72.png',
-    tag: data.tag || 'chat-notification',
+    icon: data.icon || '/favicon.ico',
+    badge: data.badge || '/favicon.ico',
+    tag: data.tag || 'general-notification',
     renotify: true,
-    requireInteraction: false,
+    requireInteraction: data.requireInteraction || false,
     vibrate: [200, 100, 200],
-    data: data.data || { url: '/ohweees' },
-    actions: [
+    data: data.data || { url: '/' },
+    actions: data.actions || [
       { action: 'open', title: 'Öffnen' },
       { action: 'dismiss', title: 'Schließen' }
     ]
@@ -64,7 +70,7 @@ self.addEventListener('notificationclick', (event) => {
     return;
   }
   
-  const urlToOpen = event.notification.data?.url || '/ohweees';
+  const urlToOpen = event.notification.data?.url || '/';
   
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
@@ -87,4 +93,14 @@ self.addEventListener('notificationclick', (event) => {
 // Notification close event
 self.addEventListener('notificationclose', (event) => {
   console.log('[SW] Notification closed:', event);
+});
+
+// Background sync for offline support
+self.addEventListener('sync', (event) => {
+  console.log('[SW] Background sync:', event.tag);
+});
+
+// Periodic background sync
+self.addEventListener('periodicsync', (event) => {
+  console.log('[SW] Periodic sync:', event.tag);
 });

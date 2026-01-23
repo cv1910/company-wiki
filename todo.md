@@ -1165,3 +1165,8 @@
 - [x] Pull-to-Refresh auf mobilen Geräten (bereits implementiert)
 - [x] Bottom Navigation Bar für schnellen Zugriff
 - [x] Swipe-Gesten zum Öffnen/Schließen der Sidebar
+
+
+## Mobile Erweiterungen (Januar 2026)
+- [x] Haptic Feedback bei Interaktionen (Vibration bei Navigation, Swipe-Gesten)
+- [x] Push-Benachrichtigungen (Browser Push Notifications, bereits implementiert)
