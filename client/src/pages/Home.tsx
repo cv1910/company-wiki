@@ -32,7 +32,8 @@ import {
   Minimize2,
   Square,
   Palmtree,
-  MessageSquarePlus
+  MessageSquarePlus,
+  ClipboardCheck
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
@@ -468,6 +469,15 @@ export default function Home() {
             >
               <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Termin
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLocation("/aufgaben/new")}
+              className="rounded-lg sm:rounded-xl border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-400 gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4"
+            >
+              <ClipboardCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              Aufgabe
             </Button>
           </div>
         </div>

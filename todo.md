@@ -1041,3 +1041,16 @@
 - [x] Navigation: Breadcrumbs im Desktop-Header
 - [x] Empty States: Wiederverwendbare EmptyState-Komponente mit Presets
 - [x] Visuelle Hierarchie: Section Dividers, Card Grid, Glass Effect, Status Indicators
+
+
+## Aufgaben-System (Januar 2026)
+- [x] Datenbank-Schema für Aufgaben (tasks) mit Zuweisung
+- [x] Backend-API für Aufgaben (CRUD, Zuweisung)
+- [x] Schnellaktion "+ Aufgabe" auf Home-Seite
+- [x] Aufgaben-Seite mit Tabs (Alle, Mir zugewiesen, Von mir erstellt)
+- [x] Aufgaben erstellen mit Titel, Beschreibung, Priorität, Fälligkeitsdatum
+- [x] Aufgaben an Teammitglieder zuweisen
+- [x] Aufgaben-Status ändern (Offen, In Bearbeitung, Erledigt, Abgebrochen)
+- [x] Aufgaben löschen
+- [x] Benachrichtigung bei Aufgabenzuweisung
+- [x] Unit-Tests für Aufgaben-Modul

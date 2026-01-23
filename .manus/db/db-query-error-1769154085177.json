@@ -1,0 +1,8 @@
+{
+  "query": "CREATE TABLE `tasks` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`title` varchar(500) NOT NULL,\n\t`description` text,\n\t`status` enum('open','in_progress','completed','cancelled') NOT NULL DEFAULT 'open',\n\t`priority` enum('low','medium','high','urgent') NOT NULL DEFAULT 'medium',\n\t`dueDate` timestamp,\n\t`createdById` int NOT NULL,\n\t`assignedToId` int,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `tasks_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute CREATE TABLE `tasks` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`title` varchar(500) NOT NULL,\n\t`description` text,\n\t`status` enum('open','in_progress','completed','cancelled') NOT NULL DEFAULT 'open',\n\t`priority` enum('low','medium','high','urgent') NOT NULL DEFAULT 'medium',\n\t`dueDate` timestamp,\n\t`createdById` int NOT NULL,\n\t`assignedToId` int,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `tasks_id` PRIMARY KEY(`id`)\n);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1050 (42S01) at line 1: Table 'TkhZDUK5jrbqMP42NAV4Ff.tasks' already exists"
+  ]
+}

@@ -204,6 +204,7 @@ export const notifications = mysqlTable("notifications", {
   message: text("message"),
   resourceType: varchar("resourceType", { length: 64 }),
   resourceId: int("resourceId"),
+  link: varchar("link", { length: 500 }),
   isRead: boolean("isRead").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -1262,3 +1263,23 @@ export const orgChartSettings = mysqlTable("org_chart_settings", {
 
 export type OrgChartSettings = typeof orgChartSettings.$inferSelect;
 export type InsertOrgChartSettings = typeof orgChartSettings.$inferInsert;
+
+
+/**
+ * Tasks for team task management with assignment.
+ */
+export const tasks = mysqlTable("tasks", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 500 }).notNull(),
+  description: text("description"),
+  status: mysqlEnum("status", ["open", "in_progress", "completed", "cancelled"]).default("open").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium").notNull(),
+  dueDate: timestamp("dueDate"),
+  createdById: int("createdById").notNull(),
+  assignedToId: int("assignedToId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Task = typeof tasks.$inferSelect;
+export type InsertTask = typeof tasks.$inferInsert;

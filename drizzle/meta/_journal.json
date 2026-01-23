@@ -232,6 +232,20 @@
       "when": 1769088163058,
       "tag": "0032_jittery_dazzler",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "5",
+      "when": 1769154074268,
+      "tag": "0033_huge_agent_zero",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "5",
+      "when": 1769154241961,
+      "tag": "0034_spicy_winter_soldier",
+      "breakpoints": true
     }
   ]
 }

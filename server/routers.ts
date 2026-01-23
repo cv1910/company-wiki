@@ -5391,6 +5391,110 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
       return { success: true };
     }),
   }),
+
+  // Tasks Router
+  tasks: router({
+    // Get all my tasks (created by me or assigned to me)
+    getMyTasks: protectedProcedure.query(async ({ ctx }) => {
+      return db.getMyTasks(ctx.user.id);
+    }),
+
+    // Get tasks assigned to me
+    getAssignedToMe: protectedProcedure.query(async ({ ctx }) => {
+      return db.getTasksAssignedToMe(ctx.user.id);
+    }),
+
+    // Get tasks created by me
+    getCreatedByMe: protectedProcedure.query(async ({ ctx }) => {
+      return db.getTasksCreatedByMe(ctx.user.id);
+    }),
+
+    // Create a new task
+    create: protectedProcedure
+      .input(
+        z.object({
+          title: z.string().min(1),
+          description: z.string().optional(),
+          priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
+          dueDate: z.date().optional().nullable(),
+          assignedToId: z.number().optional().nullable(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const result = await db.createTask({
+          title: input.title,
+          description: input.description || null,
+          priority: input.priority,
+          dueDate: input.dueDate || null,
+          assignedToId: input.assignedToId || null,
+          createdById: ctx.user.id,
+          status: "open",
+        });
+
+        // Create notification for assigned user
+        if (input.assignedToId && input.assignedToId !== ctx.user.id) {
+          await db.createNotification({
+            userId: input.assignedToId,
+            type: "task_assigned",
+            title: "Neue Aufgabe zugewiesen",
+            message: `${ctx.user.name || "Jemand"} hat dir eine Aufgabe zugewiesen: ${input.title}`,
+            link: "/aufgaben",
+          });
+        }
+
+        return result;
+      }),
+
+    // Update a task
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          title: z.string().min(1).optional(),
+          description: z.string().optional().nullable(),
+          status: z.enum(["open", "in_progress", "completed", "cancelled"]).optional(),
+          priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+          dueDate: z.date().optional().nullable(),
+          assignedToId: z.number().optional().nullable(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...data } = input;
+        
+        // Get the current task to check if assignment changed
+        const currentTask = await db.getTaskById(id);
+        
+        await db.updateTask(id, data);
+
+        // Notify if assignment changed
+        if (data.assignedToId && currentTask && data.assignedToId !== currentTask.task.assignedToId && data.assignedToId !== ctx.user.id) {
+          await db.createNotification({
+            userId: data.assignedToId,
+            type: "task_assigned",
+            title: "Aufgabe zugewiesen",
+            message: `${ctx.user.name || "Jemand"} hat dir eine Aufgabe zugewiesen: ${currentTask.task.title}`,
+            link: "/aufgaben",
+          });
+        }
+
+        return { success: true };
+      }),
+
+    // Delete a task
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteTask(input.id);
+        return { success: true };
+      }),
+
+    // Get a single task by ID
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getTaskById(input.id);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

@@ -109,6 +109,8 @@ import {
   InsertOrgPosition,
   orgChartSettings,
   InsertOrgChartSettings,
+  tasks,
+  InsertTask,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -5779,4 +5781,102 @@ export async function getPositionHierarchy(positionId: number) {
   }
 
   return hierarchy;
+}
+
+
+// =====================
+// Tasks Functions
+// =====================
+
+export async function getMyTasks(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db
+    .select()
+    .from(tasks)
+    .leftJoin(users, eq(tasks.assignedToId, users.id))
+    .where(or(eq(tasks.createdById, userId), eq(tasks.assignedToId, userId)))
+    .orderBy(desc(tasks.createdAt));
+
+  return result.map((r) => ({
+    task: r.tasks,
+    assignedTo: r.users ? { id: r.users.id, name: r.users.name, avatarUrl: r.users.avatarUrl } : null,
+  }));
+}
+
+export async function getTasksAssignedToMe(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db
+    .select()
+    .from(tasks)
+    .leftJoin(users, eq(tasks.createdById, users.id))
+    .where(eq(tasks.assignedToId, userId))
+    .orderBy(desc(tasks.createdAt));
+
+  return result.map((r) => ({
+    task: r.tasks,
+    createdBy: r.users ? { id: r.users.id, name: r.users.name, avatarUrl: r.users.avatarUrl } : null,
+    assignedTo: { id: userId, name: null, avatarUrl: null },
+  }));
+}
+
+export async function getTasksCreatedByMe(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db
+    .select()
+    .from(tasks)
+    .leftJoin(users, eq(tasks.assignedToId, users.id))
+    .where(eq(tasks.createdById, userId))
+    .orderBy(desc(tasks.createdAt));
+
+  return result.map((r) => ({
+    task: r.tasks,
+    assignedTo: r.users ? { id: r.users.id, name: r.users.name, avatarUrl: r.users.avatarUrl } : null,
+  }));
+}
+
+export async function createTask(data: InsertTask) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(tasks).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function updateTask(id: number, data: Partial<InsertTask>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(tasks).set(data).where(eq(tasks.id, id));
+}
+
+export async function deleteTask(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(tasks).where(eq(tasks.id, id));
+}
+
+export async function getTaskById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(tasks)
+    .leftJoin(users, eq(tasks.assignedToId, users.id))
+    .where(eq(tasks.id, id))
+    .limit(1);
+
+  if (result.length === 0) return null;
+
+  return {
+    task: result[0].tasks,
+    assignedTo: result[0].users ? { id: result[0].users.id, name: result[0].users.name, avatarUrl: result[0].users.avatarUrl } : null,
+  };
 }
