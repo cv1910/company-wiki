@@ -33,7 +33,10 @@ import {
   Square,
   Palmtree,
   MessageSquarePlus,
-  ClipboardCheck
+  ClipboardCheck,
+  Clock,
+  TrendingUp,
+  TrendingDown
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
@@ -85,11 +88,49 @@ const SIZE_ICONS: Record<WidgetSize, typeof Minimize2> = {
   large: Maximize2,
 };
 
+// Quick Action Icon Mappings
+const QUICK_ACTION_ICONS: Record<string, typeof Sparkles> = {
+  Palmtree,
+  MessageSquarePlus,
+  Calendar,
+  ClipboardCheck,
+  Book,
+  FileText,
+  Users,
+  Search,
+  Bell,
+  Star,
+  Plus,
+  Clock,
+  Sparkles,
+};
+
+// Quick Action Color Classes
+const QUICK_ACTION_COLORS: Record<string, string> = {
+  green: "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 hover:bg-green-100 dark:hover:bg-green-900/50 text-green-700 dark:text-green-400",
+  blue: "border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400",
+  orange: "border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 text-orange-700 dark:text-orange-400",
+  purple: "border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-400",
+  red: "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400",
+  yellow: "border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950/30 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 text-yellow-700 dark:text-yellow-400",
+  cyan: "border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-950/30 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-cyan-700 dark:text-cyan-400",
+  pink: "border-pink-200 dark:border-pink-800 bg-pink-50 dark:bg-pink-950/30 hover:bg-pink-100 dark:hover:bg-pink-900/50 text-pink-700 dark:text-pink-400",
+};
+
+// Default Quick Actions
+const DEFAULT_QUICK_ACTIONS = [
+  { id: "leave", label: "Urlaub", path: "/leave/new", icon: "Palmtree", color: "green" },
+  { id: "chat", label: "Chat", path: "/taps/new", icon: "MessageSquarePlus", color: "blue" },
+  { id: "calendar", label: "Termin", path: "/calendar?new=true", icon: "Calendar", color: "orange" },
+  { id: "task", label: "Aufgabe", path: "/aufgaben/new", icon: "ClipboardCheck", color: "purple" },
+];
+
 // Widget definitions with size support - vereinfacht für fokussiertes Dashboard
 const WIDGET_DEFINITIONS = {
   welcomeHero: { id: "welcomeHero", label: "Willkommens-Banner", description: "Personalisierte Begrüßung mit AI-Suche", supportsResize: false },
   announcements: { id: "announcements", label: "Ankündigungen", description: "Angepinnte Unternehmens-Mitteilungen", supportsResize: true },
   myTasks: { id: "myTasks", label: "Meine Aufgaben", description: "Offene Aufgaben und Zuweisungen", supportsResize: true },
+  myOvertime: { id: "myOvertime", label: "Meine Überstunden", description: "Persönlicher Überstunden-Stand", supportsResize: true },
   teamStats: { id: "teamStats", label: "Team-Statistiken", description: "Übersicht über Teamgröße, Schichten und Auslastung", supportsResize: true },
   // Folgende Widgets sind ausgeblendet, können aber über Einstellungen aktiviert werden
   navigation: { id: "navigation", label: "Navigation", description: "Schnellzugriff auf Bereiche", supportsResize: false },
@@ -201,6 +242,7 @@ export default function Home() {
   const { data: assignments, isLoading: assignmentsLoading } = trpc.assignments.getMyAssignments.useQuery();
   const { data: myTasks, isLoading: myTasksLoading } = trpc.tasks.getMyTasks.useQuery();
   const { data: teamStats, isLoading: teamStatsLoading } = trpc.teams.getStats.useQuery();
+  const { data: myOvertimeHistory, isLoading: overtimeLoading } = trpc.overtime.myHistory.useQuery({ year: new Date().getFullYear() });
   
   const { data: dashboardSettings, isLoading: settingsLoading } = trpc.dashboardSettings.get.useQuery();
   const utils = trpc.useUtils();
@@ -235,6 +277,7 @@ export default function Home() {
     welcomeHero: dashboardSettings?.showWelcomeHero ?? true,
     announcements: dashboardSettings?.showAnnouncements ?? true,
     myTasks: (dashboardSettings as any)?.showMyTasks ?? true, // Default eingeblendet
+    myOvertime: (dashboardSettings as any)?.showMyOvertime ?? true, // Default eingeblendet
     teamStats: (dashboardSettings as any)?.showTeamStats ?? false, // Default ausgeblendet
     navigation: dashboardSettings?.showNavigation ?? false, // Default ausgeblendet
     recentArticles: dashboardSettings?.showRecentArticles ?? false, // Default ausgeblendet
@@ -260,6 +303,16 @@ export default function Home() {
   const getWidgetSize = (widgetId: string): WidgetSize => {
     return widgetSizes[widgetId] || "medium";
   };
+
+  // Get quick actions
+  type QuickAction = { id: string; label: string; path: string; icon: string; color: string };
+  const quickActions = useMemo(() => {
+    const actions = (dashboardSettings as any)?.quickActions as QuickAction[] | undefined;
+    if (actions && Array.isArray(actions) && actions.length > 0) {
+      return actions;
+    }
+    return DEFAULT_QUICK_ACTIONS;
+  }, [dashboardSettings]);
 
   // DnD sensors
   const sensors = useSensors(
@@ -378,12 +431,37 @@ export default function Home() {
     }
   };
 
-  // Personalisierte Begrüßung basierend auf Tageszeit
+  // Personalisierte Begrüßung basierend auf Tageszeit und Rolle
   const getGreeting = () => {
     const hour = new Date().getHours();
+    const dayOfWeek = new Date().getDay();
+    const firstName = user?.name?.split(" ")[0] || "Benutzer";
+    
+    // Spezielle Begrüßungen für bestimmte Tage
+    if (dayOfWeek === 1) { // Montag
+      if (hour >= 5 && hour < 12) return "Guten Start in die Woche";
+    }
+    if (dayOfWeek === 5) { // Freitag
+      if (hour >= 14) return "Fast Wochenende";
+    }
+    
+    // Standard-Begrüßungen nach Tageszeit
     if (hour >= 5 && hour < 12) return "Guten Morgen";
-    if (hour >= 12 && hour < 18) return "Guten Tag";
-    return "Guten Abend";
+    if (hour >= 12 && hour < 14) return "Mahlzeit";
+    if (hour >= 14 && hour < 18) return "Guten Tag";
+    if (hour >= 18 && hour < 22) return "Guten Abend";
+    return "Gute Nacht";
+  };
+
+  // Personalisierte Beschreibung basierend auf Rolle
+  const getPersonalizedDescription = () => {
+    if (user?.role === "admin") {
+      return "Hier hast du Zugriff auf alle Verwaltungsfunktionen und Einstellungen.";
+    }
+    if (user?.role === "editor") {
+      return "Hier kannst du Inhalte erstellen und bearbeiten.";
+    }
+    return "Hier findest du alle wichtigen Informationen, Prozesse und Anleitungen für deinen Arbeitsalltag.";
   };
 
   const renderWelcomeHero = () => (
@@ -405,7 +483,7 @@ export default function Home() {
               {getGreeting()}, {user?.name?.split(" ")[0] || "Benutzer"}!
             </h1>
             <p className="text-muted-foreground mt-2 sm:mt-3 max-w-xl text-sm sm:text-base leading-relaxed">
-              Hier findest du alle wichtigen Informationen, Prozesse und Anleitungen für deinen Arbeitsalltag.
+              {getPersonalizedDescription()}
             </p>
           </div>
           
@@ -445,42 +523,22 @@ export default function Home() {
           
           {/* Schnellaktions-Buttons - Mobile optimiert */}
           <div className="flex flex-wrap gap-2 sm:gap-3 mt-1 sm:mt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setLocation("/leave/new")}
-              className="rounded-lg sm:rounded-xl border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 hover:bg-green-100 dark:hover:bg-green-900/50 text-green-700 dark:text-green-400 gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4"
-            >
-              <Palmtree className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Urlaub
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setLocation("/taps/new")}
-              className="rounded-lg sm:rounded-xl border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4"
-            >
-              <MessageSquarePlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Chat
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setLocation("/calendar?new=true")}
-              className="rounded-lg sm:rounded-xl border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 text-orange-700 dark:text-orange-400 gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4"
-            >
-              <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Termin
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setLocation("/aufgaben/new")}
-              className="rounded-lg sm:rounded-xl border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-400 gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4"
-            >
-              <ClipboardCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Aufgabe
-            </Button>
+            {quickActions.map((action) => {
+              const IconComponent = QUICK_ACTION_ICONS[action.icon] || Sparkles;
+              const colorClasses = QUICK_ACTION_COLORS[action.color] || QUICK_ACTION_COLORS.blue;
+              return (
+                <Button
+                  key={action.id}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setLocation(action.path)}
+                  className={`rounded-lg sm:rounded-xl ${colorClasses} gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4`}
+                >
+                  <IconComponent className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  {action.label}
+                </Button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -1033,11 +1091,95 @@ export default function Home() {
     );
   };
 
+  // Render my overtime widget
+  const renderMyOvertime = () => {
+    const currentMonth = new Date().getMonth() + 1;
+    const currentYear = new Date().getFullYear();
+    const currentMonthData = myOvertimeHistory?.find(
+      (item: any) => item.month === currentMonth && item.year === currentYear
+    );
+    const previousMonthData = myOvertimeHistory?.find(
+      (item: any) => item.month === (currentMonth === 1 ? 12 : currentMonth - 1) && 
+                     item.year === (currentMonth === 1 ? currentYear - 1 : currentYear)
+    );
+    
+    const currentBalance = currentMonthData ? parseFloat(currentMonthData.overtimeHours) + parseFloat(currentMonthData.carryOverHours) : 0;
+    const previousBalance = previousMonthData ? parseFloat(previousMonthData.overtimeHours) + parseFloat(previousMonthData.carryOverHours) : 0;
+    const trend = currentBalance - previousBalance;
+    const totalYearHours = myOvertimeHistory?.reduce((sum: number, item: any) => sum + parseFloat(item.actualHours || "0"), 0) || 0;
+    
+    return (
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Clock className="h-5 w-5 text-blue-500" />
+                Meine Überstunden
+              </CardTitle>
+              <CardDescription>Aktueller Stand {new Date().toLocaleDateString("de-DE", { month: "long", year: "numeric" })}</CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setLocation("/admin/overtime")}>
+              Details
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {overtimeLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-200 dark:border-blue-800">
+                <div>
+                  <p className="text-sm text-muted-foreground">Aktueller Saldo</p>
+                  <p className={`text-3xl font-bold ${currentBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    {currentBalance >= 0 ? "+" : ""}{currentBalance.toFixed(1)}h
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {trend !== 0 && (
+                    <div className={`flex items-center gap-1 text-sm ${trend > 0 ? "text-green-600" : "text-red-600"}`}>
+                      {trend > 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                      {trend > 0 ? "+" : ""}{trend.toFixed(1)}h
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-xs text-muted-foreground">Gesamtstunden {currentYear}</p>
+                  <p className="text-lg font-semibold">{totalYearHours.toFixed(1)}h</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-xs text-muted-foreground">Status</p>
+                  <p className="text-lg font-semibold">
+                    {currentMonthData?.status === "approved" ? (
+                      <span className="text-green-600">Genehmigt</span>
+                    ) : currentMonthData?.status === "paid_out" ? (
+                      <span className="text-blue-600">Ausbezahlt</span>
+                    ) : (
+                      <span className="text-amber-600">Ausstehend</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
   // Widget renderer map
   const widgetRenderers: Record<WidgetId, () => React.ReactNode> = {
     welcomeHero: renderWelcomeHero,
     announcements: renderAnnouncements,
     myTasks: renderMyTasks,
+    myOvertime: renderMyOvertime,
     teamStats: renderTeamStats,
     navigation: renderNavigation,
     recentArticles: renderRecentArticles,
@@ -1059,7 +1201,7 @@ export default function Home() {
   const renderWidgets = () => {
     // Group widgets that should be side by side
     const singleWidgets = ["welcomeHero", "announcements", "navigation"];
-    const resizableWidgets = ["recentArticles", "favorites", "onboardingProgress"];
+    const resizableWidgets = ["recentArticles", "favorites", "onboardingProgress", "myOvertime"];
 
     const elements: React.ReactNode[] = [];
 

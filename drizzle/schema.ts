@@ -657,6 +657,13 @@ export const userDashboardSettings = mysqlTable("userDashboardSettings", {
   ]).notNull(),
   // Widget sizes (JSON object mapping widget ID to size: "small" | "medium" | "large")
   widgetSizes: json("widgetSizes").$type<Record<string, "small" | "medium" | "large">>().default({}),
+  // Quick action buttons configuration
+  quickActions: json("quickActions").$type<Array<{ id: string; label: string; path: string; icon: string; color: string }>>().default([
+    { id: "leave", label: "Urlaub", path: "/leave/new", icon: "Palmtree", color: "green" },
+    { id: "chat", label: "Chat", path: "/taps/new", icon: "MessageSquarePlus", color: "blue" },
+    { id: "calendar", label: "Termin", path: "/calendar?new=true", icon: "Calendar", color: "orange" },
+    { id: "task", label: "Aufgabe", path: "/aufgaben/new", icon: "ClipboardCheck", color: "purple" }
+  ]),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -1147,3 +1147,9 @@
 ## UI-Anpassungen (Januar 2026)
 - [x] Statistik-Karten (Artikel, SOPs, Kategorien, Benutzer) von Startseite entfernen
 - [x] Aktivitäten-Widget von Startseite entfernen
+
+
+## Dashboard-Verbesserungen (Januar 2026)
+- [x] Persönliches Überstunden-Widget auf Dashboard
+- [x] Anpassbare Schnellzugriff-Buttons (dynamisch aus Einstellungen)
+- [x] Personalisierter Begrüßungstext (Tageszeit, Wochentag, Rolle)

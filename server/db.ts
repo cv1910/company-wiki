@@ -2360,6 +2360,12 @@ export async function getUserDashboardSettings(userId: number) {
     showOnboardingProgress: true,
     widgetOrder: DEFAULT_WIDGET_ORDER,
     widgetSizes: {} as Record<string, "small" | "medium" | "large">,
+    quickActions: [
+      { id: "leave", label: "Urlaub", path: "/leave/new", icon: "Palmtree", color: "green" },
+      { id: "chat", label: "Chat", path: "/taps/new", icon: "MessageSquarePlus", color: "blue" },
+      { id: "calendar", label: "Termin", path: "/calendar?new=true", icon: "Calendar", color: "orange" },
+      { id: "task", label: "Aufgabe", path: "/aufgaben/new", icon: "ClipboardCheck", color: "purple" }
+    ],
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -2440,6 +2446,16 @@ export async function updateWidgetSize(userId: number, widgetId: string, size: "
   const newSizes: Record<string, "small" | "medium" | "large"> = { ...currentSizes, [widgetId]: size };
   
   return upsertUserDashboardSettings(userId, { widgetSizes: newSizes });
+}
+
+export async function updateQuickActions(
+  userId: number, 
+  quickActions: Array<{ id: string; label: string; path: string; icon: string; color: string }>
+) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  return upsertUserDashboardSettings(userId, { quickActions } as any);
 }
 
 

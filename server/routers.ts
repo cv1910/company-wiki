@@ -2782,6 +2782,23 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
       .mutation(async ({ ctx, input }) => {
         return db.updateWidgetSize(ctx.user.id, input.widgetId, input.size);
       }),
+
+    // Update quick actions
+    updateQuickActions: protectedProcedure
+      .input(
+        z.object({
+          quickActions: z.array(z.object({
+            id: z.string(),
+            label: z.string(),
+            path: z.string(),
+            icon: z.string(),
+            color: z.string(),
+          })),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        return db.updateQuickActions(ctx.user.id, input.quickActions);
+      }),
   }),
 
   // ==================== CALENDAR ====================
