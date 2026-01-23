@@ -75,12 +75,14 @@ function TaskCard({
   onStatusChange, 
   onDelete,
   onComment,
+  onEdit,
   showAssignee = true 
 }: { 
   task: any;
   onStatusChange: (id: number, status: "open" | "in_progress" | "completed" | "cancelled") => void;
   onDelete: (id: number) => void;
   onComment: (id: number) => void;
+  onEdit: (task: any) => void;
   showAssignee?: boolean;
 }) {
   const status = task.task.status as keyof typeof STATUS_CONFIG;
@@ -132,6 +134,9 @@ function TaskCard({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onEdit(task)}>
+                    <Edit2 className="h-4 w-4 mr-2" /> Bearbeiten
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onStatusChange(task.task.id, "open")}>
                     <Circle className="h-4 w-4 mr-2" /> Offen
                   </DropdownMenuItem>
@@ -166,7 +171,7 @@ function TaskCard({
               <div className={`flex items-center gap-1 ${isOverdue ? "text-red-600" : ""}`}>
                 {isOverdue && <AlertTriangle className="h-3 w-3" />}
                 <Calendar className="h-3 w-3" />
-                <span>{format(new Date(task.task.dueDate), "dd.MM.yyyy", { locale: de })}</span>
+                <span>{format(new Date(task.task.dueDate), "dd.MM.yyyy HH:mm", { locale: de })} Uhr</span>
               </div>
             )}
             {showAssignee && task.assignedTo && (
@@ -224,10 +229,15 @@ export default function Aufgaben() {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent">("medium");
   const [dueDate, setDueDate] = useState("");
+  const [dueTime, setDueTime] = useState("");
   const [assignedToId, setAssignedToId] = useState<number | null>(null);
   const [recurrencePattern, setRecurrencePattern] = useState<"none" | "daily" | "weekly" | "monthly">("none");
   const [recurrenceEndDate, setRecurrenceEndDate] = useState("");
   const [reminderDays, setReminderDays] = useState<number>(0);
+  
+  // Edit mode
+  const [editingTask, setEditingTask] = useState<any>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // Queries
   const { data: myTasks, isLoading: myTasksLoading, refetch: refetchMyTasks } = trpc.tasks.getMyTasks.useQuery();
@@ -303,10 +313,69 @@ export default function Aufgaben() {
     setDescription("");
     setPriority("medium");
     setDueDate("");
+    setDueTime("");
     setAssignedToId(null);
     setRecurrencePattern("none");
     setRecurrenceEndDate("");
     setReminderDays(0);
+    setEditingTask(null);
+  };
+
+  // Handle edit task
+  const handleEdit = (task: any) => {
+    setEditingTask(task);
+    setTitle(task.task.title);
+    setDescription(task.task.description || "");
+    setPriority(task.task.priority);
+    if (task.task.dueDate) {
+      const date = new Date(task.task.dueDate);
+      setDueDate(format(date, "yyyy-MM-dd"));
+      setDueTime(format(date, "HH:mm"));
+    } else {
+      setDueDate("");
+      setDueTime("");
+    }
+    setAssignedToId(task.task.assignedToId || null);
+    setRecurrencePattern(task.task.recurrencePattern || "none");
+    if (task.task.recurrenceEndDate) {
+      setRecurrenceEndDate(format(new Date(task.task.recurrenceEndDate), "yyyy-MM-dd"));
+    } else {
+      setRecurrenceEndDate("");
+    }
+    setReminderDays(task.task.reminderDays || 0);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdate = () => {
+    if (!editingTask || !title.trim()) {
+      toast.error("Bitte gib einen Titel ein");
+      return;
+    }
+    
+    let dueDateValue: Date | null = null;
+    if (dueDate) {
+      if (dueTime) {
+        dueDateValue = new Date(`${dueDate}T${dueTime}`);
+      } else {
+        dueDateValue = new Date(`${dueDate}T00:00`);
+      }
+    }
+    
+    updateTask.mutate({
+      id: editingTask.task.id,
+      title: title.trim(),
+      description: description.trim() || null,
+      priority,
+      dueDate: dueDateValue,
+      assignedToId,
+      reminderDays: dueDate ? reminderDays : 0,
+    }, {
+      onSuccess: () => {
+        toast.success("Aufgabe aktualisiert");
+        setEditDialogOpen(false);
+        resetForm();
+      }
+    });
   };
 
   const handleCreate = () => {
@@ -314,11 +383,20 @@ export default function Aufgaben() {
       toast.error("Bitte gib einen Titel ein");
       return;
     }
+    let dueDateValue: Date | null = null;
+    if (dueDate) {
+      if (dueTime) {
+        dueDateValue = new Date(`${dueDate}T${dueTime}`);
+      } else {
+        dueDateValue = new Date(`${dueDate}T00:00`);
+      }
+    }
+    
     createTask.mutate({
       title: title.trim(),
       description: description.trim() || undefined,
       priority,
-      dueDate: dueDate ? new Date(dueDate) : null,
+      dueDate: dueDateValue,
       assignedToId,
       recurrencePattern,
       recurrenceEndDate: recurrenceEndDate ? new Date(recurrenceEndDate) : null,
@@ -489,6 +567,7 @@ export default function Aufgaben() {
                     setSelectedTaskId(id);
                     setCommentDialogOpen(true);
                   }}
+                  onEdit={handleEdit}
                   showAssignee={activeTab !== "assigned"}
                 />
               ))}
@@ -555,6 +634,22 @@ export default function Aufgaben() {
                 />
               </div>
             </div>
+
+            {dueDate && (
+              <div className="space-y-2">
+                <Label htmlFor="dueTime" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Uhrzeit (optional)
+                </Label>
+                <Input
+                  id="dueTime"
+                  type="time"
+                  value={dueTime}
+                  onChange={(e) => setDueTime(e.target.value)}
+                  placeholder="HH:MM"
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Zuweisen an</Label>
@@ -648,6 +743,151 @@ export default function Aufgaben() {
             </Button>
             <Button onClick={handleCreate} disabled={createTask.isPending}>
               {createTask.isPending ? "Erstelle..." : "Erstellen"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={(open) => {
+        setEditDialogOpen(open);
+        if (!open) {
+          resetForm();
+        }
+      }}>
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit2 className="h-5 w-5" />
+              Aufgabe bearbeiten
+            </DialogTitle>
+            <DialogDescription>
+              Bearbeite die Details dieser Aufgabe.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">Titel *</Label>
+              <Input
+                id="edit-title"
+                placeholder="Was muss erledigt werden?"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Beschreibung</Label>
+              <Textarea
+                id="edit-description"
+                placeholder="Weitere Details zur Aufgabe..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Priorität</Label>
+                <Select value={priority} onValueChange={(v) => setPriority(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Niedrig</SelectItem>
+                    <SelectItem value="medium">Mittel</SelectItem>
+                    <SelectItem value="high">Hoch</SelectItem>
+                    <SelectItem value="urgent">Dringend</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-dueDate">Fällig am</Label>
+                <Input
+                  id="edit-dueDate"
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {dueDate && (
+              <div className="space-y-2">
+                <Label htmlFor="edit-dueTime" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Uhrzeit (optional)
+                </Label>
+                <Input
+                  id="edit-dueTime"
+                  type="time"
+                  value={dueTime}
+                  onChange={(e) => setDueTime(e.target.value)}
+                  placeholder="HH:MM"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Zuweisen an</Label>
+              <Select 
+                value={assignedToId?.toString() || "none"} 
+                onValueChange={(v) => setAssignedToId(v === "none" ? null : parseInt(v))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Niemand zugewiesen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Niemand zugewiesen</SelectItem>
+                  {allUsers?.map((u) => (
+                    <SelectItem key={u.id} value={u.id.toString()}>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-5 w-5">
+                          <AvatarImage src={u.avatarUrl || undefined} />
+                          <AvatarFallback className="text-[10px]">
+                            {u.name?.charAt(0) || "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        {u.name || u.email || "Unbekannt"}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {dueDate && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Erinnerung
+                </Label>
+                <Select value={String(reminderDays)} onValueChange={(v) => setReminderDays(Number(v))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Keine Erinnerung</SelectItem>
+                    <SelectItem value="1">1 Tag vorher</SelectItem>
+                    <SelectItem value="2">2 Tage vorher</SelectItem>
+                    <SelectItem value="3">3 Tage vorher</SelectItem>
+                    <SelectItem value="7">1 Woche vorher</SelectItem>
+                    <SelectItem value="14">2 Wochen vorher</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Abbrechen
+            </Button>
+            <Button onClick={handleUpdate} disabled={updateTask.isPending}>
+              {updateTask.isPending ? "Speichere..." : "Speichern"}
             </Button>
           </div>
         </DialogContent>

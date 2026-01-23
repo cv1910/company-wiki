@@ -1153,3 +1153,8 @@
 - [x] Persönliches Überstunden-Widget auf Dashboard
 - [x] Anpassbare Schnellzugriff-Buttons (dynamisch aus Einstellungen)
 - [x] Personalisierter Begrüßungstext (Tageszeit, Wochentag, Rolle)
+
+
+## Aufgaben-Verbesserungen (Januar 2026)
+- [x] Uhrzeitauswahl bei Aufgabenerstellung hinzufügen
+- [x] Aufgaben nachträglich bearbeiten können (Titel, Beschreibung, Datum, Uhrzeit, Priorität, Zuweisung)
