@@ -18,7 +18,10 @@ export type EmailType =
   | "booking_confirmation"
   | "task_assigned"
   | "task_reminder"
-  | "shift_assigned";
+  | "shift_assigned"
+  | "shift_changed"
+  | "shift_cancelled"
+  | "shift_swap_request";
 
 interface SendEmailParams {
   recipientId: number;
@@ -68,6 +71,14 @@ export async function shouldSendEmail(userId: number, emailType: EmailType): Pro
       return userSettings.articleFeedback;
     case "mentioned":
       return userSettings.mentioned;
+    case "shift_assigned":
+      return userSettings.shiftAssigned;
+    case "shift_changed":
+      return userSettings.shiftChanged;
+    case "shift_cancelled":
+      return userSettings.shiftCancelled;
+    case "shift_swap_request":
+      return userSettings.shiftSwapRequest;
     default:
       return true;
   }
@@ -903,5 +914,230 @@ Dein Company Wiki Team
     console.log(`[Email] Shift assigned notification sent to ${params.userEmail}`);
   } catch (error) {
     console.error("[Email] Failed to send shift assigned email:", error);
+  }
+}
+
+
+
+/**
+ * Send shift change notification email
+ */
+export async function sendShiftChangedEmail(params: {
+  userId: number;
+  userEmail: string;
+  userName: string;
+  shiftTitle: string;
+  oldDate: string;
+  newDate: string;
+  oldTime?: string;
+  newTime?: string;
+  teamName: string;
+  changedByName: string;
+  changeReason?: string;
+}) {
+  const shouldSend = await shouldSendEmail(params.userId, "shift_assigned");
+  if (!shouldSend) {
+    console.log(`[Email] User ${params.userId} has disabled shift notifications`);
+    return;
+  }
+
+  const subject = `Schicht geändert: ${params.shiftTitle}`;
+  const content = `
+Hallo ${params.userName},
+
+Deine Schicht wurde geändert:
+
+**Schicht:** ${params.shiftTitle}
+**Team:** ${params.teamName}
+
+**Vorher:**
+- Datum: ${params.oldDate}${params.oldTime ? `\n- Zeit: ${params.oldTime}` : ""}
+
+**Nachher:**
+- Datum: ${params.newDate}${params.newTime ? `\n- Zeit: ${params.newTime}` : ""}
+
+**Geändert von:** ${params.changedByName}
+${params.changeReason ? `**Grund:** ${params.changeReason}` : ""}
+
+Bitte überprüfe deinen Kalender für weitere Details.
+
+Viele Grüße,
+Dein Company Wiki Team
+  `.trim();
+
+  try {
+    await notifyOwner({
+      title: subject,
+      content: `An: ${params.userEmail}\n\n${content}`,
+    });
+    console.log(`[Email] Shift changed notification sent to ${params.userEmail}`);
+  } catch (error) {
+    console.error("[Email] Failed to send shift changed email:", error);
+  }
+}
+
+
+/**
+ * Send shift cancelled notification email
+ */
+export async function sendShiftCancelledEmail(params: {
+  userId: number;
+  userEmail: string;
+  userName: string;
+  shiftTitle: string;
+  shiftDate: string;
+  teamName: string;
+  cancelledByName: string;
+  cancelReason?: string;
+}) {
+  const shouldSend = await shouldSendEmail(params.userId, "shift_assigned");
+  if (!shouldSend) {
+    console.log(`[Email] User ${params.userId} has disabled shift notifications`);
+    return;
+  }
+
+  const subject = `Schicht storniert: ${params.shiftTitle}`;
+  const content = `
+Hallo ${params.userName},
+
+Deine Schicht wurde storniert:
+
+**Schicht:** ${params.shiftTitle}
+**Datum:** ${params.shiftDate}
+**Team:** ${params.teamName}
+
+**Storniert von:** ${params.cancelledByName}
+${params.cancelReason ? `**Grund:** ${params.cancelReason}` : ""}
+
+Bitte wende dich an deinen Teamleiter, falls du Fragen hast.
+
+Viele Grüße,
+Dein Company Wiki Team
+  `.trim();
+
+  try {
+    await notifyOwner({
+      title: subject,
+      content: `An: ${params.userEmail}\n\n${content}`,
+    });
+    console.log(`[Email] Shift cancelled notification sent to ${params.userEmail}`);
+  } catch (error) {
+    console.error("[Email] Failed to send shift cancelled email:", error);
+  }
+}
+
+
+/**
+ * Send shift swap request notification email
+ */
+export async function sendShiftSwapRequestEmail(params: {
+  targetUserId: number;
+  targetUserEmail: string;
+  targetUserName: string;
+  requesterName: string;
+  requesterShiftTitle: string;
+  requesterShiftDate: string;
+  targetShiftTitle: string;
+  targetShiftDate: string;
+  teamName: string;
+  message?: string;
+}) {
+  const shouldSend = await shouldSendEmail(params.targetUserId, "shift_assigned");
+  if (!shouldSend) {
+    console.log(`[Email] User ${params.targetUserId} has disabled shift notifications`);
+    return;
+  }
+
+  const subject = `Schicht-Tausch-Anfrage von ${params.requesterName}`;
+  const content = `
+Hallo ${params.targetUserName},
+
+${params.requesterName} möchte eine Schicht mit dir tauschen:
+
+**Deine Schicht:**
+- ${params.targetShiftTitle}
+- Datum: ${params.targetShiftDate}
+
+**Schicht von ${params.requesterName}:**
+- ${params.requesterShiftTitle}
+- Datum: ${params.requesterShiftDate}
+
+**Team:** ${params.teamName}
+${params.message ? `\n**Nachricht:** ${params.message}` : ""}
+
+Bitte überprüfe die Anfrage im Kalender und akzeptiere oder lehne sie ab.
+
+Viele Grüße,
+Dein Company Wiki Team
+  `.trim();
+
+  try {
+    await notifyOwner({
+      title: subject,
+      content: `An: ${params.targetUserEmail}\n\n${content}`,
+    });
+    console.log(`[Email] Shift swap request notification sent to ${params.targetUserEmail}`);
+  } catch (error) {
+    console.error("[Email] Failed to send shift swap request email:", error);
+  }
+}
+
+
+/**
+ * Send shift swap response notification email
+ */
+export async function sendShiftSwapResponseEmail(params: {
+  requesterId: number;
+  requesterEmail: string;
+  requesterName: string;
+  responderName: string;
+  status: "approved" | "rejected";
+  requesterShiftTitle: string;
+  requesterShiftDate: string;
+  targetShiftTitle: string;
+  targetShiftDate: string;
+  teamName: string;
+  responseMessage?: string;
+}) {
+  const shouldSend = await shouldSendEmail(params.requesterId, "shift_assigned");
+  if (!shouldSend) {
+    console.log(`[Email] User ${params.requesterId} has disabled shift notifications`);
+    return;
+  }
+
+  const statusText = params.status === "approved" ? "angenommen" : "abgelehnt";
+  const subject = `Schicht-Tausch ${statusText}`;
+  const content = `
+Hallo ${params.requesterName},
+
+${params.responderName} hat deine Schicht-Tausch-Anfrage ${statusText}.
+
+**Deine Schicht:**
+- ${params.requesterShiftTitle}
+- Datum: ${params.requesterShiftDate}
+
+**Schicht von ${params.responderName}:**
+- ${params.targetShiftTitle}
+- Datum: ${params.targetShiftDate}
+
+**Team:** ${params.teamName}
+${params.responseMessage ? `\n**Nachricht:** ${params.responseMessage}` : ""}
+
+${params.status === "approved" 
+  ? "Die Schichten wurden erfolgreich getauscht. Bitte überprüfe deinen Kalender."
+  : "Die Anfrage wurde abgelehnt. Bitte kontaktiere deinen Teamleiter für Alternativen."}
+
+Viele Grüße,
+Dein Company Wiki Team
+  `.trim();
+
+  try {
+    await notifyOwner({
+      title: subject,
+      content: `An: ${params.requesterEmail}\n\n${content}`,
+    });
+    console.log(`[Email] Shift swap response notification sent to ${params.requesterEmail}`);
+  } catch (error) {
+    console.error("[Email] Failed to send shift swap response email:", error);
   }
 }

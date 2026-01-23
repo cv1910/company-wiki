@@ -64,6 +64,8 @@ import {
   Building2,
   ChevronDown,
   ChevronUp,
+  Clock,
+  TrendingUp,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -95,6 +97,8 @@ const adminMenuItems = [
   { icon: CalendarClock, label: "Terminplanung", path: "/scheduling" },
   { icon: Users, label: "Teams", path: "/admin/teams" },
   { icon: BarChart3, label: "Schicht-Auswertungen", path: "/schicht-auswertungen" },
+  { icon: Clock, label: "Soll-Stunden", path: "/admin/soll-stunden" },
+  { icon: TrendingUp, label: "Überstunden", path: "/admin/ueberstunden" },
   { icon: FolderOpen, label: "Bereiche", path: "/admin/categories" },
   { icon: Users, label: "Benutzer", path: "/admin/users" },
   { icon: Calendar, label: "Urlaubsanträge", path: "/admin/leave" },

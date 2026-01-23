@@ -1123,3 +1123,22 @@
 - [x] Schicht-Auswertungen Seite mit monatlicher Übersicht
 - [x] Export-Funktion für Auswertungen (CSV)
 - [x] Navigation zur Schicht-Auswertungen Seite
+
+
+## Schicht-Benachrichtigungen (Januar 2026)
+- [x] E-Mail-Benachrichtigung bei Schichtzuweisung
+- [x] E-Mail-Benachrichtigung bei Schichtänderung
+- [x] E-Mail-Benachrichtigung bei Schichtstornierung
+- [x] E-Mail-Benachrichtigung bei Schicht-Tausch-Anfragen
+- [x] E-Mail-Einstellungen für Schicht-Benachrichtigungen in Benutzereinstellungen
+
+
+## Überstunden-Tracking (Januar 2026)
+- [x] Datenbank-Schema für Soll-Arbeitsstunden pro Mitarbeiter
+- [x] Datenbank-Schema für Überstunden-Salden
+- [x] Backend-API für Soll-Stunden (CRUD)
+- [x] Backend-API für Überstunden (Berechnung, Historie, Genehmigung)
+- [x] Überstunden-Berechnung (Ist - Soll) mit Übertrag
+- [x] Admin-UI für Soll-Stunden-Verwaltung
+- [x] Admin-UI für Überstunden-Tracking mit Genehmigungsworkflow
+- [x] CSV-Export für Überstunden-Daten

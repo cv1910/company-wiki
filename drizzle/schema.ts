@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, decimal } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -457,6 +457,11 @@ export const emailSettings = mysqlTable("emailSettings", {
   articleFeedback: boolean("articleFeedback").default(true).notNull(),
   // Mention notifications
   mentioned: boolean("mentioned").default(true).notNull(),
+  // Shift notifications
+  shiftAssigned: boolean("shiftAssigned").default(true).notNull(),
+  shiftChanged: boolean("shiftChanged").default(true).notNull(),
+  shiftCancelled: boolean("shiftCancelled").default(true).notNull(),
+  shiftSwapRequest: boolean("shiftSwapRequest").default(true).notNull(),
   // Digest settings
   dailyDigest: boolean("dailyDigest").default(false).notNull(),
   weeklyDigest: boolean("weeklyDigest").default(true).notNull(),
@@ -1349,3 +1354,61 @@ export const shiftSwapRequests = mysqlTable("shift_swap_requests", {
 
 export type ShiftSwapRequest = typeof shiftSwapRequests.$inferSelect;
 export type InsertShiftSwapRequest = typeof shiftSwapRequests.$inferInsert;
+
+
+/**
+ * Target work hours per user per month.
+ * Stores the expected/contracted hours for overtime calculation.
+ */
+export const targetWorkHours = mysqlTable("targetWorkHours", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  // Monthly target hours (e.g., 160 for full-time)
+  monthlyHours: decimal("monthlyHours", { precision: 6, scale: 2 }).notNull(),
+  // Weekly target hours (e.g., 40 for full-time)
+  weeklyHours: decimal("weeklyHours", { precision: 5, scale: 2 }).notNull(),
+  // Employment type for reference
+  employmentType: mysqlEnum("employmentType", ["full_time", "part_time", "mini_job", "student", "intern"]).default("full_time").notNull(),
+  // Effective date range
+  validFrom: timestamp("validFrom").defaultNow().notNull(),
+  validUntil: timestamp("validUntil"),
+  // Notes (e.g., special arrangements)
+  notes: text("notes"),
+  // Audit
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdById: int("createdById").notNull(),
+});
+
+export type TargetWorkHours = typeof targetWorkHours.$inferSelect;
+export type InsertTargetWorkHours = typeof targetWorkHours.$inferInsert;
+
+/**
+ * Overtime balance tracking per user per month.
+ * Stores calculated overtime for historical tracking.
+ */
+export const overtimeBalance = mysqlTable("overtimeBalance", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  // Month and year for this record
+  year: int("year").notNull(),
+  month: int("month").notNull(),
+  // Calculated values
+  targetHours: decimal("targetHours", { precision: 6, scale: 2 }).notNull(),
+  actualHours: decimal("actualHours", { precision: 6, scale: 2 }).notNull(),
+  overtimeHours: decimal("overtimeHours", { precision: 6, scale: 2 }).notNull(),
+  // Carry-over from previous month
+  carryOverHours: decimal("carryOverHours", { precision: 6, scale: 2 }).default("0").notNull(),
+  // Status
+  status: mysqlEnum("status", ["pending", "approved", "paid_out"]).default("pending").notNull(),
+  approvedById: int("approvedById"),
+  approvedAt: timestamp("approvedAt"),
+  // Notes
+  notes: text("notes"),
+  // Audit
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type OvertimeBalance = typeof overtimeBalance.$inferSelect;
+export type InsertOvertimeBalance = typeof overtimeBalance.$inferInsert;

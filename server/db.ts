@@ -117,6 +117,10 @@ import {
   InsertShiftTemplate,
   shiftSwapRequests,
   InsertShiftSwapRequest,
+  targetWorkHours,
+  InsertTargetWorkHours,
+  overtimeBalance,
+  InsertOvertimeBalance,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -6546,4 +6550,334 @@ function getWeekNumber(date: Date): number {
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+
+// ============================================================
+// Target Work Hours (Soll-Stunden)
+// ============================================================
+
+export async function getTargetWorkHours(userId: number, date?: Date) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const targetDate = date || new Date();
+  
+  // Get the most recent valid target hours for this user
+  const results = await db
+    .select()
+    .from(targetWorkHours)
+    .where(
+      and(
+        eq(targetWorkHours.userId, userId),
+        lte(targetWorkHours.validFrom, targetDate),
+        or(
+          isNull(targetWorkHours.validUntil),
+          gte(targetWorkHours.validUntil, targetDate)
+        )
+      )
+    )
+    .orderBy(desc(targetWorkHours.validFrom))
+    .limit(1);
+  
+  return results[0] || null;
+}
+
+export async function getAllTargetWorkHours() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const results = await db
+    .select({
+      target: targetWorkHours,
+      user: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(targetWorkHours)
+    .innerJoin(users, eq(targetWorkHours.userId, users.id))
+    .orderBy(desc(targetWorkHours.validFrom));
+  
+  return results;
+}
+
+export async function getActiveTargetWorkHours() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const now = new Date();
+  
+  const results = await db
+    .select({
+      target: targetWorkHours,
+      user: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(targetWorkHours)
+    .innerJoin(users, eq(targetWorkHours.userId, users.id))
+    .where(
+      and(
+        lte(targetWorkHours.validFrom, now),
+        or(
+          isNull(targetWorkHours.validUntil),
+          gte(targetWorkHours.validUntil, now)
+        )
+      )
+    )
+    .orderBy(users.name);
+  
+  return results;
+}
+
+export async function createTargetWorkHours(data: InsertTargetWorkHours) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [result] = await db.insert(targetWorkHours).values(data);
+  return result.insertId;
+}
+
+export async function updateTargetWorkHours(id: number, data: Partial<InsertTargetWorkHours>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(targetWorkHours)
+    .set(data)
+    .where(eq(targetWorkHours.id, id));
+}
+
+export async function deleteTargetWorkHours(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(targetWorkHours).where(eq(targetWorkHours.id, id));
+}
+
+// ============================================================
+// Overtime Balance
+// ============================================================
+
+export async function getOvertimeBalance(userId: number, year: number, month: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const results = await db
+    .select()
+    .from(overtimeBalance)
+    .where(
+      and(
+        eq(overtimeBalance.userId, userId),
+        eq(overtimeBalance.year, year),
+        eq(overtimeBalance.month, month)
+      )
+    )
+    .limit(1);
+  
+  return results[0] || null;
+}
+
+export async function getUserOvertimeHistory(userId: number, year?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [eq(overtimeBalance.userId, userId)];
+  if (year) {
+    conditions.push(eq(overtimeBalance.year, year));
+  }
+  
+  return db
+    .select()
+    .from(overtimeBalance)
+    .where(and(...conditions))
+    .orderBy(desc(overtimeBalance.year), desc(overtimeBalance.month));
+}
+
+export async function getAllOvertimeBalances(year: number, month: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const results = await db
+    .select({
+      balance: overtimeBalance,
+      user: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(overtimeBalance)
+    .innerJoin(users, eq(overtimeBalance.userId, users.id))
+    .where(
+      and(
+        eq(overtimeBalance.year, year),
+        eq(overtimeBalance.month, month)
+      )
+    )
+    .orderBy(desc(overtimeBalance.overtimeHours));
+  
+  return results;
+}
+
+export async function upsertOvertimeBalance(
+  userId: number,
+  year: number,
+  month: number,
+  data: {
+    targetHours: string;
+    actualHours: string;
+    overtimeHours: string;
+    carryOverHours?: string;
+    notes?: string;
+  }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const existing = await getOvertimeBalance(userId, year, month);
+  
+  if (existing) {
+    await db
+      .update(overtimeBalance)
+      .set(data)
+      .where(eq(overtimeBalance.id, existing.id));
+    return existing.id;
+  } else {
+    const [result] = await db.insert(overtimeBalance).values({
+      userId,
+      year,
+      month,
+      ...data,
+    });
+    return result.insertId;
+  }
+}
+
+export async function approveOvertimeBalance(id: number, approvedById: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(overtimeBalance)
+    .set({
+      status: "approved",
+      approvedById,
+      approvedAt: new Date(),
+    })
+    .where(eq(overtimeBalance.id, id));
+}
+
+export async function calculateUserOvertime(userId: number, year: number, month: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  // Get user's target hours
+  const targetDate = new Date(year, month - 1, 15); // Middle of month
+  const target = await getTargetWorkHours(userId, targetDate);
+  
+  if (!target) {
+    return {
+      targetHours: 0,
+      actualHours: 0,
+      overtimeHours: 0,
+      hasTarget: false,
+    };
+  }
+  
+  // Get user info
+  const userResult = await db.select().from(users).where(eq(users.id, userId));
+  const user = userResult[0];
+  if (!user) return null;
+  
+  // Get actual hours from shift report
+  const shiftReport = await getUserShiftReport(user.openId, year, month);
+  const actualHours = shiftReport?.totalHours || 0;
+  
+  const targetHours = parseFloat(target.monthlyHours);
+  const overtimeHours = actualHours - targetHours;
+  
+  return {
+    targetHours,
+    actualHours,
+    overtimeHours,
+    hasTarget: true,
+    employmentType: target.employmentType,
+    weeklyTarget: parseFloat(target.weeklyHours),
+  };
+}
+
+export async function calculateAndSaveMonthlyOvertime(year: number, month: number) {
+  const db = await getDb();
+  if (!db) return { processed: 0, errors: [] };
+  
+  // Get all users with target hours
+  const activeTargets = await getActiveTargetWorkHours();
+  const errors: string[] = [];
+  let processed = 0;
+  
+  for (const { target, user } of activeTargets) {
+    try {
+      const overtime = await calculateUserOvertime(user.id, year, month);
+      if (overtime && overtime.hasTarget) {
+        // Get carry-over from previous month
+        let carryOver = "0";
+        const prevMonth = month === 1 ? 12 : month - 1;
+        const prevYear = month === 1 ? year - 1 : year;
+        const prevBalance = await getOvertimeBalance(user.id, prevYear, prevMonth);
+        if (prevBalance) {
+          // Add previous overtime to carry-over
+          const prevOvertime = parseFloat(prevBalance.overtimeHours);
+          const prevCarryOver = parseFloat(prevBalance.carryOverHours);
+          carryOver = (prevOvertime + prevCarryOver).toFixed(2);
+        }
+        
+        await upsertOvertimeBalance(user.id, year, month, {
+          targetHours: overtime.targetHours.toFixed(2),
+          actualHours: overtime.actualHours.toFixed(2),
+          overtimeHours: overtime.overtimeHours.toFixed(2),
+          carryOverHours: carryOver,
+        });
+        processed++;
+      }
+    } catch (error) {
+      errors.push(`User ${user.name}: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  }
+  
+  return { processed, errors };
+}
+
+// Get overtime summary for dashboard
+export async function getOvertimeSummary(year: number, month: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const balances = await getAllOvertimeBalances(year, month);
+  
+  const totalTargetHours = balances.reduce((sum, b) => sum + parseFloat(b.balance.targetHours), 0);
+  const totalActualHours = balances.reduce((sum, b) => sum + parseFloat(b.balance.actualHours), 0);
+  const totalOvertimeHours = balances.reduce((sum, b) => sum + parseFloat(b.balance.overtimeHours), 0);
+  
+  const usersWithOvertime = balances.filter(b => parseFloat(b.balance.overtimeHours) > 0).length;
+  const usersUndertime = balances.filter(b => parseFloat(b.balance.overtimeHours) < 0).length;
+  
+  return {
+    year,
+    month,
+    totalUsers: balances.length,
+    totalTargetHours,
+    totalActualHours,
+    totalOvertimeHours,
+    usersWithOvertime,
+    usersUndertime,
+    balances,
+  };
 }

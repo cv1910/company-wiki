@@ -10,7 +10,7 @@ import { nanoid } from "nanoid";
 import * as embeddings from "./embeddings";
 import DiffMatchPatch from "diff-match-patch";
 import * as googleCalendarService from "./googleCalendar";
-import { sendMentionEmail, sendTaskAssignedEmail, sendTaskReminderEmail } from "./email";
+import { sendMentionEmail, sendTaskAssignedEmail, sendTaskReminderEmail, sendShiftAssignedEmail, sendShiftChangedEmail, sendShiftCancelledEmail, sendShiftSwapRequestEmail, sendShiftSwapResponseEmail } from "./email";
 import { transcribeAudio } from "./_core/voiceTranscription";
 
 // Initialize diff-match-patch
@@ -2928,6 +2928,30 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           });
         }
         
+        // Send shift notification if it's a shift event assigned to someone else
+        if (input.eventType === "shift" && event.userId !== ctx.user.id) {
+          const assignedUser = await db.getUserById(event.userId);
+          const team = input.teamId ? await db.getTeamById(input.teamId) : null;
+          if (assignedUser && assignedUser.email) {
+            const startDate = new Date(input.startDate);
+            const shiftDate = startDate.toLocaleDateString("de-DE", {
+              weekday: "long",
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            });
+            await sendShiftAssignedEmail({
+              userId: assignedUser.id,
+              userEmail: assignedUser.email,
+              userName: assignedUser.name || "Mitarbeiter",
+              shiftTitle: input.title,
+              shiftDate,
+              teamName: team?.name || "Kein Team",
+              assignedByName: ctx.user.name || "Admin",
+            });
+          }
+        }
+        
         return event;
       }),
 
@@ -2971,6 +2995,9 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         if (updates.reminderMinutes !== undefined) updateData.reminderMinutes = updates.reminderMinutes;
         if (updates.link !== undefined) updateData.link = updates.link;
         
+        // Get old event data for comparison
+        const oldEvent = await db.getCalendarEvent(id, ctx.user.id);
+        
         const event = await db.updateCalendarEvent(id, ctx.user.id, updateData);
         
         if (!event) {
@@ -2980,6 +3007,40 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           });
         }
         
+        // Send shift change notification if it's a shift event
+        if (oldEvent && oldEvent.eventType === "shift" && event.userId !== ctx.user.id) {
+          const assignedUser = await db.getUserById(event.userId);
+          const team = event.teamId ? await db.getTeamById(event.teamId) : null;
+          
+          // Check if date or time changed
+          const dateChanged = updates.startDate || updates.endDate;
+          if (assignedUser && assignedUser.email && dateChanged) {
+            const formatDate = (d: Date) => d.toLocaleDateString("de-DE", {
+              weekday: "long",
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            });
+            const formatTime = (d: Date) => d.toLocaleTimeString("de-DE", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            
+            await sendShiftChangedEmail({
+              userId: assignedUser.id,
+              userEmail: assignedUser.email,
+              userName: assignedUser.name || "Mitarbeiter",
+              shiftTitle: event.title,
+              oldDate: formatDate(oldEvent.startDate),
+              newDate: formatDate(event.startDate),
+              oldTime: !oldEvent.isAllDay ? formatTime(oldEvent.startDate) + " - " + formatTime(oldEvent.endDate) : undefined,
+              newTime: !event.isAllDay ? formatTime(event.startDate) + " - " + formatTime(event.endDate) : undefined,
+              teamName: team?.name || "Kein Team",
+              changedByName: ctx.user.name || "Admin",
+            });
+          }
+        }
+        
         return event;
       }),
 
@@ -2987,7 +3048,35 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
+        // Get event before deletion for notification
+        const eventToDelete = await db.getCalendarEvent(input.id, ctx.user.id);
+        
         const success = await db.deleteCalendarEvent(input.id, ctx.user.id);
+        
+        // Send cancellation notification for shift events
+        if (success && eventToDelete && eventToDelete.eventType === "shift" && eventToDelete.userId !== ctx.user.id) {
+          const assignedUser = await db.getUserById(eventToDelete.userId);
+          const team = eventToDelete.teamId ? await db.getTeamById(eventToDelete.teamId) : null;
+          
+          if (assignedUser && assignedUser.email) {
+            const shiftDate = eventToDelete.startDate.toLocaleDateString("de-DE", {
+              weekday: "long",
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            });
+            
+            await sendShiftCancelledEmail({
+              userId: assignedUser.id,
+              userEmail: assignedUser.email,
+              userName: assignedUser.name || "Mitarbeiter",
+              shiftTitle: eventToDelete.title,
+              shiftDate,
+              teamName: team?.name || "Kein Team",
+              cancelledByName: ctx.user.name || "Admin",
+            });
+          }
+        }
         return { success };
       }),
 
@@ -5798,6 +5887,34 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
             message: `${ctx.user.name || "Ein Kollege"} möchte eine Schicht mit dir tauschen.`,
             link: "/calendar?view=shifts",
           });
+          
+          // Send email notification
+          const targetUser = await db.getUserById(input.targetUserId);
+          const originalEvent = await db.getCalendarEvent(input.originalEventId, ctx.user.id);
+          const targetEvent = input.targetEventId ? await db.getCalendarEvent(input.targetEventId, input.targetUserId) : null;
+          const team = originalEvent?.teamId ? await db.getTeamById(originalEvent.teamId) : null;
+          
+          if (targetUser && targetUser.email && originalEvent) {
+            const formatDate = (d: Date) => d.toLocaleDateString("de-DE", {
+              weekday: "long",
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            });
+            
+            await sendShiftSwapRequestEmail({
+              targetUserId: targetUser.id,
+              targetUserEmail: targetUser.email,
+              targetUserName: targetUser.name || "Mitarbeiter",
+              requesterName: ctx.user.name || "Kollege",
+              requesterShiftTitle: originalEvent.title,
+              requesterShiftDate: formatDate(originalEvent.startDate),
+              targetShiftTitle: targetEvent?.title || "Deine Schicht",
+              targetShiftDate: targetEvent ? formatDate(targetEvent.startDate) : "Zu vereinbaren",
+              teamName: team?.name || "Team",
+              message: input.reason,
+            });
+          }
         }
         
         return { id };
@@ -5827,6 +5944,34 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           link: "/calendar?view=shifts",
         });
         
+        // Send email notification
+        const requester = await db.getUserById(request.requesterId);
+        const originalEvent = await db.getCalendarEvent(request.originalEventId, request.requesterId);
+        const targetEvent = request.targetEventId ? await db.getCalendarEvent(request.targetEventId, request.targetUserId!) : null;
+        const team = originalEvent?.teamId ? await db.getTeamById(originalEvent.teamId) : null;
+        
+        if (requester && requester.email && originalEvent) {
+          const formatDate = (d: Date) => d.toLocaleDateString("de-DE", {
+            weekday: "long",
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          });
+          
+          await sendShiftSwapResponseEmail({
+            requesterId: requester.id,
+            requesterEmail: requester.email,
+            requesterName: requester.name || "Mitarbeiter",
+            responderName: ctx.user.name || "Kollege",
+            status: "approved",
+            requesterShiftTitle: originalEvent.title,
+            requesterShiftDate: formatDate(originalEvent.startDate),
+            targetShiftTitle: targetEvent?.title || "Schicht",
+            targetShiftDate: targetEvent ? formatDate(targetEvent.startDate) : "Vereinbart",
+            teamName: team?.name || "Team",
+          });
+        }
+        
         return { success: true };
       }),
 
@@ -5853,6 +5998,35 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           message: input.reason || "Deine Schicht-Tausch Anfrage wurde abgelehnt.",
           link: "/calendar?view=shifts",
         });
+        
+        // Send email notification
+        const requester = await db.getUserById(request.requesterId);
+        const originalEvent = await db.getCalendarEvent(request.originalEventId, request.requesterId);
+        const targetEvent = request.targetEventId ? await db.getCalendarEvent(request.targetEventId, request.targetUserId!) : null;
+        const team = originalEvent?.teamId ? await db.getTeamById(originalEvent.teamId) : null;
+        
+        if (requester && requester.email && originalEvent) {
+          const formatDate = (d: Date) => d.toLocaleDateString("de-DE", {
+            weekday: "long",
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          });
+          
+          await sendShiftSwapResponseEmail({
+            requesterId: requester.id,
+            requesterEmail: requester.email,
+            requesterName: requester.name || "Mitarbeiter",
+            responderName: ctx.user.name || "Kollege",
+            status: "rejected",
+            requesterShiftTitle: originalEvent.title,
+            requesterShiftDate: formatDate(originalEvent.startDate),
+            targetShiftTitle: targetEvent?.title || "Schicht",
+            targetShiftDate: targetEvent ? formatDate(targetEvent.startDate) : "Vereinbart",
+            teamName: team?.name || "Team",
+            responseMessage: input.reason,
+          });
+        }
         
         return { success: true };
       }),
@@ -5928,6 +6102,170 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
       }))
       .query(async ({ input }) => {
         return db.getYearlyShiftReport(input.year, input.teamId);
+      }),
+  }),
+
+  // ============================================================
+  // Target Work Hours Router (Soll-Stunden)
+  // ============================================================
+  targetWorkHours: router({
+    // Get target hours for a user
+    getForUser: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getTargetWorkHours(input.userId);
+      }),
+
+    // Get all active target hours
+    getActive: adminProcedure
+      .query(async () => {
+        return db.getActiveTargetWorkHours();
+      }),
+
+    // Get all target hours (including historical)
+    getAll: adminProcedure
+      .query(async () => {
+        return db.getAllTargetWorkHours();
+      }),
+
+    // Create target hours for a user
+    create: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        monthlyHours: z.string(),
+        weeklyHours: z.string(),
+        employmentType: z.enum(["full_time", "part_time", "mini_job", "student", "intern"]),
+        validFrom: z.string(),
+        validUntil: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createTargetWorkHours({
+          userId: input.userId,
+          monthlyHours: input.monthlyHours,
+          weeklyHours: input.weeklyHours,
+          employmentType: input.employmentType,
+          validFrom: new Date(input.validFrom),
+          validUntil: input.validUntil ? new Date(input.validUntil) : null,
+          notes: input.notes || null,
+          createdById: ctx.user.id,
+        });
+        return { id };
+      }),
+
+    // Update target hours
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        monthlyHours: z.string().optional(),
+        weeklyHours: z.string().optional(),
+        employmentType: z.enum(["full_time", "part_time", "mini_job", "student", "intern"]).optional(),
+        validFrom: z.string().optional(),
+        validUntil: z.string().optional().nullable(),
+        notes: z.string().optional().nullable(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        const updateData: Record<string, unknown> = {};
+        if (data.monthlyHours !== undefined) updateData.monthlyHours = data.monthlyHours;
+        if (data.weeklyHours !== undefined) updateData.weeklyHours = data.weeklyHours;
+        if (data.employmentType !== undefined) updateData.employmentType = data.employmentType;
+        if (data.validFrom !== undefined) updateData.validFrom = new Date(data.validFrom);
+        if (data.validUntil !== undefined) updateData.validUntil = data.validUntil ? new Date(data.validUntil) : null;
+        if (data.notes !== undefined) updateData.notes = data.notes;
+        
+        await db.updateTargetWorkHours(id, updateData);
+        return { success: true };
+      }),
+
+    // Delete target hours
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteTargetWorkHours(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ============================================================
+  // Overtime Balance Router (Überstunden)
+  // ============================================================
+  overtime: router({
+    // Get overtime for a user in a specific month
+    getForUser: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        year: z.number(),
+        month: z.number().min(1).max(12),
+      }))
+      .query(async ({ input }) => {
+        return db.getOvertimeBalance(input.userId, input.year, input.month);
+      }),
+
+    // Get overtime history for a user
+    getUserHistory: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        year: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return db.getUserOvertimeHistory(input.userId, input.year);
+      }),
+
+    // Get my overtime history
+    myHistory: protectedProcedure
+      .input(z.object({ year: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        return db.getUserOvertimeHistory(ctx.user.id, input.year);
+      }),
+
+    // Get all overtime balances for a month (admin)
+    getAllForMonth: adminProcedure
+      .input(z.object({
+        year: z.number(),
+        month: z.number().min(1).max(12),
+      }))
+      .query(async ({ input }) => {
+        return db.getAllOvertimeBalances(input.year, input.month);
+      }),
+
+    // Get overtime summary for dashboard
+    getSummary: adminProcedure
+      .input(z.object({
+        year: z.number(),
+        month: z.number().min(1).max(12),
+      }))
+      .query(async ({ input }) => {
+        return db.getOvertimeSummary(input.year, input.month);
+      }),
+
+    // Calculate overtime for a user
+    calculateForUser: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        year: z.number(),
+        month: z.number().min(1).max(12),
+      }))
+      .query(async ({ input }) => {
+        return db.calculateUserOvertime(input.userId, input.year, input.month);
+      }),
+
+    // Calculate and save overtime for all users in a month (admin)
+    calculateAll: adminProcedure
+      .input(z.object({
+        year: z.number(),
+        month: z.number().min(1).max(12),
+      }))
+      .mutation(async ({ input }) => {
+        return db.calculateAndSaveMonthlyOvertime(input.year, input.month);
+      }),
+
+    // Approve overtime balance (admin)
+    approve: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.approveOvertimeBalance(input.id, ctx.user.id);
+        return { success: true };
       }),
   }),
 });
