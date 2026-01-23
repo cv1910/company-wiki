@@ -1176,3 +1176,7 @@
 - [x] Bottom Navigation: Suche und Kalender Pfade korrigieren (404 Fehler)
 - [x] Bottom Navigation: Ändern zu AI Suche, Taps, Aufgaben
 - [x] Aufgaben-Details: Layout bündig ausrichten (flex-wrap)
+
+
+## Bottom Navigation Erweiterungen (Januar 2026)
+- [x] Badge für ungelesene Taps-Nachrichten auf Icon anzeigen

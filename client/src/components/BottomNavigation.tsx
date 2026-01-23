@@ -1,6 +1,7 @@
 import { useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
+import { trpc } from "@/lib/trpc";
 import { 
   Home, 
   Search, 
@@ -23,13 +24,14 @@ interface NavItem {
   icon: typeof Home;
   label: string;
   path: string;
+  showBadge?: boolean;
 }
 
 // Geändert zu: Home, AI Suche, Taps, Aufgaben
 const navItems: NavItem[] = [
   { icon: Home, label: "Home", path: "/" },
   { icon: Search, label: "AI Suche", path: "/search" },
-  { icon: MessageCircle, label: "Taps", path: "/taps" },
+  { icon: MessageCircle, label: "Taps", path: "/taps", showBadge: true },
   { icon: CheckSquare, label: "Aufgaben", path: "/aufgaben" },
 ];
 
@@ -44,6 +46,12 @@ export function BottomNavigation() {
   const [location, setLocation] = useLocation();
   const { toggleSidebar } = useSidebar();
   const { lightTap, selection } = useHapticFeedback();
+  
+  // Fetch unread Taps count
+  const { data: unreadCount } = trpc.ohweees.unreadCount.useQuery(undefined, {
+    refetchInterval: 30000, // Refresh every 30 seconds
+    staleTime: 10000,
+  });
 
   if (!isMobile) {
     return null;
@@ -65,22 +73,30 @@ export function BottomNavigation() {
         {navItems.map((item) => {
           const isActive = location === item.path || 
             (item.path !== "/" && location.startsWith(item.path));
+          const badgeCount = item.showBadge ? unreadCount : 0;
           
           return (
             <button
               key={item.path}
               onClick={() => handleNavigation(item.path)}
               className={cn(
-                "flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors",
+                "flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors relative",
                 isActive 
                   ? "text-primary" 
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <item.icon className={cn(
-                "h-5 w-5 mb-0.5 transition-transform",
-                isActive && "scale-110"
-              )} />
+              <div className="relative">
+                <item.icon className={cn(
+                  "h-5 w-5 mb-0.5 transition-transform",
+                  isActive && "scale-110"
+                )} />
+                {badgeCount && badgeCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-bold text-white bg-primary rounded-full">
+                    {badgeCount > 99 ? "99+" : badgeCount}
+                  </span>
+                )}
+              </div>
               <span className={cn(
                 "text-[10px] font-medium",
                 isActive && "font-semibold"
