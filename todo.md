@@ -1099,3 +1099,10 @@
 - [ ] POS und Versand Teams erstellen
 - [ ] Schichtplan-Ansicht für Teammitglieder implementieren
 - [ ] Schicht-Benachrichtigungen per E-Mail implementieren
+
+
+## Team-Mitgliedschaft (Januar 2026)
+- [x] Datenbank-Schema für Team-Mitgliedschaft prüfen/erstellen
+- [x] Backend-API für Team-Mitgliedschaft (hinzufügen, entfernen, auflisten)
+- [x] UI für Team-Mitgliedschaft in Team-Verwaltung
+- [x] Mitarbeiter den POS/Versand Teams zuordnen können
