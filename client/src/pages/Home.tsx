@@ -94,7 +94,6 @@ const WIDGET_DEFINITIONS = {
   // Folgende Widgets sind ausgeblendet, können aber über Einstellungen aktiviert werden
   navigation: { id: "navigation", label: "Navigation", description: "Schnellzugriff auf Bereiche", supportsResize: false },
   recentArticles: { id: "recentArticles", label: "Kürzlich aktualisiert", description: "Neueste Artikel", supportsResize: true },
-  activityFeed: { id: "activityFeed", label: "Aktivitäten", description: "Letzte Änderungen", supportsResize: true },
   favorites: { id: "favorites", label: "Favoriten", description: "Deine Lieblingsartikel", supportsResize: true },
   onboardingProgress: { id: "onboardingProgress", label: "Onboarding-Fortschritt", description: "Dein Einarbeitungsstatus", supportsResize: true },
 };
@@ -239,7 +238,6 @@ export default function Home() {
     teamStats: (dashboardSettings as any)?.showTeamStats ?? false, // Default ausgeblendet
     navigation: dashboardSettings?.showNavigation ?? false, // Default ausgeblendet
     recentArticles: dashboardSettings?.showRecentArticles ?? false, // Default ausgeblendet
-    activityFeed: dashboardSettings?.showActivityFeed ?? false, // Default ausgeblendet
     favorites: dashboardSettings?.showFavorites ?? false, // Default ausgeblendet
     onboardingProgress: dashboardSettings?.showOnboardingProgress ?? false, // Default ausgeblendet
   }), [dashboardSettings]);
@@ -1043,7 +1041,6 @@ export default function Home() {
     teamStats: renderTeamStats,
     navigation: renderNavigation,
     recentArticles: renderRecentArticles,
-    activityFeed: renderActivityFeed,
     favorites: renderFavorites,
     onboardingProgress: renderOnboardingProgress,
   };
@@ -1062,7 +1059,7 @@ export default function Home() {
   const renderWidgets = () => {
     // Group widgets that should be side by side
     const singleWidgets = ["welcomeHero", "announcements", "navigation"];
-    const resizableWidgets = ["recentArticles", "activityFeed", "favorites", "onboardingProgress"];
+    const resizableWidgets = ["recentArticles", "favorites", "onboardingProgress"];
 
     const elements: React.ReactNode[] = [];
 

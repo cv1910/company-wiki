@@ -1146,3 +1146,4 @@
 
 ## UI-Anpassungen (Januar 2026)
 - [x] Statistik-Karten (Artikel, SOPs, Kategorien, Benutzer) von Startseite entfernen
+- [x] Aktivitäten-Widget von Startseite entfernen
