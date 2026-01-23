@@ -1106,3 +1106,13 @@
 - [x] Backend-API für Team-Mitgliedschaft (hinzufügen, entfernen, auflisten)
 - [x] UI für Team-Mitgliedschaft in Team-Verwaltung
 - [x] Mitarbeiter den POS/Versand Teams zuordnen können
+
+
+## Schicht-System Erweiterungen (Januar 2026)
+- [ ] Datenbank-Schema für Schicht-Vorlagen (shiftTemplates)
+- [ ] Datenbank-Schema für Schicht-Tausch (shiftSwapRequests)
+- [ ] Backend-API für Schicht-Vorlagen (CRUD)
+- [ ] Backend-API für Schicht-Tausch (Anfrage, Genehmigung, Ablehnung)
+- [ ] Schicht-Vorlagen UI im Kalender
+- [ ] Schicht-Tausch UI mit Genehmigungsworkflow
+- [ ] Team-Statistiken Dashboard-Widget (Teamgröße, aktive Schichten, Auslastung)

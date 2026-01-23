@@ -90,6 +90,7 @@ const WIDGET_DEFINITIONS = {
   welcomeHero: { id: "welcomeHero", label: "Willkommens-Banner", description: "Personalisierte Begrüßung mit AI-Suche", supportsResize: false },
   announcements: { id: "announcements", label: "Ankündigungen", description: "Angepinnte Unternehmens-Mitteilungen", supportsResize: true },
   myTasks: { id: "myTasks", label: "Meine Aufgaben", description: "Offene Aufgaben und Zuweisungen", supportsResize: true },
+  teamStats: { id: "teamStats", label: "Team-Statistiken", description: "Übersicht über Teamgröße, Schichten und Auslastung", supportsResize: true },
   // Folgende Widgets sind ausgeblendet, können aber über Einstellungen aktiviert werden
   navigation: { id: "navigation", label: "Navigation", description: "Schnellzugriff auf Bereiche", supportsResize: false },
   stats: { id: "stats", label: "Statistiken", description: "Übersicht der Inhalte", supportsResize: false },
@@ -201,6 +202,7 @@ export default function Home() {
   const { data: favorites, isLoading: favoritesLoading } = trpc.favorites.list.useQuery();
   const { data: assignments, isLoading: assignmentsLoading } = trpc.assignments.getMyAssignments.useQuery();
   const { data: myTasks, isLoading: myTasksLoading } = trpc.tasks.getMyTasks.useQuery();
+  const { data: teamStats, isLoading: teamStatsLoading } = trpc.teams.getStats.useQuery();
   
   const { data: dashboardSettings, isLoading: settingsLoading } = trpc.dashboardSettings.get.useQuery();
   const utils = trpc.useUtils();
@@ -235,6 +237,7 @@ export default function Home() {
     welcomeHero: dashboardSettings?.showWelcomeHero ?? true,
     announcements: dashboardSettings?.showAnnouncements ?? true,
     myTasks: (dashboardSettings as any)?.showMyTasks ?? true, // Default eingeblendet
+    teamStats: (dashboardSettings as any)?.showTeamStats ?? false, // Default ausgeblendet
     navigation: dashboardSettings?.showNavigation ?? false, // Default ausgeblendet
     stats: dashboardSettings?.showStats ?? false, // Default ausgeblendet
     recentArticles: dashboardSettings?.showRecentArticles ?? false, // Default ausgeblendet
@@ -975,11 +978,71 @@ export default function Home() {
     );
   };
 
+  // Render team stats widget
+  const renderTeamStats = () => {
+    return (
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">Team-Statistiken</CardTitle>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/teams")}>
+              Alle Teams
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {teamStatsLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          ) : teamStats && teamStats.length > 0 ? (
+            <div className="space-y-3">
+              {teamStats.slice(0, 4).map((team: any) => (
+                <div
+                  key={team.teamId}
+                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                  onClick={() => navigate(`/teams`)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Users className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{team.teamName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {team.memberCount} Mitglieder
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">{team.shiftsThisWeek} Schichten</p>
+                    <p className="text-xs text-muted-foreground">diese Woche</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <Users className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Keine Teams vorhanden</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
   // Widget renderer map
   const widgetRenderers: Record<WidgetId, () => React.ReactNode> = {
     welcomeHero: renderWelcomeHero,
     announcements: renderAnnouncements,
     myTasks: renderMyTasks,
+    teamStats: renderTeamStats,
     navigation: renderNavigation,
     stats: renderStats,
     recentArticles: renderRecentArticles,

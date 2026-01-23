@@ -3985,6 +3985,11 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
       return db.getTeamsForUser(ctx.user.id);
     }),
 
+    // Get team statistics for dashboard
+    getStats: protectedProcedure.query(async () => {
+      return db.getTeamStats();
+    }),
+
     // Get team by ID with members
     getById: protectedProcedure
       .input(z.object({ id: z.number() }))
@@ -5683,6 +5688,213 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
       
       return { processed: tasksToRemind.length, sent: sentCount };
     }),
+  }),
+
+  // ============================================================
+  // Shift Templates Router
+  // ============================================================
+  shiftTemplates: router({
+    list: protectedProcedure
+      .input(z.object({ teamId: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return db.getShiftTemplates(input?.teamId);
+      }),
+
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getShiftTemplateById(input.id);
+      }),
+
+    create: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+        teamId: z.number(),
+        startTime: z.string().regex(/^\d{2}:\d{2}$/),
+        endTime: z.string().regex(/^\d{2}:\d{2}$/),
+        color: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const id = await db.createShiftTemplate({
+          ...input,
+          createdById: ctx.user.id,
+        });
+        return { id };
+      }),
+
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        description: z.string().optional(),
+        startTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+        endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+        color: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateShiftTemplate(id, data);
+        return { success: true };
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteShiftTemplate(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ============================================================
+  // Shift Swap Requests Router
+  // ============================================================
+  shiftSwap: router({
+    list: protectedProcedure
+      .input(z.object({
+        requesterId: z.number().optional(),
+        targetUserId: z.number().optional(),
+        status: z.enum(["pending", "accepted", "rejected", "cancelled"]).optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return db.getShiftSwapRequests(input);
+      }),
+
+    myRequests: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getShiftSwapRequests({ requesterId: ctx.user.id });
+      }),
+
+    pendingForMe: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getPendingSwapRequestsForUser(ctx.user.id);
+      }),
+
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getShiftSwapRequestById(input.id);
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        originalEventId: z.number(),
+        targetUserId: z.number().optional(),
+        targetEventId: z.number().optional(),
+        reason: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const id = await db.createShiftSwapRequest({
+          ...input,
+          requesterId: ctx.user.id,
+        });
+        
+        // Notify target user if specified
+        if (input.targetUserId) {
+          await db.createNotification({
+            userId: input.targetUserId,
+            type: "shift_swap_request",
+            title: "Schicht-Tausch Anfrage",
+            message: `${ctx.user.name || "Ein Kollege"} möchte eine Schicht mit dir tauschen.`,
+            link: "/calendar?view=shifts",
+          });
+        }
+        
+        return { id };
+      }),
+
+    accept: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const request = await db.getShiftSwapRequestById(input.id);
+        if (!request) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Anfrage nicht gefunden" });
+        }
+        
+        // Only target user or admin can accept
+        if (request.targetUserId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Keine Berechtigung" });
+        }
+        
+        await db.approveShiftSwapRequest(input.id, ctx.user.id);
+        
+        // Notify requester
+        await db.createNotification({
+          userId: request.requesterId,
+          type: "shift_swap_accepted",
+          title: "Schicht-Tausch akzeptiert",
+          message: "Deine Schicht-Tausch Anfrage wurde akzeptiert.",
+          link: "/calendar?view=shifts",
+        });
+        
+        return { success: true };
+      }),
+
+    reject: protectedProcedure
+      .input(z.object({ id: z.number(), reason: z.string().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        const request = await db.getShiftSwapRequestById(input.id);
+        if (!request) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Anfrage nicht gefunden" });
+        }
+        
+        // Only target user or admin can reject
+        if (request.targetUserId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Keine Berechtigung" });
+        }
+        
+        await db.rejectShiftSwapRequest(input.id, ctx.user.id, input.reason);
+        
+        // Notify requester
+        await db.createNotification({
+          userId: request.requesterId,
+          type: "shift_swap_rejected",
+          title: "Schicht-Tausch abgelehnt",
+          message: input.reason || "Deine Schicht-Tausch Anfrage wurde abgelehnt.",
+          link: "/calendar?view=shifts",
+        });
+        
+        return { success: true };
+      }),
+
+    cancel: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const request = await db.getShiftSwapRequestById(input.id);
+        if (!request) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Anfrage nicht gefunden" });
+        }
+        
+        // Only requester can cancel
+        if (request.requesterId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Keine Berechtigung" });
+        }
+        
+        await db.cancelShiftSwapRequest(input.id);
+        return { success: true };
+      }),
+
+    // Admin endpoint to get all pending requests
+    adminPending: adminProcedure
+      .query(async () => {
+        return db.getShiftSwapRequests({ status: "pending" });
+      }),
+  }),
+
+  // ============================================================
+  // Team Statistics Router
+  // ============================================================
+  teamStats: router({
+    getForTeam: protectedProcedure
+      .input(z.object({ teamId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getTeamStatistics(input.teamId);
+      }),
+
+    getAll: protectedProcedure
+      .query(async () => {
+        return db.getAllTeamsStatistics();
+      }),
   }),
 });
 

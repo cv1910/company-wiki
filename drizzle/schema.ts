@@ -1307,3 +1307,45 @@ export const taskComments = mysqlTable("task_comments", {
 
 export type TaskComment = typeof taskComments.$inferSelect;
 export type InsertTaskComment = typeof taskComments.$inferInsert;
+
+
+/**
+ * Shift templates for reusable shift patterns.
+ */
+export const shiftTemplates = mysqlTable("shift_templates", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  teamId: int("teamId").notNull(),
+  startTime: varchar("startTime", { length: 5 }).notNull(), // HH:MM format
+  endTime: varchar("endTime", { length: 5 }).notNull(), // HH:MM format
+  color: varchar("color", { length: 50 }).default("blue"),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ShiftTemplate = typeof shiftTemplates.$inferSelect;
+export type InsertShiftTemplate = typeof shiftTemplates.$inferInsert;
+
+/**
+ * Shift swap requests for exchanging shifts between team members.
+ */
+export const shiftSwapRequests = mysqlTable("shift_swap_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  originalEventId: int("originalEventId").notNull(), // The shift event to swap
+  requesterId: int("requesterId").notNull(), // User requesting the swap
+  targetUserId: int("targetUserId"), // User to swap with (null if open request)
+  targetEventId: int("targetEventId"), // The shift event offered in exchange (optional)
+  status: mysqlEnum("status", ["pending", "accepted", "rejected", "cancelled"]).default("pending").notNull(),
+  reason: text("reason"),
+  adminNote: text("adminNote"),
+  approvedById: int("approvedById"),
+  approvedAt: timestamp("approvedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ShiftSwapRequest = typeof shiftSwapRequests.$inferSelect;
+export type InsertShiftSwapRequest = typeof shiftSwapRequests.$inferInsert;

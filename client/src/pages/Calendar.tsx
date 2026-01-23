@@ -189,6 +189,16 @@ export default function Calendar() {
   const [eventRecurrenceRule, setEventRecurrenceRule] = useState("");
   // Team selection for shift events
   const [eventTeamId, setEventTeamId] = useState<number | null>(null);
+  // Shift template selection
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState("");
+  const [newTemplateDescription, setNewTemplateDescription] = useState("");
+  // Shift swap state
+  const [showSwapDialog, setShowSwapDialog] = useState(false);
+  const [swapRequestEventId, setSwapRequestEventId] = useState<number | null>(null);
+  const [swapTargetUserId, setSwapTargetUserId] = useState<number | null>(null);
+  const [swapReason, setSwapReason] = useState("");
   // UI state for optional fields
   const [showLinkField, setShowLinkField] = useState(false);
   const [showNotesField, setShowNotesField] = useState(false);
@@ -248,6 +258,35 @@ export default function Calendar() {
   // Fetch teams for shift events
   const { data: teams } = trpc.teams.list.useQuery();
   const { data: myTeams } = trpc.teams.myTeams.useQuery();
+  
+  // Fetch shift templates
+  const { data: shiftTemplates, refetch: refetchTemplates } = trpc.shiftTemplates.list.useQuery({ teamId: eventTeamId || undefined });
+  const createTemplate = trpc.shiftTemplates.create.useMutation({
+    onSuccess: () => {
+      refetchTemplates();
+      setShowTemplateDialog(false);
+      setNewTemplateName("");
+      setNewTemplateDescription("");
+    },
+  });
+  const deleteTemplate = trpc.shiftTemplates.delete.useMutation({
+    onSuccess: () => refetchTemplates(),
+  });
+  
+  // Shift swap mutations
+  const { data: mySwapRequests } = trpc.shiftSwap.myRequests.useQuery();
+  const { data: pendingSwapsForMe } = trpc.shiftSwap.pendingForMe.useQuery();
+  const { data: allUsers } = trpc.users.list.useQuery();
+  const createSwapRequest = trpc.shiftSwap.create.useMutation({
+    onSuccess: () => {
+      setShowSwapDialog(false);
+      setSwapRequestEventId(null);
+      setSwapTargetUserId(null);
+      setSwapReason("");
+    },
+  });
+  const acceptSwapRequest = trpc.shiftSwap.accept.useMutation();
+  const rejectSwapRequest = trpc.shiftSwap.reject.useMutation();
   
   // Check if user is in POS or Versand team
   const isInShiftTeam = useMemo(() => {
@@ -1094,12 +1133,26 @@ export default function Calendar() {
                       <div
                         key={shift.id}
                         className={cn(
-                          "p-1 text-xs rounded cursor-pointer truncate mb-1",
+                          "p-1 text-xs rounded cursor-pointer truncate mb-1 group relative",
                           getColorClass(shift.color)
                         )}
                         onClick={() => openEditEventDialog(shift)}
                       >
-                        {shift.title}
+                        <span>{shift.title}</span>
+                        {(shift as any).userId === user?.id && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSwapRequestEventId(shift.id);
+                              setShowSwapDialog(true);
+                            }}
+                          >
+                            <ArrowRight className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1890,26 +1943,90 @@ export default function Calendar() {
 
             {/* Team selection for shift events */}
             {eventType === "shift" && (
-              <div className="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-950/30 rounded-lg border border-orange-200 dark:border-orange-800">
-                <Users className="h-4 w-4 text-orange-600" />
-                <Select
-                  value={eventTeamId?.toString() || ""}
-                  onValueChange={(v) => setEventTeamId(v ? parseInt(v) : null)}
-                >
-                  <SelectTrigger className="flex-1 border-0 bg-transparent">
-                    <SelectValue placeholder="Team auswählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teams?.filter(team => {
-                      const shiftTeamNames = ['pos', 'versand', 'lager', 'warehouse', 'shipping'];
-                      return shiftTeamNames.some(name => team.name.toLowerCase().includes(name));
-                    }).map((team) => (
-                      <SelectItem key={team.id} value={team.id.toString()}>
-                        {team.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-950/30 rounded-lg border border-orange-200 dark:border-orange-800">
+                  <Users className="h-4 w-4 text-orange-600" />
+                  <Select
+                    value={eventTeamId?.toString() || ""}
+                    onValueChange={(v) => setEventTeamId(v ? parseInt(v) : null)}
+                  >
+                    <SelectTrigger className="flex-1 border-0 bg-transparent">
+                      <SelectValue placeholder="Team auswählen..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teams?.filter(team => {
+                        const shiftTeamNames = ['pos', 'versand', 'lager', 'warehouse', 'shipping'];
+                        return shiftTeamNames.some(name => team.name.toLowerCase().includes(name));
+                      }).map((team) => (
+                        <SelectItem key={team.id} value={team.id.toString()}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Shift template selection */}
+                {eventTeamId && shiftTemplates && shiftTemplates.length > 0 && (
+                  <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <Clock className="h-4 w-4 text-blue-600" />
+                    <Select
+                      value={selectedTemplateId?.toString() || ""}
+                      onValueChange={(v) => {
+                        const templateId = v ? parseInt(v) : null;
+                        setSelectedTemplateId(templateId);
+                        if (templateId) {
+                          const template = shiftTemplates.find(t => t.id === templateId);
+                          if (template) {
+                            setEventTitle(template.name);
+                            setEventDescription(template.description || "");
+                            setEventColor(template.color || "blue");
+                            // Set times based on template
+                            const today = eventStartDate ? eventStartDate.split("T")[0] : format(new Date(), "yyyy-MM-dd");
+                            setEventStartDate(`${today}T${template.startTime}`);
+                            setEventEndDate(`${today}T${template.endTime}`);
+                          }
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="flex-1 border-0 bg-transparent">
+                        <SelectValue placeholder="Vorlage verwenden..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {shiftTemplates.map((template) => (
+                          <SelectItem key={template.id} value={template.id.toString()}>
+                            {template.name} ({template.startTime} - {template.endTime})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
+                {/* Save as template button */}
+                {eventTeamId && eventTitle && eventStartDate && eventEndDate && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={() => {
+                      const startTime = eventStartDate.split("T")[1] || "09:00";
+                      const endTime = eventEndDate.split("T")[1] || "17:00";
+                      createTemplate.mutate({
+                        name: eventTitle,
+                        description: eventDescription || undefined,
+                        teamId: eventTeamId,
+                        startTime: startTime.substring(0, 5),
+                        endTime: endTime.substring(0, 5),
+                        color: eventColor,
+                      });
+                    }}
+                    disabled={createTemplate.isPending}
+                  >
+                    {createTemplate.isPending ? "Speichere..." : "Als Vorlage speichern"}
+                  </Button>
+                )}
               </div>
             )}
 
@@ -2275,6 +2392,102 @@ export default function Calendar() {
         {viewMode === "shifts" && renderShiftsView()}
       </div>
     </div>
+    
+    {/* Shift Swap Dialog */}
+    <Dialog open={showSwapDialog} onOpenChange={setShowSwapDialog}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Schicht tauschen</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>Mit wem möchtest du tauschen?</Label>
+            <Select
+              value={swapTargetUserId?.toString() || ""}
+              onValueChange={(v) => setSwapTargetUserId(v ? parseInt(v) : null)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Kollege auswählen..." />
+              </SelectTrigger>
+              <SelectContent>
+                {allUsers?.filter(u => u.id !== user?.id).map((u) => (
+                  <SelectItem key={u.id} value={u.id.toString()}>
+                    {u.name || u.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Grund (optional)</Label>
+            <Textarea
+              value={swapReason}
+              onChange={(e) => setSwapReason(e.target.value)}
+              placeholder="Warum möchtest du diese Schicht tauschen?"
+              rows={3}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowSwapDialog(false)}>
+            Abbrechen
+          </Button>
+          <Button
+            onClick={() => {
+              if (swapRequestEventId) {
+                createSwapRequest.mutate({
+                  originalEventId: swapRequestEventId,
+                  targetUserId: swapTargetUserId || undefined,
+                  reason: swapReason || undefined,
+                });
+              }
+            }}
+            disabled={createSwapRequest.isPending}
+          >
+            {createSwapRequest.isPending ? "Sende..." : "Anfrage senden"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    
+    {/* Pending Swap Requests Notification */}
+    {pendingSwapsForMe && pendingSwapsForMe.length > 0 && (
+      <div className="fixed bottom-4 right-4 z-50">
+        <Card className="w-80 shadow-lg border-orange-200 bg-orange-50 dark:bg-orange-950/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <ArrowRight className="h-4 w-4" />
+              Schicht-Tausch Anfragen ({pendingSwapsForMe.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {pendingSwapsForMe.slice(0, 3).map((request) => (
+              <div key={request.id} className="flex items-center justify-between gap-2 p-2 bg-background rounded-lg">
+                <span className="text-sm truncate">Anfrage #{request.id}</span>
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-green-600 hover:text-green-700 hover:bg-green-100"
+                    onClick={() => acceptSwapRequest.mutate({ id: request.id })}
+                  >
+                    Annehmen
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-100"
+                    onClick={() => rejectSwapRequest.mutate({ id: request.id })}
+                  >
+                    Ablehnen
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    )}
     </>
   );
 }

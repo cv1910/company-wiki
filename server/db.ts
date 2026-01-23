@@ -113,6 +113,10 @@ import {
   InsertTask,
   taskComments,
   InsertTaskComment,
+  shiftTemplates,
+  InsertShiftTemplate,
+  shiftSwapRequests,
+  InsertShiftSwapRequest,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -6045,4 +6049,226 @@ export async function resetTaskReminder(taskId: number) {
     .update(tasks)
     .set({ reminderSent: false })
     .where(eq(tasks.id, taskId));
+}
+
+
+// ============================================================
+// Shift Templates
+// ============================================================
+
+export async function createShiftTemplate(data: InsertShiftTemplate) {
+  const db = await getDb();
+  const result = await db!.insert(shiftTemplates).values(data);
+  return result[0].insertId;
+}
+
+export async function getShiftTemplates(teamId?: number) {
+  const db = await getDb();
+  if (teamId) {
+    return db!
+      .select()
+      .from(shiftTemplates)
+      .where(and(eq(shiftTemplates.teamId, teamId), eq(shiftTemplates.isActive, true)))
+      .orderBy(shiftTemplates.name);
+  }
+  return db!
+    .select()
+    .from(shiftTemplates)
+    .where(eq(shiftTemplates.isActive, true))
+    .orderBy(shiftTemplates.name);
+}
+
+export async function getShiftTemplateById(id: number) {
+  const db = await getDb();
+  const result = await db!
+    .select()
+    .from(shiftTemplates)
+    .where(eq(shiftTemplates.id, id));
+  return result[0] || null;
+}
+
+export async function updateShiftTemplate(id: number, data: Partial<InsertShiftTemplate>) {
+  const db = await getDb();
+  await db!.update(shiftTemplates).set(data).where(eq(shiftTemplates.id, id));
+}
+
+export async function deleteShiftTemplate(id: number) {
+  const db = await getDb();
+  await db!.update(shiftTemplates).set({ isActive: false }).where(eq(shiftTemplates.id, id));
+}
+
+// ============================================================
+// Shift Swap Requests
+// ============================================================
+
+export async function createShiftSwapRequest(data: InsertShiftSwapRequest) {
+  const db = await getDb();
+  const result = await db!.insert(shiftSwapRequests).values(data);
+  return result[0].insertId;
+}
+
+export async function getShiftSwapRequests(filters?: { 
+  requesterId?: number; 
+  targetUserId?: number; 
+  status?: string;
+}) {
+  const db = await getDb();
+  const conditions = [];
+  
+  if (filters?.requesterId) {
+    conditions.push(eq(shiftSwapRequests.requesterId, filters.requesterId));
+  }
+  if (filters?.targetUserId) {
+    conditions.push(eq(shiftSwapRequests.targetUserId, filters.targetUserId));
+  }
+  if (filters?.status) {
+    conditions.push(eq(shiftSwapRequests.status, filters.status as any));
+  }
+  
+  if (conditions.length > 0) {
+    return db!
+      .select()
+      .from(shiftSwapRequests)
+      .where(and(...conditions))
+      .orderBy(desc(shiftSwapRequests.createdAt));
+  }
+  
+  return db!
+    .select()
+    .from(shiftSwapRequests)
+    .orderBy(desc(shiftSwapRequests.createdAt));
+}
+
+export async function getShiftSwapRequestById(id: number) {
+  const db = await getDb();
+  const result = await db!
+    .select()
+    .from(shiftSwapRequests)
+    .where(eq(shiftSwapRequests.id, id));
+  return result[0] || null;
+}
+
+export async function getPendingSwapRequestsForUser(userId: number) {
+  const db = await getDb();
+  return db!
+    .select()
+    .from(shiftSwapRequests)
+    .where(
+      and(
+        eq(shiftSwapRequests.targetUserId, userId),
+        eq(shiftSwapRequests.status, "pending")
+      )
+    )
+    .orderBy(desc(shiftSwapRequests.createdAt));
+}
+
+export async function updateShiftSwapRequest(id: number, data: Partial<InsertShiftSwapRequest> & { approvedById?: number; approvedAt?: Date }) {
+  const db = await getDb();
+  await db!.update(shiftSwapRequests).set(data).where(eq(shiftSwapRequests.id, id));
+}
+
+export async function approveShiftSwapRequest(id: number, approvedById: number, adminNote?: string) {
+  const db = await getDb();
+  await db!
+    .update(shiftSwapRequests)
+    .set({ 
+      status: "accepted", 
+      approvedById, 
+      approvedAt: new Date(),
+      adminNote 
+    })
+    .where(eq(shiftSwapRequests.id, id));
+}
+
+export async function rejectShiftSwapRequest(id: number, approvedById: number, adminNote?: string) {
+  const db = await getDb();
+  await db!
+    .update(shiftSwapRequests)
+    .set({ 
+      status: "rejected", 
+      approvedById, 
+      approvedAt: new Date(),
+      adminNote 
+    })
+    .where(eq(shiftSwapRequests.id, id));
+}
+
+export async function cancelShiftSwapRequest(id: number) {
+  const db = await getDb();
+  await db!
+    .update(shiftSwapRequests)
+    .set({ status: "cancelled" })
+    .where(eq(shiftSwapRequests.id, id));
+}
+
+// ============================================================
+// Team Statistics
+// ============================================================
+
+export async function getTeamStatistics(teamId: number) {
+  const db = await getDb();
+  
+  // Get team member count
+  const memberCount = await db!
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(teamMembers)
+    .where(eq(teamMembers.teamId, teamId));
+  
+  // Get active shifts (calendar events of type 'shift' for this team)
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay() + 1); // Monday
+  startOfWeek.setHours(0, 0, 0, 0);
+  
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6); // Sunday
+  endOfWeek.setHours(23, 59, 59, 999);
+  
+  const activeShifts = await db!
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(calendarEvents)
+    .where(
+      and(
+        eq(calendarEvents.eventType, "shift"),
+        eq(calendarEvents.teamId, teamId),
+        gte(calendarEvents.startDate, startOfWeek),
+        lte(calendarEvents.startDate, endOfWeek)
+      )
+    );
+  
+  // Get shift templates count
+  const templateCount = await db!
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(shiftTemplates)
+    .where(and(eq(shiftTemplates.teamId, teamId), eq(shiftTemplates.isActive, true)));
+  
+  // Get pending swap requests
+  const pendingSwaps = await db!
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(shiftSwapRequests)
+    .where(eq(shiftSwapRequests.status, "pending"));
+  
+  return {
+    memberCount: memberCount[0]?.count || 0,
+    activeShiftsThisWeek: activeShifts[0]?.count || 0,
+    templateCount: templateCount[0]?.count || 0,
+    pendingSwapRequests: pendingSwaps[0]?.count || 0,
+  };
+}
+
+export async function getAllTeamsStatistics() {
+  const db = await getDb();
+  
+  const allTeams = await db!.select().from(teams);
+  const stats = [];
+  
+  for (const team of allTeams) {
+    const teamStats = await getTeamStatistics(team.id);
+    stats.push({
+      team,
+      ...teamStats,
+    });
+  }
+  
+  return stats;
 }
