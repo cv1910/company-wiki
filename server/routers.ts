@@ -5896,6 +5896,40 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         return db.getAllTeamsStatistics();
       }),
   }),
+
+  // ============================================================
+  // Shift Reports Router
+  // ============================================================
+  shiftReports: router({
+    getMonthlyReport: protectedProcedure
+      .input(z.object({
+        year: z.number(),
+        month: z.number().min(1).max(12),
+        teamId: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return db.getMonthlyShiftReport(input.year, input.month, input.teamId);
+      }),
+
+    getUserReport: protectedProcedure
+      .input(z.object({
+        userId: z.string(),
+        year: z.number(),
+        month: z.number().min(1).max(12),
+      }))
+      .query(async ({ input }) => {
+        return db.getUserShiftReport(input.userId, input.year, input.month);
+      }),
+
+    getYearlyReport: protectedProcedure
+      .input(z.object({
+        year: z.number(),
+        teamId: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return db.getYearlyShiftReport(input.year, input.teamId);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

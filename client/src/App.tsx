@@ -69,6 +69,9 @@ import TeamDirectory from "./pages/TeamDirectory";
 // Tasks
 import Aufgaben from "./pages/Aufgaben";
 
+// Shift Reports
+import ShiftReports from "./pages/ShiftReports";
+
 function Router() {
   return (
     <DashboardLayout>
@@ -129,6 +132,7 @@ function Router() {
         
         {/* Admin Routes */}
         <Route path="/admin/teams" component={Teams} />
+        <Route path="/admin/shift-reports" component={ShiftReports} />
         <Route path="/admin/categories" component={AdminCategories} />
         <Route path="/admin/users" component={AdminUsers} />
         <Route path="/admin/settings" component={AdminSettings} />

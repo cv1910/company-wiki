@@ -94,6 +94,7 @@ const moreMenuItems: typeof menuItems = [];
 const adminMenuItems = [
   { icon: CalendarClock, label: "Terminplanung", path: "/scheduling" },
   { icon: Users, label: "Teams", path: "/admin/teams" },
+  { icon: BarChart3, label: "Schicht-Auswertungen", path: "/admin/shift-reports" },
   { icon: FolderOpen, label: "Bereiche", path: "/admin/categories" },
   { icon: Users, label: "Benutzer", path: "/admin/users" },
   { icon: Calendar, label: "Urlaubsanträge", path: "/admin/leave" },

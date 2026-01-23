@@ -1109,10 +1109,17 @@
 
 
 ## Schicht-System Erweiterungen (Januar 2026)
-- [ ] Datenbank-Schema für Schicht-Vorlagen (shiftTemplates)
-- [ ] Datenbank-Schema für Schicht-Tausch (shiftSwapRequests)
-- [ ] Backend-API für Schicht-Vorlagen (CRUD)
-- [ ] Backend-API für Schicht-Tausch (Anfrage, Genehmigung, Ablehnung)
-- [ ] Schicht-Vorlagen UI im Kalender
-- [ ] Schicht-Tausch UI mit Genehmigungsworkflow
-- [ ] Team-Statistiken Dashboard-Widget (Teamgröße, aktive Schichten, Auslastung)
+- [x] Datenbank-Schema für Schicht-Vorlagen (shiftTemplates)
+- [x] Datenbank-Schema für Schicht-Tausch (shiftSwapRequests)
+- [x] Backend-API für Schicht-Vorlagen (CRUD)
+- [x] Backend-API für Schicht-Tausch (Anfrage, Genehmigung, Ablehnung)
+- [x] Schicht-Vorlagen UI im Kalender
+- [x] Schicht-Tausch UI mit Genehmigungsworkflow
+- [x] Team-Statistiken Dashboard-Widget (Teamgröße, aktive Schichten, Auslastung)
+
+
+## Schicht-Auswertungen (Januar 2026)
+- [x] Backend-API für Schicht-Auswertungen (Stunden pro Mitarbeiter/Monat)
+- [x] Schicht-Auswertungen Seite mit monatlicher Übersicht
+- [x] Export-Funktion für Auswertungen (CSV)
+- [x] Navigation zur Schicht-Auswertungen Seite

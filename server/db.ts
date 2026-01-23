@@ -6320,3 +6320,230 @@ export async function getTeamStats() {
   
   return stats;
 }
+
+
+// ============================================================
+// Shift Reports
+// ============================================================
+
+export async function getMonthlyShiftReport(year: number, month: number, teamId?: number) {
+  const db = await getDb();
+  
+  // Calculate start and end of month
+  const startOfMonth = new Date(year, month - 1, 1);
+  const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
+  
+  // Get all shift events for the month
+  let query = db!
+    .select({
+      id: calendarEvents.id,
+      title: calendarEvents.title,
+      startDate: calendarEvents.startDate,
+      endDate: calendarEvents.endDate,
+      isAllDay: calendarEvents.isAllDay,
+      userId: calendarEvents.userId,
+      teamId: calendarEvents.teamId,
+    })
+    .from(calendarEvents)
+    .where(
+      and(
+        eq(calendarEvents.eventType, "shift"),
+        gte(calendarEvents.startDate, startOfMonth),
+        lte(calendarEvents.startDate, endOfMonth),
+        teamId ? eq(calendarEvents.teamId, teamId) : undefined
+      )
+    );
+  
+  const shifts = await query;
+  
+  // Get all users who have shifts (userId is int in calendarEvents)
+  const userIds = Array.from(new Set(shifts.map(s => s.userId).filter(Boolean))) as number[];
+  const usersData = userIds.length > 0 
+    ? await db!.select().from(users).where(inArray(users.id, userIds))
+    : [];
+  
+  // Get team info if teamId provided
+  let teamInfo = null;
+  if (teamId) {
+    const teamResult = await db!.select().from(teams).where(eq(teams.id, teamId));
+    teamInfo = teamResult[0] || null;
+  }
+  
+  // Calculate hours per user - use openId as string key for frontend compatibility
+  const userHours: Record<string, { 
+    userId: string; 
+    userName: string; 
+    totalHours: number; 
+    shiftCount: number;
+    shifts: Array<{ date: Date; hours: number; title: string }>;
+  }> = {};
+  
+  for (const shift of shifts) {
+    if (!shift.userId) continue;
+    
+    const user = usersData.find(u => u.id === shift.userId);
+    const userName = user?.name || "Unbekannt";
+    const userOpenId = user?.openId || String(shift.userId);
+    
+    if (!userHours[userOpenId]) {
+      userHours[userOpenId] = {
+        userId: userOpenId,
+        userName,
+        totalHours: 0,
+        shiftCount: 0,
+        shifts: [],
+      };
+    }
+    
+    // Calculate hours for this shift
+    let hours = 0;
+    if (shift.isAllDay) {
+      // All-day shift = 8 hours
+      hours = 8;
+    } else {
+      // Calculate hours from startDate and endDate
+      const start = new Date(shift.startDate);
+      const end = new Date(shift.endDate);
+      hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+      if (hours <= 0 || hours > 24) hours = 8; // Default to 8 hours if invalid
+    }
+    
+    userHours[userOpenId].totalHours += hours;
+    userHours[userOpenId].shiftCount += 1;
+    userHours[userOpenId].shifts.push({
+      date: shift.startDate,
+      hours,
+      title: shift.title,
+    });
+  }
+  
+  // Sort by total hours descending
+  const sortedUsers = Object.values(userHours).sort((a, b) => b.totalHours - a.totalHours);
+  
+  return {
+    year,
+    month,
+    teamId,
+    teamName: teamInfo?.name || null,
+    totalShifts: shifts.length,
+    totalHours: sortedUsers.reduce((sum, u) => sum + u.totalHours, 0),
+    users: sortedUsers,
+  };
+}
+
+export async function getUserShiftReport(userOpenId: string, year: number, month: number) {
+  const db = await getDb();
+  
+  // Calculate start and end of month
+  const startOfMonth = new Date(year, month - 1, 1);
+  const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
+  
+  // Get user info
+  const userResult = await db!.select().from(users).where(eq(users.openId, userOpenId));
+  const user = userResult[0];
+  if (!user) return null;
+  
+  // Get all shifts for this user in the month (userId in calendarEvents is int)
+  const shifts = await db!
+    .select()
+    .from(calendarEvents)
+    .where(
+      and(
+        eq(calendarEvents.eventType, "shift"),
+        eq(calendarEvents.userId, user.id),
+        gte(calendarEvents.startDate, startOfMonth),
+        lte(calendarEvents.startDate, endOfMonth)
+      )
+    )
+    .orderBy(calendarEvents.startDate);
+  
+  // Calculate hours per shift
+  const shiftDetails = shifts.map(shift => {
+    let hours = 0;
+    if (shift.isAllDay) {
+      hours = 8;
+    } else {
+      // Calculate hours from startDate and endDate
+      const start = new Date(shift.startDate);
+      const end = new Date(shift.endDate);
+      hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+      if (hours <= 0 || hours > 24) hours = 8; // Default to 8 hours if invalid
+    }
+    
+    const startDate = new Date(shift.startDate);
+    const endDate = new Date(shift.endDate);
+    const startTime = `${startDate.getHours().toString().padStart(2, '0')}:${startDate.getMinutes().toString().padStart(2, '0')}`;
+    const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+    
+    return {
+      id: shift.id,
+      date: shift.startDate,
+      title: shift.title,
+      startTime,
+      endTime,
+      isAllDay: shift.isAllDay,
+      hours,
+    };
+  });
+  
+  const totalHours = shiftDetails.reduce((sum, s) => sum + s.hours, 0);
+  
+  // Group by week
+  const weeklyHours: Record<number, number> = {};
+  for (const shift of shiftDetails) {
+    const weekNum = getWeekNumber(shift.date);
+    weeklyHours[weekNum] = (weeklyHours[weekNum] || 0) + shift.hours;
+  }
+  
+  return {
+    userId: userOpenId,
+    userName: user?.name || "Unbekannt",
+    year,
+    month,
+    totalShifts: shifts.length,
+    totalHours,
+    averageHoursPerShift: shifts.length > 0 ? totalHours / shifts.length : 0,
+    shifts: shiftDetails,
+    weeklyHours: Object.entries(weeklyHours).map(([week, hours]) => ({
+      week: parseInt(week),
+      hours,
+    })),
+  };
+}
+
+export async function getYearlyShiftReport(year: number, teamId?: number) {
+  const db = await getDb();
+  
+  const monthlyReports = [];
+  
+  for (let month = 1; month <= 12; month++) {
+    const report = await getMonthlyShiftReport(year, month, teamId);
+    monthlyReports.push({
+      month,
+      totalShifts: report.totalShifts,
+      totalHours: report.totalHours,
+      userCount: report.users.length,
+    });
+  }
+  
+  const totalShifts = monthlyReports.reduce((sum, r) => sum + r.totalShifts, 0);
+  const totalHours = monthlyReports.reduce((sum, r) => sum + r.totalHours, 0);
+  
+  return {
+    year,
+    teamId,
+    totalShifts,
+    totalHours,
+    averageHoursPerMonth: totalHours / 12,
+    monthlyReports,
+  };
+}
+
+// Helper function to get week number
+function getWeekNumber(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
