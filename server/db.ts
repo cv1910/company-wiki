@@ -1,4 +1,4 @@
-import { eq, desc, and, like, or, sql, inArray, lte, gte, lt, asc, isNotNull, isNull, aliasedTable } from "drizzle-orm";
+import { eq, desc, and, like, or, sql, inArray, lte, gte, lt, asc, isNotNull, isNull, aliasedTable, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -111,6 +111,8 @@ import {
   InsertOrgChartSettings,
   tasks,
   InsertTask,
+  taskComments,
+  InsertTaskComment,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -5879,4 +5881,111 @@ export async function getTaskById(id: number) {
     task: result[0].tasks,
     assignedTo: result[0].users ? { id: result[0].users.id, name: result[0].users.name, avatarUrl: result[0].users.avatarUrl } : null,
   };
+}
+
+
+// ============================================================================
+// Task Comments
+// ============================================================================
+
+export async function createTaskComment(data: {
+  taskId: number;
+  userId: number;
+  content: string;
+}): Promise<{ id: number }> {
+  const db = await getDb();
+  const result = await db!.insert(taskComments).values({
+    taskId: data.taskId,
+    userId: data.userId,
+    content: data.content,
+  });
+  return { id: result[0].insertId };
+}
+
+export async function getTaskComments(taskId: number) {
+  const db = await getDb();
+  const result = await db!
+    .select()
+    .from(taskComments)
+    .leftJoin(users, eq(taskComments.userId, users.id))
+    .where(eq(taskComments.taskId, taskId))
+    .orderBy(asc(taskComments.createdAt));
+
+  return result.map((r) => ({
+    comment: r.task_comments,
+    user: r.users ? { id: r.users.id, name: r.users.name, avatarUrl: r.users.avatarUrl } : null,
+  }));
+}
+
+export async function updateTaskComment(id: number, content: string): Promise<void> {
+  const db = await getDb();
+  await db!.update(taskComments).set({ content }).where(eq(taskComments.id, id));
+}
+
+export async function deleteTaskComment(id: number): Promise<void> {
+  const db = await getDb();
+  await db!.delete(taskComments).where(eq(taskComments.id, id));
+}
+
+export async function getTaskCommentById(id: number) {
+  const db = await getDb();
+  const result = await db!.select().from(taskComments).where(eq(taskComments.id, id)).limit(1);
+  return result[0] || null;
+}
+
+// ============================================================================
+// Recurring Tasks
+// ============================================================================
+
+export async function createRecurringTaskInstance(parentTask: {
+  id: number;
+  title: string;
+  description: string | null;
+  priority: "low" | "medium" | "high" | "urgent";
+  assignedToId: number | null;
+  createdById: number;
+  recurrencePattern: "none" | "daily" | "weekly" | "monthly";
+}, dueDate: Date): Promise<{ id: number }> {
+  const db = await getDb();
+  const result = await db!.insert(tasks).values({
+    title: parentTask.title,
+    description: parentTask.description,
+    priority: parentTask.priority,
+    assignedToId: parentTask.assignedToId,
+    createdById: parentTask.createdById,
+    dueDate,
+    status: "open",
+    recurrencePattern: "none", // Instanzen sind nicht wiederkehrend
+    parentTaskId: parentTask.id,
+  });
+  return { id: result[0].insertId };
+}
+
+export async function getRecurringTasks() {
+  const db = await getDb();
+  const now = new Date();
+  const result = await db!
+    .select()
+    .from(tasks)
+    .where(
+      and(
+        ne(tasks.recurrencePattern, "none"),
+        or(
+          isNull(tasks.recurrenceEndDate),
+          gte(tasks.recurrenceEndDate, now)
+        )
+      )
+    );
+  return result;
+}
+
+export async function getLastTaskInstance(parentTaskId: number) {
+  const db = await getDb();
+  const result = await db!
+    .select()
+    .from(tasks)
+    .where(eq(tasks.parentTaskId, parentTaskId))
+    .orderBy(desc(tasks.dueDate))
+    .limit(1);
+  return result[0] || null;
 }

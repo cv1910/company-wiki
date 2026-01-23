@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `task_comments` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`taskId` int NOT NULL,\n\t`userId` int NOT NULL,\n\t`content` text NOT NULL,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `task_comments_id` PRIMARY KEY(`id`)\n);\n\nALTER TABLE `tasks` ADD `recurrencePattern` enum('none','daily','weekly','monthly') DEFAULT 'none' NOT NULL;\nALTER TABLE `tasks` ADD `recurrenceEndDate` timestamp;\nALTER TABLE `tasks` ADD `parentTaskId` int;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute CREATE TABLE `task_comments` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`taskId` int NOT NULL,\n\t`userId` int NOT NULL,\n\t`content` text NOT NULL,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `task_comments_id` PRIMARY KEY(`id`)\n);\n\nALTER TABLE `tasks` ADD `recurrencePattern` enum('none','daily','weekly','monthly') DEFAULT 'none' NOT NULL;\nALTER TABLE `tasks` ADD `recurrenceEndDate` timestamp;\nALTER TABLE `tasks` ADD `parentTaskId` int;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1392
+}

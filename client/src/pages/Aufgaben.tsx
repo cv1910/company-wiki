@@ -18,6 +18,12 @@ import {
   AlertTriangle,
   ChevronDown,
   Trash2,
+  MessageCircle,
+  Send,
+  MoreVertical,
+  Edit2,
+  Repeat,
+  Filter,
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import { formatDistanceToNow, format } from "date-fns";
@@ -68,11 +74,13 @@ function TaskCard({
   task, 
   onStatusChange, 
   onDelete,
+  onComment,
   showAssignee = true 
 }: { 
   task: any;
   onStatusChange: (id: number, status: "open" | "in_progress" | "completed" | "cancelled") => void;
   onDelete: (id: number) => void;
+  onComment: (id: number) => void;
   showAssignee?: boolean;
 }) {
   const status = task.task.status as keyof typeof STATUS_CONFIG;
@@ -176,6 +184,19 @@ function TaskCard({
               <StatusIcon className="h-2.5 w-2.5 mr-1" />
               {statusConfig.label}
             </Badge>
+            {task.task.recurrencePattern && task.task.recurrencePattern !== "none" && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                <Repeat className="h-2.5 w-2.5 mr-1" />
+                {task.task.recurrencePattern === "daily" ? "Täglich" : task.task.recurrencePattern === "weekly" ? "Wöchentlich" : "Monatlich"}
+              </Badge>
+            )}
+            <button
+              onClick={() => onComment(task.task.id)}
+              className="flex items-center gap-1 hover:text-primary transition-colors"
+            >
+              <MessageCircle className="h-3 w-3" />
+              <span>Kommentare</span>
+            </button>
           </div>
         </div>
       </div>
@@ -193,6 +214,10 @@ export default function Aufgaben() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [filterStatus, setFilterStatus] = useState<"all" | "open" | "completed">("all");
+  const [filterPriority, setFilterPriority] = useState<"all" | "low" | "medium" | "high" | "urgent">("all");
+  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+  const [commentDialogOpen, setCommentDialogOpen] = useState(false);
+  const [newComment, setNewComment] = useState("");
 
   // Form state
   const [title, setTitle] = useState("");
@@ -200,12 +225,18 @@ export default function Aufgaben() {
   const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent">("medium");
   const [dueDate, setDueDate] = useState("");
   const [assignedToId, setAssignedToId] = useState<number | null>(null);
+  const [recurrencePattern, setRecurrencePattern] = useState<"none" | "daily" | "weekly" | "monthly">("none");
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState("");
 
   // Queries
   const { data: myTasks, isLoading: myTasksLoading, refetch: refetchMyTasks } = trpc.tasks.getMyTasks.useQuery();
   const { data: assignedTasks, refetch: refetchAssigned } = trpc.tasks.getAssignedToMe.useQuery();
   const { data: createdTasks, refetch: refetchCreated } = trpc.tasks.getCreatedByMe.useQuery();
   const { data: allUsers } = trpc.users.list.useQuery();
+  const { data: comments, refetch: refetchComments } = trpc.tasks.getComments.useQuery(
+    { taskId: selectedTaskId! },
+    { enabled: !!selectedTaskId }
+  );
 
   // Mutations
   const createTask = trpc.tasks.create.useMutation({
@@ -245,12 +276,35 @@ export default function Aufgaben() {
     },
   });
 
+  const createComment = trpc.tasks.createComment.useMutation({
+    onSuccess: () => {
+      toast.success("Kommentar hinzugefügt");
+      setNewComment("");
+      refetchComments();
+    },
+    onError: (error) => {
+      toast.error("Fehler: " + error.message);
+    },
+  });
+
+  const deleteComment = trpc.tasks.deleteComment.useMutation({
+    onSuccess: () => {
+      toast.success("Kommentar gelöscht");
+      refetchComments();
+    },
+    onError: (error) => {
+      toast.error("Fehler: " + error.message);
+    },
+  });
+
   const resetForm = () => {
     setTitle("");
     setDescription("");
     setPriority("medium");
     setDueDate("");
     setAssignedToId(null);
+    setRecurrencePattern("none");
+    setRecurrenceEndDate("");
   };
 
   const handleCreate = () => {
@@ -264,6 +318,8 @@ export default function Aufgaben() {
       priority,
       dueDate: dueDate ? new Date(dueDate) : null,
       assignedToId,
+      recurrencePattern,
+      recurrenceEndDate: recurrenceEndDate ? new Date(recurrenceEndDate) : null,
     });
   };
 
@@ -291,13 +347,20 @@ export default function Aufgaben() {
         tasks = (myTasks || []) as any[];
     }
 
+    // Status-Filter
     if (filterStatus === "open") {
-      return tasks.filter(t => t.task.status !== "completed" && t.task.status !== "cancelled");
+      tasks = tasks.filter(t => t.task.status !== "completed" && t.task.status !== "cancelled");
     } else if (filterStatus === "completed") {
-      return tasks.filter(t => t.task.status === "completed");
+      tasks = tasks.filter(t => t.task.status === "completed");
     }
+
+    // Priorität-Filter
+    if (filterPriority !== "all") {
+      tasks = tasks.filter(t => t.task.priority === filterPriority);
+    }
+
     return tasks;
-  }, [activeTab, myTasks, assignedTasks, createdTasks, filterStatus]);
+  }, [activeTab, myTasks, assignedTasks, createdTasks, filterStatus, filterPriority]);
 
   const openCount = useMemo(() => {
     return (myTasks || []).filter(t => t.task.status !== "completed" && t.task.status !== "cancelled").length;
@@ -359,16 +422,31 @@ export default function Aufgaben() {
             <TabsTrigger value="created">Von mir erstellt</TabsTrigger>
           </TabsList>
 
-          <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alle Status</SelectItem>
-              <SelectItem value="open">Offen</SelectItem>
-              <SelectItem value="completed">Erledigt</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle Status</SelectItem>
+                <SelectItem value="open">Offen</SelectItem>
+                <SelectItem value="completed">Erledigt</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filterPriority} onValueChange={(v) => setFilterPriority(v as any)}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Priorität" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle Prioritäten</SelectItem>
+                <SelectItem value="low">Niedrig</SelectItem>
+                <SelectItem value="medium">Mittel</SelectItem>
+                <SelectItem value="high">Hoch</SelectItem>
+                <SelectItem value="urgent">Dringend</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <TabsContent value={activeTab} className="mt-4">
@@ -404,6 +482,10 @@ export default function Aufgaben() {
                   task={task}
                   onStatusChange={handleStatusChange}
                   onDelete={handleDelete}
+                  onComment={(id) => {
+                    setSelectedTaskId(id);
+                    setCommentDialogOpen(true);
+                  }}
                   showAssignee={activeTab !== "assigned"}
                 />
               ))}
@@ -498,6 +580,39 @@ export default function Aufgaben() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Wiederkehrende Aufgaben */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Repeat className="h-4 w-4" />
+                  Wiederholung
+                </Label>
+                <Select value={recurrencePattern} onValueChange={(v) => setRecurrencePattern(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Keine Wiederholung</SelectItem>
+                    <SelectItem value="daily">Täglich</SelectItem>
+                    <SelectItem value="weekly">Wöchentlich</SelectItem>
+                    <SelectItem value="monthly">Monatlich</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {recurrencePattern !== "none" && (
+                <div className="space-y-2">
+                  <Label htmlFor="recurrenceEndDate">Wiederholung bis</Label>
+                  <Input
+                    id="recurrenceEndDate"
+                    type="date"
+                    value={recurrenceEndDate}
+                    onChange={(e) => setRecurrenceEndDate(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-end gap-3">
@@ -506,6 +621,91 @@ export default function Aufgaben() {
             </Button>
             <Button onClick={handleCreate} disabled={createTask.isPending}>
               {createTask.isPending ? "Erstelle..." : "Erstellen"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Comment Dialog */}
+      <Dialog open={commentDialogOpen} onOpenChange={(open) => {
+        setCommentDialogOpen(open);
+        if (!open) {
+          setSelectedTaskId(null);
+          setNewComment("");
+        }
+      }}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5" />
+              Kommentare
+            </DialogTitle>
+            <DialogDescription>
+              Diskutiere diese Aufgabe mit deinem Team.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4 max-h-[400px] overflow-y-auto">
+            {comments?.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <MessageCircle className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                <p>Noch keine Kommentare</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {comments?.map((c) => (
+                  <div key={c.comment.id} className="flex gap-3 p-3 rounded-lg bg-muted/50">
+                    <Avatar className="h-8 w-8 flex-shrink-0">
+                      <AvatarImage src={c.user?.avatarUrl || undefined} />
+                      <AvatarFallback className="text-xs">
+                        {c.user?.name?.charAt(0) || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-sm">{c.user?.name || "Unbekannt"}</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(c.comment.createdAt), { addSuffix: true, locale: de })}
+                          </span>
+                          {c.comment.userId === user?.id && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => deleteComment.mutate({ id: c.comment.id })}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-sm mt-1 whitespace-pre-wrap">{c.comment.content}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            <Textarea
+              placeholder="Schreibe einen Kommentar..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              rows={2}
+              className="flex-1"
+            />
+            <Button
+              onClick={() => {
+                if (selectedTaskId && newComment.trim()) {
+                  createComment.mutate({ taskId: selectedTaskId, content: newComment.trim() });
+                }
+              }}
+              disabled={!newComment.trim() || createComment.isPending}
+              className="self-end"
+            >
+              <Send className="h-4 w-4" />
             </Button>
           </div>
         </DialogContent>

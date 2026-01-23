@@ -5418,6 +5418,8 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
           dueDate: z.date().optional().nullable(),
           assignedToId: z.number().optional().nullable(),
+          recurrencePattern: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
+          recurrenceEndDate: z.date().optional().nullable(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -5429,7 +5431,9 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           assignedToId: input.assignedToId || null,
           createdById: ctx.user.id,
           status: "open",
-        });
+          recurrencePattern: input.recurrencePattern,
+          recurrenceEndDate: input.recurrenceEndDate || null,
+        } as any);
 
         // Create notification for assigned user
         if (input.assignedToId && input.assignedToId !== ctx.user.id) {
@@ -5523,6 +5527,84 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         return db.getTaskById(input.id);
+      }),
+
+    // ========== Task Comments ==========
+
+    // Get comments for a task
+    getComments: protectedProcedure
+      .input(z.object({ taskId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getTaskComments(input.taskId);
+      }),
+
+    // Create a comment
+    createComment: protectedProcedure
+      .input(
+        z.object({
+          taskId: z.number(),
+          content: z.string().min(1),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const result = await db.createTaskComment({
+          taskId: input.taskId,
+          userId: ctx.user.id,
+          content: input.content,
+        });
+
+        // Notify task assignee and creator
+        const task = await db.getTaskById(input.taskId);
+        if (task) {
+          const usersToNotify = new Set<number>();
+          if (task.task.assignedToId && task.task.assignedToId !== ctx.user.id) {
+            usersToNotify.add(task.task.assignedToId);
+          }
+          if (task.task.createdById !== ctx.user.id) {
+            usersToNotify.add(task.task.createdById);
+          }
+
+          for (const userId of Array.from(usersToNotify)) {
+            await db.createNotification({
+              userId,
+              type: "comment",
+              title: "Neuer Kommentar",
+              message: `${ctx.user.name || "Jemand"} hat einen Kommentar zur Aufgabe "${task.task.title}" hinzugefügt`,
+              link: "/aufgaben",
+            });
+          }
+        }
+
+        return result;
+      }),
+
+    // Update a comment
+    updateComment: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          content: z.string().min(1),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const comment = await db.getTaskCommentById(input.id);
+        if (!comment || comment.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Du kannst nur deine eigenen Kommentare bearbeiten" });
+        }
+        await db.updateTaskComment(input.id, input.content);
+        return { success: true };
+      }),
+
+    // Delete a comment
+    deleteComment: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const comment = await db.getTaskCommentById(input.id);
+        if (!comment || (comment.userId !== ctx.user.id && ctx.user.role !== "admin")) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Du kannst nur deine eigenen Kommentare löschen" });
+        }
+        await db.deleteTaskComment(input.id);
+        return { success: true };
       }),
   }),
 });

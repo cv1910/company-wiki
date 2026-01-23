@@ -1054,3 +1054,24 @@
 - [x] Aufgaben löschen
 - [x] Benachrichtigung bei Aufgabenzuweisung
 - [x] Unit-Tests für Aufgaben-Modul
+
+
+## Aufgaben-System Erweiterungen Phase 2 (Januar 2026)
+- [ ] Datenbank-Schema für Aufgaben-Kommentare (task_comments)
+- [ ] Datenbank-Schema für wiederkehrende Aufgaben (recurrence_pattern in tasks)
+- [ ] Backend-API für Kommentare (CRUD)
+- [ ] Backend-API für wiederkehrende Aufgaben
+- [ ] Kommentar-UI auf der Aufgaben-Seite
+- [ ] Wiederkehrende Aufgaben-UI (täglich, wöchentlich, monatlich)
+- [ ] Erweiterte Filter (Priorität, Status, Fälligkeitsdatum)
+
+
+## Aufgaben-System Erweiterungen Phase 2 (Januar 2026)
+- [x] Aufgaben-Kommentare (Kommentarfunktion für Diskussionen)
+- [x] Wiederkehrende Aufgaben (täglich, wöchentlich, monatlich)
+- [x] Erweiterte Filter (Priorität und Status kombiniert)
+- [x] Kommentar-Dialog mit Benutzer-Avatar und Zeitstempel
+- [x] Wiederholungs-Optionen im Aufgaben-Erstellungsdialog
+- [x] Wiederholungs-Badge auf Aufgaben-Karten
+- [x] Kommentar-Button auf Aufgaben-Karten
+- [x] Benachrichtigungen bei neuen Kommentaren

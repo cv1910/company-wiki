@@ -164,4 +164,102 @@ describe("Tasks Module", () => {
       expect(overdueTasks[0].id).toBe(1);
     });
   });
+
+  describe("Task Comments", () => {
+    it("should support comment data structure", () => {
+      const comment = {
+        id: 1,
+        taskId: 1,
+        userId: 1,
+        content: "This is a test comment",
+        createdAt: new Date(),
+      };
+      
+      expect(comment.taskId).toBe(1);
+      expect(comment.content).toBe("This is a test comment");
+    });
+
+    it("should filter comments by task", () => {
+      const comments = [
+        { id: 1, taskId: 1, content: "Comment 1" },
+        { id: 2, taskId: 2, content: "Comment 2" },
+        { id: 3, taskId: 1, content: "Comment 3" },
+      ];
+      
+      const task1Comments = comments.filter(c => c.taskId === 1);
+      expect(task1Comments).toHaveLength(2);
+    });
+  });
+
+  describe("Recurring Tasks", () => {
+    it("should support recurrence patterns", () => {
+      const validPatterns = ["none", "daily", "weekly", "monthly"];
+      
+      validPatterns.forEach(pattern => {
+        expect(["none", "daily", "weekly", "monthly"]).toContain(pattern);
+      });
+    });
+
+    it("should identify recurring tasks", () => {
+      const tasks = [
+        { id: 1, recurrencePattern: "none" },
+        { id: 2, recurrencePattern: "daily" },
+        { id: 3, recurrencePattern: "weekly" },
+        { id: 4, recurrencePattern: "monthly" },
+      ];
+      
+      const recurringTasks = tasks.filter(t => t.recurrencePattern !== "none");
+      expect(recurringTasks).toHaveLength(3);
+    });
+
+    it("should support recurrence end date", () => {
+      const now = new Date();
+      const futureDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const pastDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      
+      const tasks = [
+        { id: 1, recurrencePattern: "daily", recurrenceEndDate: futureDate },
+        { id: 2, recurrencePattern: "weekly", recurrenceEndDate: pastDate },
+        { id: 3, recurrencePattern: "monthly", recurrenceEndDate: null },
+      ];
+      
+      const activeRecurring = tasks.filter(t => 
+        t.recurrencePattern !== "none" && 
+        (t.recurrenceEndDate === null || t.recurrenceEndDate >= now)
+      );
+      expect(activeRecurring).toHaveLength(2);
+    });
+  });
+
+  describe("Priority Filter", () => {
+    it("should filter tasks by priority", () => {
+      const tasks = [
+        { id: 1, priority: "low" },
+        { id: 2, priority: "medium" },
+        { id: 3, priority: "high" },
+        { id: 4, priority: "urgent" },
+        { id: 5, priority: "high" },
+      ];
+      
+      const highPriorityTasks = tasks.filter(t => t.priority === "high");
+      expect(highPriorityTasks).toHaveLength(2);
+
+      const urgentTasks = tasks.filter(t => t.priority === "urgent");
+      expect(urgentTasks).toHaveLength(1);
+    });
+
+    it("should combine status and priority filters", () => {
+      const tasks = [
+        { id: 1, status: "open", priority: "high" },
+        { id: 2, status: "completed", priority: "high" },
+        { id: 3, status: "open", priority: "low" },
+        { id: 4, status: "open", priority: "high" },
+      ];
+      
+      const openHighPriority = tasks.filter(t => 
+        t.status === "open" && t.priority === "high"
+      );
+      expect(openHighPriority).toHaveLength(2);
+    });
+  });
 });

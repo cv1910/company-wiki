@@ -1277,9 +1277,28 @@ export const tasks = mysqlTable("tasks", {
   dueDate: timestamp("dueDate"),
   createdById: int("createdById").notNull(),
   assignedToId: int("assignedToId"),
+  // Wiederkehrende Aufgaben
+  recurrencePattern: mysqlEnum("recurrencePattern", ["none", "daily", "weekly", "monthly"]).default("none").notNull(),
+  recurrenceEndDate: timestamp("recurrenceEndDate"),
+  parentTaskId: int("parentTaskId"), // Referenz zur ursprünglichen wiederkehrenden Aufgabe
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = typeof tasks.$inferInsert;
+
+/**
+ * Task comments for discussions on tasks.
+ */
+export const taskComments = mysqlTable("task_comments", {
+  id: int("id").autoincrement().primaryKey(),
+  taskId: int("taskId").notNull(),
+  userId: int("userId").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type TaskComment = typeof taskComments.$inferSelect;
+export type InsertTaskComment = typeof taskComments.$inferInsert;
