@@ -4,10 +4,11 @@ import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { 
   Home, 
   Search, 
-  Calendar, 
+  MessageCircle, 
   CheckSquare, 
   Menu,
-  Plus
+  Plus,
+  Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -24,17 +25,18 @@ interface NavItem {
   path: string;
 }
 
+// Geändert zu: Home, AI Suche, Taps, Aufgaben
 const navItems: NavItem[] = [
   { icon: Home, label: "Home", path: "/" },
-  { icon: Search, label: "Suche", path: "/ai-suche" },
-  { icon: Calendar, label: "Kalender", path: "/kalender" },
+  { icon: Search, label: "AI Suche", path: "/search" },
+  { icon: MessageCircle, label: "Taps", path: "/taps" },
   { icon: CheckSquare, label: "Aufgaben", path: "/aufgaben" },
 ];
 
 const quickActions = [
-  { label: "Neue Aufgabe", path: "/aufgaben/new", icon: CheckSquare },
-  { label: "Neuer Termin", path: "/kalender?action=new", icon: Calendar },
-  { label: "Urlaub beantragen", path: "/urlaub/new", icon: Calendar },
+  { label: "Neue Aufgabe", path: "/aufgaben?action=new", icon: CheckSquare },
+  { label: "Neuer Termin", path: "/calendar?action=new", icon: Calendar },
+  { label: "Urlaub beantragen", path: "/urlaub?action=new", icon: Calendar },
 ];
 
 export function BottomNavigation() {

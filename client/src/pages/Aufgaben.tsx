@@ -166,12 +166,17 @@ function TaskCard({
             </p>
           )}
 
-          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
             {task.task.dueDate && (
               <div className={`flex items-center gap-1 ${isOverdue ? "text-red-600" : ""}`}>
                 {isOverdue && <AlertTriangle className="h-3 w-3" />}
                 <Calendar className="h-3 w-3" />
-                <span>{format(new Date(task.task.dueDate), "dd.MM.yyyy HH:mm", { locale: de })} Uhr</span>
+                <span>
+                  {format(new Date(task.task.dueDate), "dd.MM.yyyy", { locale: de })}
+                  {format(new Date(task.task.dueDate), "HH:mm") !== "00:00" && (
+                    <span className="ml-1">{format(new Date(task.task.dueDate), "HH:mm", { locale: de })} Uhr</span>
+                  )}
+                </span>
               </div>
             )}
             {showAssignee && task.assignedTo && (

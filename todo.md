@@ -1170,3 +1170,9 @@
 ## Mobile Erweiterungen (Januar 2026)
 - [x] Haptic Feedback bei Interaktionen (Vibration bei Navigation, Swipe-Gesten)
 - [x] Push-Benachrichtigungen (Browser Push Notifications, bereits implementiert)
+
+
+## Bug Fixes (Januar 2026)
+- [x] Bottom Navigation: Suche und Kalender Pfade korrigieren (404 Fehler)
+- [x] Bottom Navigation: Ändern zu AI Suche, Taps, Aufgaben
+- [x] Aufgaben-Details: Layout bündig ausrichten (flex-wrap)
