@@ -213,6 +213,14 @@ function DashboardLayoutContent({
   const isAdmin = user?.role === "admin";
   const isEditor = user?.role === "editor" || isAdmin;
 
+  // Handle navigation - close sidebar on mobile after clicking a menu item
+  const handleNavigation = (path: string) => {
+    setLocation(path);
+    if (isMobile) {
+      toggleSidebar();
+    }
+  };
+
   // Fetch unread notification count
   const { data: unreadCount } = trpc.notifications.unreadCount.useQuery(undefined, {
     refetchInterval: 30000, // Refresh every 30 seconds
@@ -300,7 +308,7 @@ function DashboardLayoutContent({
                     <SidebarMenuItem key={item.path}>
                       <SidebarMenuButton
                         isActive={isActive}
-                        onClick={() => setLocation(item.path)}
+                        onClick={() => handleNavigation(item.path)}
                         tooltip={item.label}
                         className={`h-11 transition-all duration-200 rounded-xl group ${
                           isActive 
@@ -347,7 +355,7 @@ function DashboardLayoutContent({
                       <SidebarMenuItem key={item.path}>
                         <SidebarMenuButton
                           isActive={isActive}
-                          onClick={() => setLocation(item.path)}
+                          onClick={() => handleNavigation(item.path)}
                           tooltip={item.label}
                           className={`h-11 transition-all duration-200 rounded-xl group ${
                             isActive 
@@ -357,14 +365,12 @@ function DashboardLayoutContent({
                         >
                           <div className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 ${
                             isActive 
-                              ? "bg-primary/10" 
+                              ? "bg-primary/15" 
                               : "group-hover:bg-accent"
                           }`}>
-                            <item.icon
-                              className={`h-[18px] w-[18px] transition-colors duration-200 ${
-                                isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
-                              }`}
-                            />
+                            <item.icon className={`h-4 w-4 transition-colors ${
+                              isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                            }`} />
                           </div>
                           <span className={`text-[14px] group-data-[collapsible=icon]:hidden ${
                             isActive ? "font-semibold" : "font-medium"
@@ -394,7 +400,7 @@ function DashboardLayoutContent({
                       <SidebarMenuItem key={item.path}>
                         <SidebarMenuButton
                           isActive={isActive}
-                          onClick={() => setLocation(item.path)}
+                          onClick={() => handleNavigation(item.path)}
                           tooltip={item.label}
                           className={`h-11 transition-all duration-200 rounded-xl group ${
                             isActive 

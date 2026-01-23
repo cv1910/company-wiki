@@ -1158,3 +1158,7 @@
 ## Aufgaben-Verbesserungen (Januar 2026)
 - [x] Uhrzeitauswahl bei Aufgabenerstellung hinzufügen
 - [x] Aufgaben nachträglich bearbeiten können (Titel, Beschreibung, Datum, Uhrzeit, Priorität, Zuweisung)
+
+
+## Mobile UI Fixes (Januar 2026)
+- [x] Sidebar nach Klick auf Menüpunkt automatisch schließen (Mobile)
