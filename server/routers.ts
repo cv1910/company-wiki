@@ -2892,9 +2892,10 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           endDate: z.string(),
           isAllDay: z.boolean().optional().default(false),
           color: z.string().optional().default("blue"),
-          eventType: z.enum(["personal", "meeting", "reminder", "vacation", "other"]).optional().default("personal"),
+          eventType: z.enum(["personal", "meeting", "reminder", "vacation", "shift", "other"]).optional().default("personal"),
           location: z.string().optional(),
           notes: z.string().optional(),
+          teamId: z.number().optional().nullable(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -2909,6 +2910,7 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           eventType: input.eventType,
           location: input.location || null,
           notes: input.notes || null,
+          teamId: input.teamId || null,
         });
         
         if (!event) {
@@ -2932,9 +2934,10 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           endDate: z.string().optional(),
           isAllDay: z.boolean().optional(),
           color: z.string().optional(),
-          eventType: z.enum(["personal", "meeting", "reminder", "vacation", "other"]).optional(),
+          eventType: z.enum(["personal", "meeting", "reminder", "vacation", "shift", "other"]).optional(),
           location: z.string().optional(),
           notes: z.string().optional(),
+          teamId: z.number().optional().nullable(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -2950,6 +2953,7 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         if (updates.eventType !== undefined) updateData.eventType = updates.eventType;
         if (updates.location !== undefined) updateData.location = updates.location;
         if (updates.notes !== undefined) updateData.notes = updates.notes;
+        if (updates.teamId !== undefined) updateData.teamId = updates.teamId;
         
         const event = await db.updateCalendarEvent(id, ctx.user.id, updateData);
         

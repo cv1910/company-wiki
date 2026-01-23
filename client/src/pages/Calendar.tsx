@@ -125,6 +125,7 @@ const EVENT_TYPES = [
   { value: "personal", label: "Persönlich" },
   { value: "meeting", label: "Meeting" },
   { value: "reminder", label: "Erinnerung" },
+  { value: "shift", label: "Schicht (Einsatzplan)" },
   { value: "other", label: "Sonstiges" },
 ];
 
@@ -186,6 +187,8 @@ export default function Calendar() {
   const [eventReminderMinutes, setEventReminderMinutes] = useState<number | null>(null);
   const [eventIsRecurring, setEventIsRecurring] = useState(false);
   const [eventRecurrenceRule, setEventRecurrenceRule] = useState("");
+  // Team selection for shift events
+  const [eventTeamId, setEventTeamId] = useState<number | null>(null);
   // UI state for optional fields
   const [showLinkField, setShowLinkField] = useState(false);
   const [showNotesField, setShowNotesField] = useState(false);
@@ -231,6 +234,19 @@ export default function Calendar() {
         };
     }
   }, [currentDate, viewMode]);
+
+  // Fetch teams for shift events
+  const { data: teams } = trpc.teams.list.useQuery();
+  const { data: myTeams } = trpc.teams.myTeams.useQuery();
+  
+  // Check if user is in POS or Versand team
+  const isInShiftTeam = useMemo(() => {
+    if (!myTeams) return false;
+    const shiftTeamNames = ['pos', 'versand', 'lager', 'warehouse', 'shipping'];
+    return myTeams.some(team => 
+      shiftTeamNames.some(name => team.name.toLowerCase().includes(name))
+    );
+  }, [myTeams]);
 
   // Fetch events
   const { data: calendarData, isLoading } = trpc.calendar.getEvents.useQuery({
@@ -462,6 +478,7 @@ export default function Calendar() {
     setShowLinkField(false);
     setShowNotesField(false);
     setShowRepeatField(false);
+    setEventTeamId(null);
     setEditingEvent(null);
     setSelectedDate(null);
   };
@@ -529,8 +546,9 @@ export default function Calendar() {
       endDate: endDate.toISOString(),
       isAllDay: eventIsAllDay,
       color: eventColor,
-      eventType: eventType as "personal" | "meeting" | "reminder" | "vacation" | "other",
+      eventType: eventType as "personal" | "meeting" | "reminder" | "vacation" | "shift" | "other",
       location: eventLocation || undefined,
+      teamId: eventType === "shift" ? eventTeamId : undefined,
     };
 
     if (editingEvent) {
@@ -1588,6 +1606,31 @@ export default function Calendar() {
               />
               <Label htmlFor="all-day" className="text-sm">Ganztägig</Label>
             </div>
+
+            {/* Team selection for shift events */}
+            {eventType === "shift" && (
+              <div className="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-950/30 rounded-lg border border-orange-200 dark:border-orange-800">
+                <Users className="h-4 w-4 text-orange-600" />
+                <Select
+                  value={eventTeamId?.toString() || ""}
+                  onValueChange={(v) => setEventTeamId(v ? parseInt(v) : null)}
+                >
+                  <SelectTrigger className="flex-1 border-0 bg-transparent">
+                    <SelectValue placeholder="Team auswählen..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teams?.filter(team => {
+                      const shiftTeamNames = ['pos', 'versand', 'lager', 'warehouse', 'shipping'];
+                      return shiftTeamNames.some(name => team.name.toLowerCase().includes(name));
+                    }).map((team) => (
+                      <SelectItem key={team.id} value={team.id.toString()}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Reminder */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">

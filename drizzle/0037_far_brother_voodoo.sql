@@ -1,0 +1,2 @@
+ALTER TABLE `calendarEvents` MODIFY COLUMN `eventType` enum('personal','meeting','reminder','vacation','shift','other') NOT NULL DEFAULT 'personal';--> statement-breakpoint
+ALTER TABLE `calendarEvents` ADD `teamId` int;

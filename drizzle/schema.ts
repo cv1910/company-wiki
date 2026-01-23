@@ -675,7 +675,9 @@ export const calendarEvents = mysqlTable("calendarEvents", {
   isAllDay: boolean("isAllDay").default(false).notNull(),
   // Event styling and categorization
   color: varchar("color", { length: 20 }).default("blue").notNull(),
-  eventType: mysqlEnum("eventType", ["personal", "meeting", "reminder", "vacation", "other"]).default("personal").notNull(),
+  eventType: mysqlEnum("eventType", ["personal", "meeting", "reminder", "vacation", "shift", "other"]).default("personal").notNull(),
+  // Team assignment for shift events (POS, Versand)
+  teamId: int("teamId"),
   // Linked resources (optional)
   linkedResourceType: mysqlEnum("linkedResourceType", ["leave_request", "article", "sop"]),
   linkedResourceId: int("linkedResourceId"),

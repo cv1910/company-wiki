@@ -84,7 +84,6 @@ const menuItems = [
   { icon: MessageCircle, label: "Taps", path: "/taps" },
   { icon: ClipboardCheck, label: "Aufgaben", path: "/aufgaben" },
   { icon: CalendarDays, label: "Kalender", path: "/calendar" },
-  { icon: ClipboardList, label: "Einsatzplan POS", path: "/scheduling" },
   { icon: Building2, label: "Team", path: "/orgchart" },
   { icon: Calendar, label: "Urlaub", path: "/leave" },
 ];

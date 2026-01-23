@@ -1084,3 +1084,9 @@
 - [ ] In-App-Benachrichtigung bei bevorstehenden Aufgaben
 - [ ] Erinnerungs-Dropdown im Aufgaben-Erstellungsdialog
 - [ ] Tests für Erinnerungsfunktion
+
+
+## Einsatzplan-Integration (Januar 2026)
+- [ ] Einsatzplan POS aus der Sidebar entfernen
+- [ ] Einsatzplan in den Kalender integrieren
+- [ ] Einsatzplan nur für POS- und Versand-Teams sichtbar machen
