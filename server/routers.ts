@@ -2896,6 +2896,10 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           location: z.string().optional(),
           notes: z.string().optional(),
           teamId: z.number().optional().nullable(),
+          isCircleEvent: z.boolean().optional().default(false),
+          showCountdown: z.boolean().optional().default(false),
+          reminderMinutes: z.number().optional().nullable(),
+          link: z.string().optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -2911,6 +2915,10 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           location: input.location || null,
           notes: input.notes || null,
           teamId: input.teamId || null,
+          isCircleEvent: input.isCircleEvent,
+          showCountdown: input.showCountdown,
+          reminderMinutes: input.reminderMinutes || null,
+          link: input.link || null,
         });
         
         if (!event) {
@@ -2938,6 +2946,10 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           location: z.string().optional(),
           notes: z.string().optional(),
           teamId: z.number().optional().nullable(),
+          isCircleEvent: z.boolean().optional(),
+          showCountdown: z.boolean().optional(),
+          reminderMinutes: z.number().optional().nullable(),
+          link: z.string().optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -2954,6 +2966,10 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         if (updates.location !== undefined) updateData.location = updates.location;
         if (updates.notes !== undefined) updateData.notes = updates.notes;
         if (updates.teamId !== undefined) updateData.teamId = updates.teamId;
+        if (updates.isCircleEvent !== undefined) updateData.isCircleEvent = updates.isCircleEvent;
+        if (updates.showCountdown !== undefined) updateData.showCountdown = updates.showCountdown;
+        if (updates.reminderMinutes !== undefined) updateData.reminderMinutes = updates.reminderMinutes;
+        if (updates.link !== undefined) updateData.link = updates.link;
         
         const event = await db.updateCalendarEvent(id, ctx.user.id, updateData);
         

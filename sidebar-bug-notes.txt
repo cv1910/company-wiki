@@ -1,0 +1,8 @@
+Sidebar-Bug Beobachtungen:
+- Wenn die Sidebar eingeklappt ist, werden die Labels noch angezeigt (z.B. "Home", "AI Suche", etc.)
+- Die Sidebar sollte nur Icons zeigen wenn sie eingeklappt ist
+- Das Problem liegt darin, dass die Labels nicht versteckt werden
+
+Lösung:
+- Die Labels müssen mit group-data-[collapsible=icon]:hidden versteckt werden
+- Oder die span-Elemente müssen mit group-data-[collapsible=icon]:sr-only versteckt werden

@@ -17,7 +17,8 @@ export type EmailType =
   | "weekly_digest"
   | "booking_confirmation"
   | "task_assigned"
-  | "task_reminder";
+  | "task_reminder"
+  | "shift_assigned";
 
 interface SendEmailParams {
   recipientId: number;
@@ -855,5 +856,52 @@ Company Wiki
     console.log(`[Email] Task reminder sent to ${params.userEmail} for task ${params.taskId}`);
   } catch (error) {
     console.error("[Email] Failed to send task reminder email:", error);
+  }
+}
+
+
+/**
+ * Send shift assignment notification email
+ */
+export async function sendShiftAssignedEmail(params: {
+  userId: number;
+  userEmail: string;
+  userName: string;
+  shiftTitle: string;
+  shiftDate: string;
+  teamName: string;
+  assignedByName: string;
+}) {
+  const shouldSend = await shouldSendEmail(params.userId, "shift_assigned");
+  if (!shouldSend) {
+    console.log(`[Email] User ${params.userId} has disabled shift_assigned notifications`);
+    return;
+  }
+
+  const subject = `Neue Schicht zugewiesen: ${params.shiftTitle}`;
+  const content = `
+Hallo ${params.userName},
+
+Dir wurde eine neue Schicht zugewiesen:
+
+**Schicht:** ${params.shiftTitle}
+**Datum:** ${params.shiftDate}
+**Team:** ${params.teamName}
+**Zugewiesen von:** ${params.assignedByName}
+
+Bitte überprüfe deinen Kalender für weitere Details.
+
+Viele Grüße,
+Dein Company Wiki Team
+  `.trim();
+
+  try {
+    await notifyOwner({
+      title: subject,
+      content: `An: ${params.userEmail}\n\n${content}`,
+    });
+    console.log(`[Email] Shift assigned notification sent to ${params.userEmail}`);
+  } catch (error) {
+    console.error("[Email] Failed to send shift assigned email:", error);
   }
 }

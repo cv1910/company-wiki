@@ -1090,3 +1090,12 @@
 - [ ] Einsatzplan POS aus der Sidebar entfernen
 - [ ] Einsatzplan in den Kalender integrieren
 - [ ] Einsatzplan nur für POS- und Versand-Teams sichtbar machen
+
+
+## Kalender-Verbesserungen (Januar 2026)
+- [ ] Sidebar-Bug beheben (vollständiges Ausblenden wenn eingeklappt)
+- [ ] Mehrtägige Termine optisch zusammenhängend darstellen (durchgehender Balken)
+- [ ] Circle Event Funktion reparieren
+- [ ] POS und Versand Teams erstellen
+- [ ] Schichtplan-Ansicht für Teammitglieder implementieren
+- [ ] Schicht-Benachrichtigungen per E-Mail implementieren

@@ -314,7 +314,7 @@ function DashboardLayoutContent({
                             }`}
                           />
                         </div>
-                        <span className={`text-[14px] ${
+                        <span className={`text-[14px] group-data-[collapsible=icon]:hidden ${
                           isActive ? "font-semibold" : "font-medium"
                         }`}>{item.label}</span>
                       </SidebarMenuButton>
@@ -325,7 +325,7 @@ function DashboardLayoutContent({
             </div>
 
             {/* Mehr-Navigation (aufklappbar) */}
-            <Collapsible open={moreOpen} onOpenChange={setMoreOpen} className="mt-2">
+            <Collapsible open={moreOpen} onOpenChange={setMoreOpen} className="mt-2 group-data-[collapsible=icon]:hidden">
               <CollapsibleTrigger asChild>
                 <button className="flex items-center gap-2 w-full px-3 py-2.5 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-widest hover:text-muted-foreground transition-colors">
                   <span>Mehr</span>
@@ -361,7 +361,7 @@ function DashboardLayoutContent({
                               }`}
                             />
                           </div>
-                          <span className={`text-[14px] ${
+                          <span className={`text-[14px] group-data-[collapsible=icon]:hidden ${
                             isActive ? "font-semibold" : "font-medium"
                           }`}>{item.label}</span>
                         </SidebarMenuButton>
@@ -408,7 +408,7 @@ function DashboardLayoutContent({
                               }`}
                             />
                           </div>
-                          <span className={`text-[14px] ${
+                          <span className={`text-[14px] group-data-[collapsible=icon]:hidden ${
                             isActive ? "font-semibold" : "font-medium"
                           }`}>{item.label}</span>
                         </SidebarMenuButton>

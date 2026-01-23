@@ -93,7 +93,7 @@ import { cn } from "@/lib/utils";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { useCallback } from "react";
 
-type ViewMode = "day" | "week" | "month" | "year";
+type ViewMode = "day" | "week" | "month" | "year" | "shifts";
 
 interface CalendarEvent {
   id: number;
@@ -231,6 +231,16 @@ export default function Calendar() {
         return {
           start: startOfYear(currentDate),
           end: endOfYear(currentDate),
+        };
+      case "shifts":
+        return {
+          start: startOfWeek(currentDate, { weekStartsOn: 1 }),
+          end: endOfWeek(currentDate, { weekStartsOn: 1 }),
+        };
+      default:
+        return {
+          start: startOfMonth(currentDate),
+          end: endOfMonth(currentDate),
         };
     }
   }, [currentDate, viewMode]);
@@ -549,6 +559,11 @@ export default function Calendar() {
       eventType: eventType as "personal" | "meeting" | "reminder" | "vacation" | "shift" | "other",
       location: eventLocation || undefined,
       teamId: eventType === "shift" ? eventTeamId : undefined,
+      isCircleEvent: eventIsCircle,
+      showCountdown: eventShowCountdown,
+      reminderMinutes: eventReminderMinutes,
+      link: eventLink || undefined,
+      notes: eventNotes || undefined,
     };
 
     if (editingEvent) {
@@ -591,6 +606,109 @@ export default function Calendar() {
     const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
     const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
     const weekDays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+    
+    // Group days into weeks
+    const weeks: Date[][] = [];
+    for (let i = 0; i < days.length; i += 7) {
+      weeks.push(days.slice(i, i + 7));
+    }
+    
+    // Get multi-day events that span across days
+    const getMultiDayEventsForWeek = (weekDays: Date[]) => {
+      const weekStart = weekDays[0];
+      const weekEnd = weekDays[6];
+      weekEnd.setHours(23, 59, 59, 999);
+      
+      return allEvents.filter(event => {
+        const eventStart = new Date(event.startDate);
+        const eventEnd = new Date(event.endDate);
+        // Check if event spans multiple days and overlaps with this week
+        const isMultiDay = differenceInDays(eventEnd, eventStart) >= 1 || event.isAllDay;
+        const overlapsWeek = eventStart <= weekEnd && eventEnd >= weekStart;
+        return isMultiDay && overlapsWeek;
+      }).sort((a, b) => {
+        // Sort by start date, then by duration (longer first)
+        const startDiff = new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+        if (startDiff !== 0) return startDiff;
+        const aDuration = differenceInDays(new Date(a.endDate), new Date(a.startDate));
+        const bDuration = differenceInDays(new Date(b.endDate), new Date(b.startDate));
+        return bDuration - aDuration;
+      });
+    };
+    
+    // Calculate event bar positions for a week
+    const getEventBarsForWeek = (weekDays: Date[], multiDayEvents: CalendarEvent[]) => {
+      const bars: { event: CalendarEvent; startCol: number; endCol: number; row: number; isStart: boolean; isEnd: boolean }[] = [];
+      const rowOccupancy: boolean[][] = []; // rowOccupancy[row][col] = occupied
+      
+      multiDayEvents.forEach(event => {
+        const eventStart = new Date(event.startDate);
+        const eventEnd = new Date(event.endDate);
+        eventStart.setHours(0, 0, 0, 0);
+        eventEnd.setHours(23, 59, 59, 999);
+        
+        // Find start and end columns within this week
+        let startCol = 0;
+        let endCol = 6;
+        let isStart = false;
+        let isEnd = false;
+        
+        for (let i = 0; i < 7; i++) {
+          const dayStart = new Date(weekDays[i]);
+          dayStart.setHours(0, 0, 0, 0);
+          const dayEnd = new Date(weekDays[i]);
+          dayEnd.setHours(23, 59, 59, 999);
+          
+          if (isSameDay(dayStart, eventStart) || (eventStart < dayStart && i === 0)) {
+            startCol = eventStart < dayStart ? 0 : i;
+            isStart = isSameDay(dayStart, eventStart);
+          }
+          if (isSameDay(dayEnd, eventEnd) || (eventEnd > dayEnd && i === 6)) {
+            endCol = eventEnd > dayEnd ? 6 : i;
+            isEnd = isSameDay(dayEnd, eventEnd);
+          }
+        }
+        
+        // Adjust if event starts before this week
+        if (eventStart < weekDays[0]) {
+          startCol = 0;
+          isStart = false;
+        }
+        // Adjust if event ends after this week
+        const weekEndDate = new Date(weekDays[6]);
+        weekEndDate.setHours(23, 59, 59, 999);
+        if (eventEnd > weekEndDate) {
+          endCol = 6;
+          isEnd = false;
+        }
+        
+        // Find available row
+        let row = 0;
+        while (true) {
+          if (!rowOccupancy[row]) rowOccupancy[row] = Array(7).fill(false);
+          let canPlace = true;
+          for (let col = startCol; col <= endCol; col++) {
+            if (rowOccupancy[row][col]) {
+              canPlace = false;
+              break;
+            }
+          }
+          if (canPlace) break;
+          row++;
+          if (row > 10) break; // Safety limit
+        }
+        
+        // Mark occupied
+        if (!rowOccupancy[row]) rowOccupancy[row] = Array(7).fill(false);
+        for (let col = startCol; col <= endCol; col++) {
+          rowOccupancy[row][col] = true;
+        }
+        
+        bars.push({ event, startCol, endCol, row, isStart, isEnd });
+      });
+      
+      return bars;
+    };
 
     return (
       <div className="flex flex-col h-full">
@@ -606,65 +724,122 @@ export default function Calendar() {
           ))}
         </div>
 
-        {/* Calendar grid */}
-        <div className="grid grid-cols-7 flex-1">
-          {days.map((day, index) => {
-            const dayEvents = getEventsForDay(day);
-            const isCurrentMonth = isSameMonth(day, currentDate);
-            const isCurrentDay = isToday(day);
-            const isDropTarget = dragOverDate && isSameDay(day, dragOverDate);
-
+        {/* Calendar grid - by weeks */}
+        <div className="flex-1 flex flex-col">
+          {weeks.map((week, weekIndex) => {
+            const multiDayEvents = getMultiDayEventsForWeek(week);
+            const eventBars = getEventBarsForWeek(week, multiDayEvents);
+            const maxRows = Math.max(0, ...eventBars.map(b => b.row)) + 1;
+            
             return (
-              <div
-                key={index}
-                className={cn(
-                  "min-h-[100px] border-b border-r p-1 cursor-pointer transition-colors",
-                  !isCurrentMonth && "bg-muted/20 text-muted-foreground",
-                  isDropTarget && isDragging && "bg-primary/20 ring-2 ring-primary ring-inset",
-                  !isDropTarget && "hover:bg-muted/50"
-                )}
-                onClick={() => openNewEventDialog(day)}
-                onDragOver={(e) => handleDragOver(day, e)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(day, e)}
-              >
-                <div
-                  className={cn(
-                    "text-sm font-medium mb-1 w-7 h-7 flex items-center justify-center rounded-full",
-                    isCurrentDay && "bg-primary text-primary-foreground"
-                  )}
-                >
-                  {format(day, "d")}
+              <div key={weekIndex} className="flex-1 min-h-[100px] relative">
+                {/* Multi-day event bars */}
+                <div className="absolute top-6 left-0 right-0 z-10 pointer-events-none" style={{ height: maxRows * 20 }}>
+                  {eventBars.map((bar, barIdx) => {
+                    const leftPercent = (bar.startCol / 7) * 100;
+                    const widthPercent = ((bar.endCol - bar.startCol + 1) / 7) * 100;
+                    
+                    return (
+                      <div
+                        key={`${bar.event.id}-${weekIndex}-${barIdx}`}
+                        className={cn(
+                          "absolute h-[18px] text-xs px-1.5 truncate cursor-pointer pointer-events-auto flex items-center",
+                          getDotColorClass(bar.event.color),
+                          "text-white",
+                          bar.isStart ? "rounded-l" : "",
+                          bar.isEnd ? "rounded-r" : "",
+                          !bar.isStart && "pl-0",
+                          !bar.isEnd && "pr-0"
+                        )}
+                        style={{
+                          top: bar.row * 20,
+                          left: `calc(${leftPercent}% + ${bar.isStart ? 4 : 0}px)`,
+                          width: `calc(${widthPercent}% - ${(bar.isStart ? 4 : 0) + (bar.isEnd ? 4 : 0)}px)`,
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditEventDialog(bar.event);
+                        }}
+                        title={bar.event.title}
+                      >
+                        {bar.isStart && <span className="truncate">{bar.event.title}</span>}
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="space-y-0.5">
-                  {dayEvents.slice(0, 3).map((event) => (
-                    <div
-                      key={event.id}
-                      draggable={event.id > 0}
-                      onDragStart={(e) => handleDragStart(event, e)}
-                      onDragEnd={handleDragEnd}
-                      className={cn(
-                        "text-xs px-1.5 py-0.5 rounded truncate cursor-pointer border group flex items-center gap-1",
-                        getColorClass(event.color),
-                        event.id > 0 && "cursor-grab active:cursor-grabbing",
-                        draggedEvent?.id === event.id && "opacity-50"
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openEditEventDialog(event);
-                      }}
-                    >
-                      {event.id > 0 && (
-                        <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-50 flex-shrink-0" />
-                      )}
-                      <span className="truncate">{event.title}</span>
-                    </div>
-                  ))}
-                  {dayEvents.length > 3 && (
-                    <div className="text-xs text-muted-foreground px-1">
-                      +{dayEvents.length - 3} weitere
-                    </div>
-                  )}
+                
+                {/* Day cells */}
+                <div className="grid grid-cols-7 h-full">
+                  {week.map((day, dayIndex) => {
+                    const dayEvents = getEventsForDay(day);
+                    // Filter out multi-day events (they're shown as bars)
+                    const singleDayEvents = dayEvents.filter(event => {
+                      const eventStart = new Date(event.startDate);
+                      const eventEnd = new Date(event.endDate);
+                      return differenceInDays(eventEnd, eventStart) < 1 && !event.isAllDay;
+                    });
+                    const isCurrentMonth = isSameMonth(day, currentDate);
+                    const isCurrentDay = isToday(day);
+                    const isDropTarget = dragOverDate && isSameDay(day, dragOverDate);
+
+                    return (
+                      <div
+                        key={dayIndex}
+                        className={cn(
+                          "border-b border-r p-1 cursor-pointer transition-colors",
+                          !isCurrentMonth && "bg-muted/20 text-muted-foreground",
+                          isDropTarget && isDragging && "bg-primary/20 ring-2 ring-primary ring-inset",
+                          !isDropTarget && "hover:bg-muted/50"
+                        )}
+                        onClick={() => openNewEventDialog(day)}
+                        onDragOver={(e) => handleDragOver(day, e)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(day, e)}
+                      >
+                        <div
+                          className={cn(
+                            "text-sm font-medium mb-1 w-7 h-7 flex items-center justify-center rounded-full",
+                            isCurrentDay && "bg-primary text-primary-foreground"
+                          )}
+                        >
+                          {format(day, "d")}
+                        </div>
+                        {/* Space for multi-day event bars */}
+                        <div style={{ height: maxRows * 20 + 4 }} />
+                        {/* Single-day events */}
+                        <div className="space-y-0.5">
+                          {singleDayEvents.slice(0, 2).map((event) => (
+                            <div
+                              key={event.id}
+                              draggable={event.id > 0}
+                              onDragStart={(e) => handleDragStart(event, e)}
+                              onDragEnd={handleDragEnd}
+                              className={cn(
+                                "text-xs px-1.5 py-0.5 rounded truncate cursor-pointer border group flex items-center gap-1",
+                                getColorClass(event.color),
+                                event.id > 0 && "cursor-grab active:cursor-grabbing",
+                                draggedEvent?.id === event.id && "opacity-50"
+                              )}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditEventDialog(event);
+                              }}
+                            >
+                              {event.id > 0 && (
+                                <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-50 flex-shrink-0" />
+                              )}
+                              <span className="truncate">{event.title}</span>
+                            </div>
+                          ))}
+                          {singleDayEvents.length > 2 && (
+                            <div className="text-xs text-muted-foreground px-1">
+                              +{singleDayEvents.length - 2} weitere
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -827,6 +1002,112 @@ export default function Calendar() {
             ))}
           </div>
         </div>
+      </div>
+    );
+  };
+
+  // Render shifts view (Schichtplan)
+  const renderShiftsView = () => {
+    // Get shift events only
+    const shiftEvents = (allEvents || []).filter(e => e.eventType === "shift");
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+    const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+    
+    // Group shifts by team
+    const shiftsByTeam = shiftEvents.reduce((acc, event) => {
+      const teamId = (event as any).teamId || 0;
+      if (!acc[teamId]) acc[teamId] = [];
+      acc[teamId].push(event);
+      return acc;
+    }, {} as Record<number, CalendarEvent[]>);
+    
+    const teamNames: Record<number, string> = { 0: "Ohne Team" };
+    (teams || []).forEach((t: any) => {
+      teamNames[t.id] = t.name;
+    });
+    
+    return (
+      <div className="p-4">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold">
+            Schichtplan: {format(weekStart, "d. MMM", { locale: de })} - {format(weekEnd, "d. MMM yyyy", { locale: de })}
+          </h2>
+        </div>
+        
+        {/* Week header */}
+        <div className="grid grid-cols-8 gap-1 mb-2">
+          <div className="p-2 font-medium text-muted-foreground text-sm">Team</div>
+          {weekDays.map((day) => (
+            <div
+              key={day.toISOString()}
+              className={cn(
+                "p-2 text-center font-medium text-sm rounded-lg",
+                isToday(day) && "bg-primary/10 text-primary",
+                (getDay(day) === 0 || getDay(day) === 6) && "bg-muted/50"
+              )}
+            >
+              <div>{format(day, "EEE", { locale: de })}</div>
+              <div className="text-lg">{format(day, "d")}</div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Team rows */}
+        {Object.entries(shiftsByTeam).length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            Keine Schichten in dieser Woche geplant.
+            <br />
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => {
+                setEventType("shift");
+                setShowEventDialog(true);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Schicht erstellen
+            </Button>
+          </div>
+        ) : (
+          Object.entries(shiftsByTeam).map(([teamId, shifts]) => (
+            <div key={teamId} className="grid grid-cols-8 gap-1 mb-1">
+              <div className="p-2 font-medium text-sm bg-muted/30 rounded-lg flex items-center">
+                {teamNames[parseInt(teamId)] || `Team ${teamId}`}
+              </div>
+              {weekDays.map((day) => {
+                const dayShifts = shifts.filter((s) => {
+                  const start = new Date(s.startDate);
+                  const end = new Date(s.endDate);
+                  return day >= new Date(start.setHours(0, 0, 0, 0)) && day <= new Date(end.setHours(23, 59, 59, 999));
+                });
+                return (
+                  <div
+                    key={day.toISOString()}
+                    className={cn(
+                      "p-1 min-h-[60px] rounded-lg border border-border/50",
+                      (getDay(day) === 0 || getDay(day) === 6) && "bg-muted/30"
+                    )}
+                  >
+                    {dayShifts.map((shift) => (
+                      <div
+                        key={shift.id}
+                        className={cn(
+                          "p-1 text-xs rounded cursor-pointer truncate mb-1",
+                          getColorClass(shift.color)
+                        )}
+                        onClick={() => openEditEventDialog(shift)}
+                      >
+                        {shift.title}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          ))
+        )}
       </div>
     );
   };
@@ -1965,6 +2246,7 @@ export default function Calendar() {
                 <SelectItem value="week">Woche</SelectItem>
                 <SelectItem value="month">Monat</SelectItem>
                 <SelectItem value="year">Jahr</SelectItem>
+                <SelectItem value="shifts">Schichtplan</SelectItem>
               </SelectContent>
             </Select>
             <Button onClick={() => setShowEventDialog(true)}>
@@ -1990,6 +2272,7 @@ export default function Calendar() {
             onEventClick={openEditEventDialog}
           />
         )}
+        {viewMode === "shifts" && renderShiftsView()}
       </div>
     </div>
     </>
