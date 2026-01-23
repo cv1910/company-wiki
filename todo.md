@@ -1142,3 +1142,7 @@
 - [x] Admin-UI für Soll-Stunden-Verwaltung
 - [x] Admin-UI für Überstunden-Tracking mit Genehmigungsworkflow
 - [x] CSV-Export für Überstunden-Daten
+
+
+## UI-Anpassungen (Januar 2026)
+- [x] Statistik-Karten (Artikel, SOPs, Kategorien, Benutzer) von Startseite entfernen
