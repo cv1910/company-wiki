@@ -6272,3 +6272,51 @@ export async function getAllTeamsStatistics() {
   
   return stats;
 }
+
+
+// Get team stats for dashboard widget
+export async function getTeamStats() {
+  const db = await getDb();
+  
+  const allTeams = await db!.select().from(teams);
+  const stats = [];
+  
+  for (const team of allTeams) {
+    // Get member count
+    const memberCount = await db!
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(teamMembers)
+      .where(eq(teamMembers.teamId, team.id));
+    
+    // Get shifts this week
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay() + 1);
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+    
+    const shiftsThisWeek = await db!
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(calendarEvents)
+      .where(
+        and(
+          eq(calendarEvents.eventType, "shift"),
+          eq(calendarEvents.teamId, team.id),
+          gte(calendarEvents.startDate, startOfWeek),
+          lte(calendarEvents.startDate, endOfWeek)
+        )
+      );
+    
+    stats.push({
+      teamId: team.id,
+      teamName: team.name,
+      memberCount: memberCount[0]?.count || 0,
+      shiftsThisWeek: shiftsThisWeek[0]?.count || 0,
+    });
+  }
+  
+  return stats;
+}

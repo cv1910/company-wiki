@@ -988,7 +988,7 @@ export default function Home() {
               <Users className="h-5 w-5 text-primary" />
               <CardTitle className="text-lg">Team-Statistiken</CardTitle>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/teams")}>
+            <Button variant="ghost" size="sm" onClick={() => setLocation("/teams")}>
               Alle Teams
               <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
@@ -1006,7 +1006,7 @@ export default function Home() {
                 <div
                   key={team.teamId}
                   className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-                  onClick={() => navigate(`/teams`)}
+                  onClick={() => setLocation(`/teams`)}
                 >
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
