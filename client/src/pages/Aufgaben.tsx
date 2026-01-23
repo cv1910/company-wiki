@@ -499,7 +499,7 @@ export default function Aufgaben() {
 
       {/* Create Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Neue Aufgabe</DialogTitle>
             <DialogDescription>
@@ -618,8 +618,7 @@ export default function Aufgaben() {
             </div>
 
             {/* Erinnerung */}
-            {dueDate && (
-              <div className="space-y-2">
+            <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
                   Erinnerung vor Fälligkeit
@@ -640,8 +639,7 @@ export default function Aufgaben() {
                 <p className="text-xs text-muted-foreground">
                   Du erhältst eine Benachrichtigung und E-Mail vor dem Fälligkeitsdatum.
                 </p>
-              </div>
-            )}
+            </div>
           </div>
 
           <div className="flex justify-end gap-3">
@@ -663,7 +661,7 @@ export default function Aufgaben() {
           setNewComment("");
         }
       }}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MessageCircle className="h-5 w-5" />
