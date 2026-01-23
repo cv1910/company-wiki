@@ -5814,6 +5814,23 @@ export async function getPositionHierarchy(positionId: number) {
 // Tasks Functions
 // =====================
 
+export async function getOpenTaskCount(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const result = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(tasks)
+    .where(
+      and(
+        eq(tasks.assignedToId, userId),
+        eq(tasks.status, "open")
+      )
+    );
+
+  return result[0]?.count || 0;
+}
+
 export async function getMyTasks(userId: number) {
   const db = await getDb();
   if (!db) return [];

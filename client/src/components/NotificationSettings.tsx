@@ -24,13 +24,16 @@ import {
   AtSign,
   Users,
   Volume2,
+  VolumeX,
   CheckSquare,
   FileText,
   Mail,
   Loader2,
   Smartphone,
   AlertCircle,
+  Play,
 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
@@ -180,6 +183,37 @@ export function NotificationSettings({
                   description="Ton bei neuen Nachrichten abspielen"
                   settingKey="soundEnabled"
                 />
+                {localSettings.soundEnabled && (
+                  <div className="ml-11 mt-2 mb-3">
+                    <div className="flex items-center gap-3">
+                      <VolumeX className="h-4 w-4 text-muted-foreground" />
+                      <Slider
+                        value={[settings?.soundVolume ?? 50]}
+                        min={0}
+                        max={100}
+                        step={10}
+                        className="w-32"
+                        onValueChange={(value) => {
+                          updateSettings.mutate({ soundVolume: value[0] });
+                        }}
+                      />
+                      <Volume2 className="h-4 w-4 text-muted-foreground" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2"
+                        onClick={() => {
+                          const audio = new Audio('/sounds/message.mp3');
+                          audio.volume = (settings?.soundVolume ?? 50) / 100;
+                          audio.play();
+                        }}
+                      >
+                        <Play className="h-3 w-3 mr-1" />
+                        Test
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

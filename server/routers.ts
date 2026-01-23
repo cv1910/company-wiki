@@ -5295,6 +5295,7 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           browserNotificationsEnabled: z.boolean().optional(),
           emailDigestEnabled: z.boolean().optional(),
           emailDigestFrequency: z.enum(["daily", "weekly", "never"]).optional(),
+          soundVolume: z.number().min(0).max(100).optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -5525,6 +5526,11 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
 
   // Tasks Router
   tasks: router({
+    // Get count of open/overdue tasks assigned to me
+    openCount: protectedProcedure.query(async ({ ctx }) => {
+      return db.getOpenTaskCount(ctx.user.id);
+    }),
+
     // Get all my tasks (created by me or assigned to me)
     getMyTasks: protectedProcedure.query(async ({ ctx }) => {
       return db.getMyTasks(ctx.user.id);

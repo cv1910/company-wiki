@@ -79,6 +79,7 @@ import { useKeyboardShortcuts, KeyboardShortcutsHelp } from "./KeyboardShortcuts
 import { FavoritesList } from "./FavoriteButton";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
+import { useMessageSoundNotification, useNotificationSoundAlert } from "@/hooks/useSoundNotification";
 
 // Haupt-Navigation
 const menuItems = [
@@ -242,6 +243,23 @@ function DashboardLayoutContent({
   const { data: unreadCount } = trpc.notifications.unreadCount.useQuery(undefined, {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
+
+  // Fetch unread Taps count for header badge
+  const { data: unreadTapsCount } = trpc.ohweees.unreadCount.useQuery(undefined, {
+    refetchInterval: 30000,
+  });
+
+  // Fetch open tasks count for header badge
+  const { data: openTasksCount } = trpc.tasks.openCount.useQuery(undefined, {
+    refetchInterval: 60000,
+  });
+
+  // Calculate total badge count for header
+  const totalBadgeCount = (unreadCount || 0) + (unreadTapsCount || 0) + (openTasksCount || 0);
+
+  // Sound notifications for new messages and alerts
+  useMessageSoundNotification();
+  useNotificationSoundAlert();
 
   useEffect(() => {
     if (isCollapsed) {
@@ -573,13 +591,13 @@ function DashboardLayoutContent({
                 variant="ghost"
                 size="icon"
                 onClick={() => setLocation("/notifications")}
-                title="Benachrichtigungen"
+                title={`Benachrichtigungen (${totalBadgeCount} ungelesen)`}
                 className="relative"
               >
                 <Bell className="h-4 w-4" />
-                {unreadCount && unreadCount > 0 && (
+                {totalBadgeCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
-                    {unreadCount > 9 ? "9+" : unreadCount}
+                    {totalBadgeCount > 9 ? "9+" : totalBadgeCount}
                   </span>
                 )}
                 <span className="sr-only">Benachrichtigungen</span>

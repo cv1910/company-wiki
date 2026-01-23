@@ -24,15 +24,15 @@ interface NavItem {
   icon: typeof Home;
   label: string;
   path: string;
-  showBadge?: boolean;
+  badgeType?: "taps" | "tasks";
 }
 
 // Geändert zu: Home, AI Suche, Taps, Aufgaben
 const navItems: NavItem[] = [
   { icon: Home, label: "Home", path: "/" },
   { icon: Search, label: "AI Suche", path: "/search" },
-  { icon: MessageCircle, label: "Taps", path: "/taps", showBadge: true },
-  { icon: CheckSquare, label: "Aufgaben", path: "/aufgaben" },
+  { icon: MessageCircle, label: "Taps", path: "/taps", badgeType: "taps" },
+  { icon: CheckSquare, label: "Aufgaben", path: "/aufgaben", badgeType: "tasks" },
 ];
 
 const quickActions = [
@@ -48,9 +48,15 @@ export function BottomNavigation() {
   const { lightTap, selection } = useHapticFeedback();
   
   // Fetch unread Taps count
-  const { data: unreadCount } = trpc.ohweees.unreadCount.useQuery(undefined, {
-    refetchInterval: 30000, // Refresh every 30 seconds
+  const { data: unreadTapsCount } = trpc.ohweees.unreadCount.useQuery(undefined, {
+    refetchInterval: 30000,
     staleTime: 10000,
+  });
+
+  // Fetch open tasks count
+  const { data: openTasksCount } = trpc.tasks.openCount.useQuery(undefined, {
+    refetchInterval: 60000, // Refresh every minute
+    staleTime: 30000,
   });
 
   if (!isMobile) {
@@ -67,13 +73,19 @@ export function BottomNavigation() {
     toggleSidebar();
   };
 
+  const getBadgeCount = (badgeType?: "taps" | "tasks") => {
+    if (badgeType === "taps") return unreadTapsCount || 0;
+    if (badgeType === "tasks") return openTasksCount || 0;
+    return 0;
+  };
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border safe-area-bottom">
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
           const isActive = location === item.path || 
             (item.path !== "/" && location.startsWith(item.path));
-          const badgeCount = item.showBadge ? unreadCount : 0;
+          const badgeCount = getBadgeCount(item.badgeType);
           
           return (
             <button
@@ -91,8 +103,11 @@ export function BottomNavigation() {
                   "h-5 w-5 mb-0.5 transition-transform",
                   isActive && "scale-110"
                 )} />
-                {badgeCount && badgeCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-bold text-white bg-primary rounded-full">
+                {badgeCount > 0 && (
+                  <span className={cn(
+                    "absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-bold text-white rounded-full",
+                    item.badgeType === "tasks" ? "bg-amber-500" : "bg-primary"
+                  )}>
                     {badgeCount > 99 ? "99+" : badgeCount}
                   </span>
                 )}

@@ -1,0 +1,1 @@
+ALTER TABLE `user_notification_settings` ADD `soundVolume` int DEFAULT 50 NOT NULL;

@@ -465,6 +465,9 @@ export const emailSettings = mysqlTable("emailSettings", {
   // Digest settings
   dailyDigest: boolean("dailyDigest").default(false).notNull(),
   weeklyDigest: boolean("weeklyDigest").default(true).notNull(),
+  // Sound notifications
+  soundEnabled: boolean("soundEnabled").default(true).notNull(),
+  soundVolume: int("soundVolume").default(50).notNull(), // 0-100
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
@@ -1173,6 +1176,7 @@ export const userNotificationSettings = mysqlTable("user_notification_settings",
   directMessagesEnabled: boolean("directMessagesEnabled").default(true).notNull(),
   roomUpdatesEnabled: boolean("roomUpdatesEnabled").default(true).notNull(),
   soundEnabled: boolean("soundEnabled").default(true).notNull(),
+  soundVolume: int("soundVolume").default(50).notNull(), // 0-100
   // Task notifications
   taskRemindersEnabled: boolean("taskRemindersEnabled").default(true).notNull(),
   taskAssignmentsEnabled: boolean("taskAssignmentsEnabled").default(true).notNull(),

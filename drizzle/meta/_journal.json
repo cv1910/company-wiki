@@ -295,6 +295,20 @@
       "when": 1769175611112,
       "tag": "0041_bent_raza",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "5",
+      "when": 1769181110901,
+      "tag": "0042_luxuriant_gladiator",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "5",
+      "when": 1769185370229,
+      "tag": "0043_ordinary_saracen",
+      "breakpoints": true
     }
   ]
 }

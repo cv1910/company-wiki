@@ -1180,3 +1180,6 @@
 
 ## Bottom Navigation Erweiterungen (Januar 2026)
 - [x] Badge für ungelesene Taps-Nachrichten auf Icon anzeigen
+- [x] Badge für offene/überfällige Aufgaben auf Aufgaben-Icon
+- [x] Benachrichtigungs-Badge im Desktop-Header (Summe aus Benachrichtigungen, Taps, Aufgaben)
+- [x] Sound-Benachrichtigungen (optional, in Einstellungen aktivierbar mit Lautstärkeregler)
