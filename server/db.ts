@@ -6049,7 +6049,7 @@ export async function getTasksNeedingReminder() {
     .leftJoin(users, eq(tasks.assignedToId, users.id))
     .where(
       and(
-        gt(tasks.reminderDays, 0), // Hat eine Erinnerung konfiguriert
+        gt(tasks.reminderMinutes, 0), // Hat eine Erinnerung konfiguriert
         eq(tasks.reminderSent, false), // Erinnerung wurde noch nicht gesendet
         isNotNull(tasks.dueDate), // Hat ein Fälligkeitsdatum
         ne(tasks.status, "completed"), // Nicht erledigt
@@ -6059,11 +6059,12 @@ export async function getTasksNeedingReminder() {
   
   // Filtere nach Aufgaben, deren Fälligkeitsdatum innerhalb der Erinnerungsfrist liegt
   const tasksToRemind = result.filter(({ task }) => {
-    if (!task.dueDate || !task.reminderDays) return false;
+    if (!task.dueDate || !task.reminderMinutes) return false;
     
     const dueDate = new Date(task.dueDate);
     const reminderDate = new Date(dueDate);
-    reminderDate.setDate(reminderDate.getDate() - task.reminderDays);
+    // Ziehe reminderMinutes in Millisekunden ab
+    reminderDate.setTime(reminderDate.getTime() - task.reminderMinutes * 60 * 1000);
     
     // Erinnerung senden, wenn wir das Erinnerungsdatum erreicht oder überschritten haben
     return now >= reminderDate;

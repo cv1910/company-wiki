@@ -5557,7 +5557,7 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           assignedToId: z.number().optional().nullable(),
           recurrencePattern: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
           recurrenceEndDate: z.date().optional().nullable(),
-          reminderDays: z.number().min(0).max(30).default(0),
+          reminderMinutes: z.number().min(0).default(0), // Minuten vor Fälligkeit (0 = keine Erinnerung)
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -5571,7 +5571,7 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           status: "open",
           recurrencePattern: input.recurrencePattern,
           recurrenceEndDate: input.recurrenceEndDate || null,
-          reminderDays: input.reminderDays,
+          reminderMinutes: input.reminderMinutes,
           reminderSent: false,
         } as any);
 
@@ -5615,16 +5615,16 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
           dueDate: z.date().optional().nullable(),
           assignedToId: z.number().optional().nullable(),
-          reminderDays: z.number().min(0).max(30).optional(),
+          reminderMinutes: z.number().min(0).optional(), // Minuten vor Fälligkeit
         })
       )
       .mutation(async ({ ctx, input }) => {
-        const { id, reminderDays, ...data } = input;
+        const { id, reminderMinutes, ...data } = input;
         
-        // If reminderDays changed, reset reminderSent
+        // If reminderMinutes changed, reset reminderSent
         const updateData: Record<string, unknown> = { ...data };
-        if (reminderDays !== undefined) {
-          updateData.reminderDays = reminderDays;
+        if (reminderMinutes !== undefined) {
+          updateData.reminderMinutes = reminderMinutes;
           updateData.reminderSent = false; // Reset so reminder can be sent again
         }
         

@@ -1189,3 +1189,10 @@
 - [x] Benachrichtigungs-Zentrale: Unified Dropdown mit allen Benachrichtigungen (Taps, Aufgaben, System)
 - [x] Aufgaben-Erinnerungen: Automatische Erinnerung vor Fälligkeit (bereits implementiert mit reminderDays)
 - [x] Schnellaktionen per Wisch: In Aufgabenliste durch Wischen erledigen (rechts) / verschieben (links)
+
+
+## Aufgaben-UI Verbesserungen (Januar 2026)
+- [x] Layout-Fix: "Fällig am" Feld wird abgeschnitten im Dialog
+- [x] Layout-Fix: Tabs "Mir zugewiesen" / "Von mir erstellt" überlappen
+- [x] Layout-Fix: "Alle Prioritäten" Filter wird abgeschnitten
+- [x] Flexible Erinnerungen: Minuten, Stunden oder Tage frei wählbar (nicht nur Tage)

@@ -247,7 +247,8 @@ export default function Aufgaben() {
   const [assignedToId, setAssignedToId] = useState<number | null>(null);
   const [recurrencePattern, setRecurrencePattern] = useState<"none" | "daily" | "weekly" | "monthly">("none");
   const [recurrenceEndDate, setRecurrenceEndDate] = useState("");
-  const [reminderDays, setReminderDays] = useState<number>(0);
+  const [reminderValue, setReminderValue] = useState<number>(0);
+  const [reminderUnit, setReminderUnit] = useState<"minutes" | "hours" | "days">("days");
   
   // Edit mode
   const [editingTask, setEditingTask] = useState<any>(null);
@@ -331,8 +332,20 @@ export default function Aufgaben() {
     setAssignedToId(null);
     setRecurrencePattern("none");
     setRecurrenceEndDate("");
-    setReminderDays(0);
+    setReminderValue(0);
+    setReminderUnit("days");
     setEditingTask(null);
+  };
+
+  // Konvertiere Erinnerungswert zu Minuten für die API
+  const getReminderMinutes = (): number => {
+    if (reminderValue === 0) return 0;
+    switch (reminderUnit) {
+      case "minutes": return reminderValue;
+      case "hours": return reminderValue * 60;
+      case "days": return reminderValue * 60 * 24;
+      default: return 0;
+    }
   };
 
   // Handle edit task
@@ -356,7 +369,21 @@ export default function Aufgaben() {
     } else {
       setRecurrenceEndDate("");
     }
-    setReminderDays(task.task.reminderDays || 0);
+    // Konvertiere reminderMinutes zurück zu Value und Unit
+    const mins = task.task.reminderMinutes || 0;
+    if (mins === 0) {
+      setReminderValue(0);
+      setReminderUnit("days");
+    } else if (mins % (60 * 24) === 0) {
+      setReminderValue(mins / (60 * 24));
+      setReminderUnit("days");
+    } else if (mins % 60 === 0) {
+      setReminderValue(mins / 60);
+      setReminderUnit("hours");
+    } else {
+      setReminderValue(mins);
+      setReminderUnit("minutes");
+    }
     setEditDialogOpen(true);
   };
 
@@ -382,7 +409,7 @@ export default function Aufgaben() {
       priority,
       dueDate: dueDateValue,
       assignedToId,
-      reminderDays: dueDate ? reminderDays : 0,
+      reminderMinutes: dueDate ? getReminderMinutes() : 0,
     }, {
       onSuccess: () => {
         toast.success("Aufgabe aktualisiert");
@@ -414,7 +441,7 @@ export default function Aufgaben() {
       assignedToId,
       recurrencePattern,
       recurrenceEndDate: recurrenceEndDate ? new Date(recurrenceEndDate) : null,
-      reminderDays: dueDate ? reminderDays : 0, // Nur wenn Fälligkeitsdatum gesetzt
+      reminderMinutes: dueDate ? getReminderMinutes() : 0,
     });
   };
 
@@ -528,16 +555,20 @@ export default function Aufgaben() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <TabsList>
-            <TabsTrigger value="all">Alle</TabsTrigger>
-            <TabsTrigger value="assigned">Mir zugewiesen</TabsTrigger>
-            <TabsTrigger value="created">Von mir erstellt</TabsTrigger>
-          </TabsList>
+        <div className="flex flex-col gap-3">
+          {/* Tab-Leiste - scrollbar auf mobil */}
+          <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
+            <TabsList className="inline-flex w-auto min-w-full sm:min-w-0">
+              <TabsTrigger value="all" className="text-xs sm:text-sm px-3 sm:px-4">Alle</TabsTrigger>
+              <TabsTrigger value="assigned" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Mir zugewiesen</TabsTrigger>
+              <TabsTrigger value="created" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Von mir erstellt</TabsTrigger>
+            </TabsList>
+          </div>
 
-          <div className="flex items-center gap-2">
+          {/* Filter - untereinander auf mobil, nebeneinander auf Desktop */}
+          <div className="flex flex-col sm:flex-row gap-2">
             <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-full sm:w-[140px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -548,7 +579,7 @@ export default function Aufgaben() {
             </Select>
 
             <Select value={filterPriority} onValueChange={(v) => setFilterPriority(v as any)}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-full sm:w-[160px]">
                 <SelectValue placeholder="Priorität" />
               </SelectTrigger>
               <SelectContent>
@@ -641,31 +672,34 @@ export default function Aufgaben() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Priorität</Label>
-                <Select value={priority} onValueChange={(v) => setPriority(v as any)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Niedrig</SelectItem>
-                    <SelectItem value="medium">Mittel</SelectItem>
-                    <SelectItem value="high">Hoch</SelectItem>
-                    <SelectItem value="urgent">Dringend</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Priorität und Fälligkeitsdatum */}
+            <div className="space-y-2">
+              <Label>Priorität</Label>
+              <Select value={priority} onValueChange={(v) => setPriority(v as any)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Niedrig</SelectItem>
+                  <SelectItem value="medium">Mittel</SelectItem>
+                  <SelectItem value="high">Hoch</SelectItem>
+                  <SelectItem value="urgent">Dringend</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="dueDate">Fällig am</Label>
-                <Input
-                  id="dueDate"
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="dueDate" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Fällig am
+              </Label>
+              <Input
+                id="dueDate"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="w-full"
+              />
             </div>
 
             {dueDate && (
@@ -713,61 +747,74 @@ export default function Aufgaben() {
             </div>
 
             {/* Wiederkehrende Aufgaben */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Repeat className="h-4 w-4" />
-                  Wiederholung
-                </Label>
-                <Select value={recurrencePattern} onValueChange={(v) => setRecurrencePattern(v as any)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Keine Wiederholung</SelectItem>
-                    <SelectItem value="daily">Täglich</SelectItem>
-                    <SelectItem value="weekly">Wöchentlich</SelectItem>
-                    <SelectItem value="monthly">Monatlich</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {recurrencePattern !== "none" && (
-                <div className="space-y-2">
-                  <Label htmlFor="recurrenceEndDate">Wiederholung bis</Label>
-                  <Input
-                    id="recurrenceEndDate"
-                    type="date"
-                    value={recurrenceEndDate}
-                    onChange={(e) => setRecurrenceEndDate(e.target.value)}
-                  />
-                </div>
-              )}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Repeat className="h-4 w-4" />
+                Wiederholung
+              </Label>
+              <Select value={recurrencePattern} onValueChange={(v) => setRecurrencePattern(v as any)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Keine Wiederholung</SelectItem>
+                  <SelectItem value="daily">Täglich</SelectItem>
+                  <SelectItem value="weekly">Wöchentlich</SelectItem>
+                  <SelectItem value="monthly">Monatlich</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
+            {recurrencePattern !== "none" && (
+              <div className="space-y-2">
+                <Label htmlFor="recurrenceEndDate" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Wiederholung bis
+                </Label>
+                <Input
+                  id="recurrenceEndDate"
+                  type="date"
+                  value={recurrenceEndDate}
+                  onChange={(e) => setRecurrenceEndDate(e.target.value)}
+                />
+              </div>
+            )}
+
             {/* Erinnerung */}
-            <div className="space-y-2">
+            {dueDate && (
+              <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
                   Erinnerung vor Fälligkeit
                 </Label>
-                <Select value={String(reminderDays)} onValueChange={(v) => setReminderDays(Number(v))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">Keine Erinnerung</SelectItem>
-                    <SelectItem value="1">1 Tag vorher</SelectItem>
-                    <SelectItem value="2">2 Tage vorher</SelectItem>
-                    <SelectItem value="3">3 Tage vorher</SelectItem>
-                    <SelectItem value="7">1 Woche vorher</SelectItem>
-                    <SelectItem value="14">2 Wochen vorher</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    max="999"
+                    value={reminderValue || ""}
+                    onChange={(e) => setReminderValue(parseInt(e.target.value) || 0)}
+                    placeholder="0"
+                    className="w-20"
+                  />
+                  <Select value={reminderUnit} onValueChange={(v) => setReminderUnit(v as "minutes" | "hours" | "days")}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="minutes">Minuten</SelectItem>
+                      <SelectItem value="hours">Stunden</SelectItem>
+                      <SelectItem value="days">Tage</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Du erhältst eine Benachrichtigung und E-Mail vor dem Fälligkeitsdatum.
+                  {reminderValue > 0 
+                    ? `Du erhältst eine Erinnerung ${reminderValue} ${reminderUnit === "minutes" ? "Minuten" : reminderUnit === "hours" ? "Stunden" : "Tage"} vorher.`
+                    : "Keine Erinnerung eingestellt."}
                 </p>
-            </div>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-3">
@@ -896,21 +943,34 @@ export default function Aufgaben() {
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
-                  Erinnerung
+                  Erinnerung vor Fälligkeit
                 </Label>
-                <Select value={String(reminderDays)} onValueChange={(v) => setReminderDays(Number(v))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">Keine Erinnerung</SelectItem>
-                    <SelectItem value="1">1 Tag vorher</SelectItem>
-                    <SelectItem value="2">2 Tage vorher</SelectItem>
-                    <SelectItem value="3">3 Tage vorher</SelectItem>
-                    <SelectItem value="7">1 Woche vorher</SelectItem>
-                    <SelectItem value="14">2 Wochen vorher</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    max="999"
+                    value={reminderValue || ""}
+                    onChange={(e) => setReminderValue(parseInt(e.target.value) || 0)}
+                    placeholder="0"
+                    className="w-20"
+                  />
+                  <Select value={reminderUnit} onValueChange={(v) => setReminderUnit(v as "minutes" | "hours" | "days")}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="minutes">Minuten</SelectItem>
+                      <SelectItem value="hours">Stunden</SelectItem>
+                      <SelectItem value="days">Tage</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {reminderValue > 0 
+                    ? `Du erhältst eine Erinnerung ${reminderValue} ${reminderUnit === "minutes" ? "Minuten" : reminderUnit === "hours" ? "Stunden" : "Tage"} vorher.`
+                    : "Keine Erinnerung eingestellt."}
+                </p>
               </div>
             )}
           </div>
