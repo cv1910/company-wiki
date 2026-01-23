@@ -243,8 +243,8 @@ export default function Calendar() {
   const isInShiftTeam = useMemo(() => {
     if (!myTeams) return false;
     const shiftTeamNames = ['pos', 'versand', 'lager', 'warehouse', 'shipping'];
-    return myTeams.some(team => 
-      shiftTeamNames.some(name => team.name.toLowerCase().includes(name))
+    return myTeams.some(t => 
+      shiftTeamNames.some(name => t.team.name.toLowerCase().includes(name))
     );
   }, [myTeams]);
 
