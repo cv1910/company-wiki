@@ -4,6 +4,7 @@ import { NotificationSettings } from "@/components/NotificationSettings";
 import { UserProfile } from "@/components/UserProfile";
 import { Spotlight, useSpotlight } from "@/components/Spotlight";
 import { MobileNavigation } from "@/components/MobileNavigation";
+import { BottomNavigation } from "@/components/BottomNavigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,6 +78,7 @@ import { ThemeSwitcher } from "./ThemeSwitcher";
 import { useKeyboardShortcuts, KeyboardShortcutsHelp } from "./KeyboardShortcuts";
 import { FavoritesList } from "./FavoriteButton";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 
 // Haupt-Navigation
 const menuItems = [
@@ -220,6 +222,21 @@ function DashboardLayoutContent({
       toggleSidebar();
     }
   };
+
+  // Swipe gestures for mobile sidebar
+  useSwipeGesture({
+    onSwipeRight: () => {
+      if (isMobile && state === "collapsed") {
+        toggleSidebar();
+      }
+    },
+    onSwipeLeft: () => {
+      if (isMobile && state === "expanded") {
+        toggleSidebar();
+      }
+    },
+    enabled: isMobile,
+  });
 
   // Fetch unread notification count
   const { data: unreadCount } = trpc.notifications.unreadCount.useQuery(undefined, {
@@ -609,7 +626,7 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-6 page-transition">{children}</main>
+        <main className="flex-1 p-6 pb-24 md:pb-6 page-transition">{children}</main>
         {showShortcuts && <KeyboardShortcutsHelp onClose={() => setShowShortcuts(false)} />}
         <NotificationSettings
           open={showNotificationSettings}
@@ -627,6 +644,7 @@ function DashboardLayoutContent({
       
       {/* Mobile Bottom Navigation */}
       <MobileNavigation />
+      <BottomNavigation />
     </>
   );
 }

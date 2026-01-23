@@ -1081,6 +1081,9 @@
 .pr-safe {
   padding-right: var(--safe-area-inset-right);
 }
+.safe-area-bottom {
+  padding-bottom: var(--safe-area-inset-bottom);
+}
 
 /* Touch-optimized tap targets */
 @media (max-width: 768px) {

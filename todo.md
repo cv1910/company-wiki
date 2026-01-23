@@ -1162,3 +1162,6 @@
 
 ## Mobile UI Fixes (Januar 2026)
 - [x] Sidebar nach Klick auf Menüpunkt automatisch schließen (Mobile)
+- [x] Pull-to-Refresh auf mobilen Geräten (bereits implementiert)
+- [x] Bottom Navigation Bar für schnellen Zugriff
+- [x] Swipe-Gesten zum Öffnen/Schließen der Sidebar
