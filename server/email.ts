@@ -15,7 +15,8 @@ export type EmailType =
   | "mentioned"
   | "daily_digest"
   | "weekly_digest"
-  | "booking_confirmation";
+  | "booking_confirmation"
+  | "task_assigned";
 
 interface SendEmailParams {
   recipientId: number;
@@ -723,5 +724,59 @@ Company Wiki
     console.log(`[Email] Mention notification sent to ${params.recipientEmail}`);
   } catch (error) {
     console.error("[Email] Failed to send mention email:", error);
+  }
+}
+
+
+/**
+ * Send task assigned email notification
+ */
+export async function sendTaskAssignedEmail(params: {
+  assigneeId: number;
+  assigneeEmail: string;
+  assigneeName: string;
+  assignerName: string;
+  taskTitle: string;
+  taskDescription?: string | null;
+  dueDate?: Date | null;
+  priority: string;
+}): Promise<void> {
+  const subject = `Neue Aufgabe: ${params.taskTitle}`;
+  
+  let dueDateText = "";
+  if (params.dueDate) {
+    const date = new Date(params.dueDate);
+    dueDateText = `\nFällig am: ${date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}`;
+  }
+
+  const priorityLabels: Record<string, string> = {
+    low: "Niedrig",
+    medium: "Mittel",
+    high: "Hoch",
+    urgent: "Dringend",
+  };
+
+  const content = `Hallo ${params.assigneeName},
+
+${params.assignerName} hat dir eine neue Aufgabe zugewiesen:
+
+**${params.taskTitle}**
+${params.taskDescription ? `\n${params.taskDescription}\n` : ""}
+Priorität: ${priorityLabels[params.priority] || params.priority}${dueDateText}
+
+Öffne die Aufgaben-Seite, um die Aufgabe zu bearbeiten.
+
+---
+Company Wiki
+`;
+
+  try {
+    await notifyOwner({
+      title: subject,
+      content: `An: ${params.assigneeEmail}\n\n${content}`,
+    });
+    console.log(`[Email] Task assigned notification sent to ${params.assigneeEmail}`);
+  } catch (error) {
+    console.error("[Email] Failed to send task assigned email:", error);
   }
 }

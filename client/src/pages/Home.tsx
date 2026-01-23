@@ -89,6 +89,7 @@ const SIZE_ICONS: Record<WidgetSize, typeof Minimize2> = {
 const WIDGET_DEFINITIONS = {
   welcomeHero: { id: "welcomeHero", label: "Willkommens-Banner", description: "Personalisierte Begrüßung mit AI-Suche", supportsResize: false },
   announcements: { id: "announcements", label: "Ankündigungen", description: "Angepinnte Unternehmens-Mitteilungen", supportsResize: true },
+  myTasks: { id: "myTasks", label: "Meine Aufgaben", description: "Offene Aufgaben und Zuweisungen", supportsResize: true },
   // Folgende Widgets sind ausgeblendet, können aber über Einstellungen aktiviert werden
   navigation: { id: "navigation", label: "Navigation", description: "Schnellzugriff auf Bereiche", supportsResize: false },
   stats: { id: "stats", label: "Statistiken", description: "Übersicht der Inhalte", supportsResize: false },
@@ -199,6 +200,7 @@ export default function Home() {
   const { data: announcements, isLoading: announcementsLoading } = trpc.announcements.getActive.useQuery();
   const { data: favorites, isLoading: favoritesLoading } = trpc.favorites.list.useQuery();
   const { data: assignments, isLoading: assignmentsLoading } = trpc.assignments.getMyAssignments.useQuery();
+  const { data: myTasks, isLoading: myTasksLoading } = trpc.tasks.getMyTasks.useQuery();
   
   const { data: dashboardSettings, isLoading: settingsLoading } = trpc.dashboardSettings.get.useQuery();
   const utils = trpc.useUtils();
@@ -232,6 +234,7 @@ export default function Home() {
   const widgetVisibility = useMemo(() => ({
     welcomeHero: dashboardSettings?.showWelcomeHero ?? true,
     announcements: dashboardSettings?.showAnnouncements ?? true,
+    myTasks: (dashboardSettings as any)?.showMyTasks ?? true, // Default eingeblendet
     navigation: dashboardSettings?.showNavigation ?? false, // Default ausgeblendet
     stats: dashboardSettings?.showStats ?? false, // Default ausgeblendet
     recentArticles: dashboardSettings?.showRecentArticles ?? false, // Default ausgeblendet
@@ -894,10 +897,89 @@ export default function Home() {
     );
   };
 
+  // Render my tasks widget
+  const renderMyTasks = () => {
+    const openTasks = myTasks?.filter(t => t.task.status !== "completed" && t.task.status !== "cancelled") || [];
+    const openCount = openTasks.length;
+
+    return (
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <ClipboardCheck className="h-5 w-5 text-purple-500" />
+                Meine Aufgaben
+              </CardTitle>
+              <CardDescription>{openCount} offene Aufgaben</CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setLocation("/aufgaben")}>
+              Alle anzeigen
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {myTasksLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          ) : openCount > 0 ? (
+            <div className="space-y-2">
+              {openTasks.slice(0, 5).map((item) => {
+                const isOverdue = item.task.dueDate && new Date(item.task.dueDate) < new Date();
+                return (
+                  <div
+                    key={item.task.id}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => setLocation("/aufgaben")}
+                  >
+                    <div className={`p-1.5 rounded-full ${item.task.priority === "urgent" ? "bg-red-100 text-red-600" : item.task.priority === "high" ? "bg-orange-100 text-orange-600" : "bg-purple-100 text-purple-600"}`}>
+                      <ClipboardCheck className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{item.task.title}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {item.task.dueDate && (
+                          <span className={isOverdue ? "text-red-600" : ""}>
+                            {isOverdue && <AlertTriangle className="h-3 w-3 inline mr-1" />}
+                            {new Date(item.task.dueDate).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
+                          </span>
+                        )}
+                        {item.assignedTo && (
+                          <span>@ {item.assignedTo.name}</span>
+                        )}
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className={`text-[10px] ${item.task.priority === "urgent" ? "bg-red-100 text-red-700" : item.task.priority === "high" ? "bg-orange-100 text-orange-700" : "bg-gray-100 text-gray-700"}`}>
+                      {item.task.priority === "urgent" ? "Dringend" : item.task.priority === "high" ? "Hoch" : item.task.priority === "medium" ? "Mittel" : "Niedrig"}
+                    </Badge>
+                  </div>
+                );
+              })}
+              {openCount > 5 && (
+                <p className="text-xs text-muted-foreground text-center pt-2">
+                  +{openCount - 5} weitere Aufgaben
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <CheckCircle className="h-10 w-10 text-green-500 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Keine offenen Aufgaben</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
   // Widget renderer map
   const widgetRenderers: Record<WidgetId, () => React.ReactNode> = {
     welcomeHero: renderWelcomeHero,
     announcements: renderAnnouncements,
+    myTasks: renderMyTasks,
     navigation: renderNavigation,
     stats: renderStats,
     recentArticles: renderRecentArticles,

@@ -10,7 +10,7 @@ import { nanoid } from "nanoid";
 import * as embeddings from "./embeddings";
 import DiffMatchPatch from "diff-match-patch";
 import * as googleCalendarService from "./googleCalendar";
-import { sendMentionEmail } from "./email";
+import { sendMentionEmail, sendTaskAssignedEmail } from "./email";
 import { transcribeAudio } from "./_core/voiceTranscription";
 
 // Initialize diff-match-patch
@@ -5440,6 +5440,21 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
             message: `${ctx.user.name || "Jemand"} hat dir eine Aufgabe zugewiesen: ${input.title}`,
             link: "/aufgaben",
           });
+
+          // Send email notification
+          const assignee = await db.getUserById(input.assignedToId);
+          if (assignee?.email) {
+            sendTaskAssignedEmail({
+              assigneeId: input.assignedToId,
+              assigneeEmail: assignee.email,
+              assigneeName: assignee.name || "Teammitglied",
+              assignerName: ctx.user.name || "Jemand",
+              taskTitle: input.title,
+              taskDescription: input.description,
+              dueDate: input.dueDate,
+              priority: input.priority,
+            }).catch(console.error);
+          }
         }
 
         return result;
@@ -5475,6 +5490,21 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
             message: `${ctx.user.name || "Jemand"} hat dir eine Aufgabe zugewiesen: ${currentTask.task.title}`,
             link: "/aufgaben",
           });
+
+          // Send email notification
+          const assignee = await db.getUserById(data.assignedToId);
+          if (assignee?.email) {
+            sendTaskAssignedEmail({
+              assigneeId: data.assignedToId,
+              assigneeEmail: assignee.email,
+              assigneeName: assignee.name || "Teammitglied",
+              assignerName: ctx.user.name || "Jemand",
+              taskTitle: currentTask.task.title,
+              taskDescription: currentTask.task.description,
+              dueDate: data.dueDate !== undefined ? data.dueDate : currentTask.task.dueDate,
+              priority: data.priority || currentTask.task.priority,
+            }).catch(console.error);
+          }
         }
 
         return { success: true };
