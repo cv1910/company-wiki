@@ -80,6 +80,7 @@ import { FavoritesList } from "./FavoriteButton";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useMessageSoundNotification, useNotificationSoundAlert } from "@/hooks/useSoundNotification";
+import { NotificationCenter } from "@/components/NotificationCenter";
 
 // Haupt-Navigation
 const menuItems = [
@@ -587,21 +588,7 @@ function DashboardLayoutContent({
                   <FavoritesList />
                 </PopoverContent>
               </Popover>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setLocation("/notifications")}
-                title={`Benachrichtigungen (${totalBadgeCount} ungelesen)`}
-                className="relative"
-              >
-                <Bell className="h-4 w-4" />
-                {totalBadgeCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
-                    {totalBadgeCount > 9 ? "9+" : totalBadgeCount}
-                  </span>
-                )}
-                <span className="sr-only">Benachrichtigungen</span>
-              </Button>
+              <NotificationCenter totalCount={totalBadgeCount} />
               <Button
                 variant="ghost"
                 size="icon"

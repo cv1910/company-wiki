@@ -1183,3 +1183,9 @@
 - [x] Badge für offene/überfällige Aufgaben auf Aufgaben-Icon
 - [x] Benachrichtigungs-Badge im Desktop-Header (Summe aus Benachrichtigungen, Taps, Aufgaben)
 - [x] Sound-Benachrichtigungen (optional, in Einstellungen aktivierbar mit Lautstärkeregler)
+
+
+## Benachrichtigungs-Erweiterungen (Januar 2026)
+- [x] Benachrichtigungs-Zentrale: Unified Dropdown mit allen Benachrichtigungen (Taps, Aufgaben, System)
+- [x] Aufgaben-Erinnerungen: Automatische Erinnerung vor Fälligkeit (bereits implementiert mit reminderDays)
+- [x] Schnellaktionen per Wisch: In Aufgabenliste durch Wischen erledigen (rechts) / verschieben (links)

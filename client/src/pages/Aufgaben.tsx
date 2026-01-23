@@ -29,6 +29,7 @@ import { useLocation, Link } from "wouter";
 import { formatDistanceToNow, format } from "date-fns";
 import { de } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SwipeableTaskCard } from "@/components/SwipeableTaskCard";
 import { useState, useMemo, useEffect } from "react";
 import {
   Dialog,
@@ -76,6 +77,7 @@ function TaskCard({
   onDelete,
   onComment,
   onEdit,
+  onPostpone,
   showAssignee = true 
 }: { 
   task: any;
@@ -83,6 +85,7 @@ function TaskCard({
   onDelete: (id: number) => void;
   onComment: (id: number) => void;
   onEdit: (task: any) => void;
+  onPostpone: (id: number) => void;
   showAssignee?: boolean;
 }) {
   const status = task.task.status as keyof typeof STATUS_CONFIG;
@@ -93,6 +96,11 @@ function TaskCard({
   const isOverdue = task.task.dueDate && new Date(task.task.dueDate) < new Date() && task.task.status !== "completed";
 
   return (
+    <SwipeableTaskCard
+      onComplete={() => onStatusChange(task.task.id, "completed")}
+      onPostpone={() => onPostpone(task.task.id)}
+      disabled={task.task.status === "completed"}
+    >
     <div className="group relative p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-200">
       <div className="flex items-start gap-3">
         {/* Status Toggle */}
@@ -211,6 +219,7 @@ function TaskCard({
         </div>
       </div>
     </div>
+    </SwipeableTaskCard>
   );
 }
 
@@ -452,6 +461,24 @@ export default function Aufgaben() {
     return (myTasks || []).filter(t => t.task.status !== "completed" && t.task.status !== "cancelled").length;
   }, [myTasks]);
 
+  // Postpone task by 1 day
+  const handlePostpone = (id: number) => {
+    const task = currentTasks?.find((t: any) => t.task.id === id);
+    if (task?.task.dueDate) {
+      const newDate = new Date(task.task.dueDate);
+      newDate.setDate(newDate.getDate() + 1);
+      updateTask.mutate({ id, dueDate: newDate });
+      toast.success("Aufgabe um 1 Tag verschoben");
+    } else {
+      // If no due date, set it to tomorrow
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(9, 0, 0, 0);
+      updateTask.mutate({ id, dueDate: tomorrow });
+      toast.success("Fälligkeit auf morgen gesetzt");
+    }
+  };
+
   // Handle /aufgaben/new route
   useEffect(() => {
     if (isNewRoute && !createDialogOpen) {
@@ -573,6 +600,7 @@ export default function Aufgaben() {
                     setCommentDialogOpen(true);
                   }}
                   onEdit={handleEdit}
+                  onPostpone={handlePostpone}
                   showAssignee={activeTab !== "assigned"}
                 />
               ))}
