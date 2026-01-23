@@ -130,6 +130,9 @@ function Router() {
         <Route path="/aufgaben" component={Aufgaben} />
         <Route path="/aufgaben/new" component={Aufgaben} />
         
+        {/* Shift Reports */}
+        <Route path="/schicht-auswertungen" component={ShiftReports} />
+        
         {/* Admin Routes */}
         <Route path="/admin/teams" component={Teams} />
         <Route path="/admin/shift-reports" component={ShiftReports} />
