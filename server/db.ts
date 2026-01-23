@@ -113,6 +113,8 @@ import {
   InsertTask,
   taskComments,
   InsertTaskComment,
+  taskReminders,
+  InsertTaskReminder,
   shiftTemplates,
   InsertShiftTemplate,
   shiftSwapRequests,
@@ -6087,6 +6089,133 @@ export async function resetTaskReminder(taskId: number) {
     .update(tasks)
     .set({ reminderSent: false })
     .where(eq(tasks.id, taskId));
+}
+
+// ===== Multiple Task Reminders =====
+
+export async function getTaskReminders(taskId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select()
+    .from(taskReminders)
+    .where(eq(taskReminders.taskId, taskId))
+    .orderBy(taskReminders.reminderMinutes);
+}
+
+export async function addTaskReminder(taskId: number, reminderMinutes: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(taskReminders).values({
+    taskId,
+    reminderMinutes,
+  });
+  return { id: result[0].insertId };
+}
+
+export async function deleteTaskReminder(reminderId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(taskReminders).where(eq(taskReminders.id, reminderId));
+}
+
+export async function deleteAllTaskReminders(taskId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(taskReminders).where(eq(taskReminders.taskId, taskId));
+}
+
+export async function setTaskReminders(taskId: number, reminderMinutesList: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Delete existing reminders
+  await db.delete(taskReminders).where(eq(taskReminders.taskId, taskId));
+  
+  // Add new reminders
+  if (reminderMinutesList.length > 0) {
+    await db.insert(taskReminders).values(
+      reminderMinutesList.map(minutes => ({
+        taskId,
+        reminderMinutes: minutes,
+      }))
+    );
+  }
+}
+
+export async function getTasksWithPendingReminders() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const now = new Date();
+  
+  // Get all tasks with due dates and unsent reminders
+  const result = await db
+    .select({
+      taskId: taskReminders.taskId,
+      reminderId: taskReminders.id,
+      reminderMinutes: taskReminders.reminderMinutes,
+      task: tasks,
+    })
+    .from(taskReminders)
+    .innerJoin(tasks, eq(taskReminders.taskId, tasks.id))
+    .where(
+      and(
+        eq(taskReminders.sent, false),
+        isNotNull(tasks.dueDate),
+        eq(tasks.status, "open")
+      )
+    );
+  
+  // Filter to only include reminders that should be sent now
+  return result.filter(r => {
+    if (!r.task.dueDate) return false;
+    const dueDate = new Date(r.task.dueDate);
+    const reminderTime = new Date(dueDate.getTime() - r.reminderMinutes * 60 * 1000);
+    return now >= reminderTime;
+  });
+}
+
+export async function markTaskReminderAsSent(reminderId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(taskReminders)
+    .set({ sent: true, sentAt: new Date() })
+    .where(eq(taskReminders.id, reminderId));
+}
+
+// ===== Tasks for Calendar Integration =====
+
+export async function getTasksWithDueDate(startDate: Date, endDate: Date, userId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [
+    isNotNull(tasks.dueDate),
+    gte(tasks.dueDate, startDate),
+    lte(tasks.dueDate, endDate),
+  ];
+  
+  if (userId) {
+    conditions.push(
+      or(
+        eq(tasks.assignedToId, userId),
+        eq(tasks.createdById, userId)
+      )!
+    );
+  }
+  
+  return db
+    .select()
+    .from(tasks)
+    .where(and(...conditions))
+    .orderBy(tasks.dueDate);
 }
 
 

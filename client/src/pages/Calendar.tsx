@@ -126,6 +126,7 @@ const EVENT_TYPES = [
   { value: "meeting", label: "Meeting" },
   { value: "reminder", label: "Erinnerung" },
   { value: "shift", label: "Schicht (Einsatzplan)" },
+  { value: "task", label: "Aufgabe" },
   { value: "other", label: "Sonstiges" },
 ];
 
@@ -460,7 +461,13 @@ export default function Calendar() {
     importIcal.mutate({ content, overwriteExisting: importOverwrite });
   };
 
-  // Combine all events
+  // Fetch tasks with due dates for calendar
+  const { data: tasksForCalendar } = trpc.tasks.getForCalendar.useQuery({
+    startDate: dateRange.start,
+    endDate: dateRange.end,
+  });
+
+  // Combine all events including tasks
   const allEvents = useMemo(() => {
     if (!calendarData) return [];
     const events: CalendarEvent[] = [
@@ -468,8 +475,28 @@ export default function Calendar() {
       ...calendarData.leaves,
       ...calendarData.teamLeaves,
     ];
+    
+    // Add tasks as calendar events
+    if (tasksForCalendar) {
+      const taskEvents: CalendarEvent[] = tasksForCalendar.map(task => ({
+        id: -1000 - task.id, // Negative ID to distinguish from real events
+        title: `\u2611 ${task.title}`,
+        description: task.description,
+        startDate: task.dueDate!,
+        endDate: task.dueDate!,
+        isAllDay: false,
+        color: task.priority === 'urgent' ? 'red' : task.priority === 'high' ? 'orange' : task.priority === 'medium' ? 'blue' : 'teal',
+        eventType: 'task',
+        location: null,
+        notes: null,
+        linkedResourceType: 'task',
+        linkedResourceId: task.id,
+      }));
+      events.push(...taskEvents);
+    }
+    
     return events;
-  }, [calendarData]);
+  }, [calendarData, tasksForCalendar]);
 
   // Get events for a specific day
   const getEventsForDay = (date: Date): CalendarEvent[] => {
@@ -543,6 +570,11 @@ export default function Calendar() {
   };
 
   const openEditEventDialog = (event: CalendarEvent) => {
+    // Handle task events - navigate to tasks page
+    if (event.eventType === 'task' && event.linkedResourceId) {
+      setLocation('/aufgaben');
+      return;
+    }
     if (event.id < 0) {
       toast.info("Urlaube können nicht bearbeitet werden");
       return;

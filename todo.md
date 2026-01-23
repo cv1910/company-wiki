@@ -1196,3 +1196,12 @@
 - [x] Layout-Fix: Tabs "Mir zugewiesen" / "Von mir erstellt" überlappen
 - [x] Layout-Fix: "Alle Prioritäten" Filter wird abgeschnitten
 - [x] Flexible Erinnerungen: Minuten, Stunden oder Tage frei wählbar (nicht nur Tage)
+
+
+## Aufgaben-Erweiterungen (Januar 2026)
+- [x] Erinnerungs-Schnellauswahl: Buttons für häufige Zeiten (15 Min, 1 Std, 1 Tag)
+- [x] Mehrere Erinnerungen pro Aufgabe: Datenbank-Schema für task_reminders Tabelle
+- [x] Mehrere Erinnerungen pro Aufgabe: Backend-API für CRUD
+- [x] Mehrere Erinnerungen pro Aufgabe: Frontend-UI mit Hinzufügen/Entfernen
+- [x] Kalender-Integration: Aufgaben mit Fälligkeit im Kalender anzeigen
+- [x] Kalender-Integration: Aufgaben-Badge/Markierung an Tagen mit Aufgaben

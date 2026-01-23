@@ -249,6 +249,8 @@ export default function Aufgaben() {
   const [recurrenceEndDate, setRecurrenceEndDate] = useState("");
   const [reminderValue, setReminderValue] = useState<number>(0);
   const [reminderUnit, setReminderUnit] = useState<"minutes" | "hours" | "days">("days");
+  // Mehrere Erinnerungen
+  const [reminders, setReminders] = useState<number[]>([]); // Array von Minuten
   
   // Edit mode
   const [editingTask, setEditingTask] = useState<any>(null);
@@ -334,6 +336,7 @@ export default function Aufgaben() {
     setRecurrenceEndDate("");
     setReminderValue(0);
     setReminderUnit("days");
+    setReminders([]);
     setEditingTask(null);
   };
 
@@ -345,6 +348,44 @@ export default function Aufgaben() {
       case "hours": return reminderValue * 60;
       case "days": return reminderValue * 60 * 24;
       default: return 0;
+    }
+  };
+
+  // Schnellauswahl-Optionen für Erinnerungen
+  const QUICK_REMINDERS = [
+    { label: "15 Min", minutes: 15 },
+    { label: "30 Min", minutes: 30 },
+    { label: "1 Std", minutes: 60 },
+    { label: "2 Std", minutes: 120 },
+    { label: "1 Tag", minutes: 1440 },
+    { label: "2 Tage", minutes: 2880 },
+  ];
+
+  // Formatiere Minuten zu lesbarem Text
+  const formatReminderTime = (minutes: number): string => {
+    if (minutes < 60) return `${minutes} Min`;
+    if (minutes < 1440) return `${Math.round(minutes / 60)} Std`;
+    return `${Math.round(minutes / 1440)} Tag(e)`;
+  };
+
+  // Füge Erinnerung hinzu
+  const addReminder = () => {
+    const mins = getReminderMinutes();
+    if (mins > 0 && !reminders.includes(mins)) {
+      setReminders([...reminders, mins].sort((a, b) => a - b));
+      setReminderValue(0);
+    }
+  };
+
+  // Entferne Erinnerung
+  const removeReminder = (minutes: number) => {
+    setReminders(reminders.filter(r => r !== minutes));
+  };
+
+  // Schnellauswahl hinzufügen
+  const addQuickReminder = (minutes: number) => {
+    if (!reminders.includes(minutes)) {
+      setReminders([...reminders, minutes].sort((a, b) => a - b));
     }
   };
 
@@ -369,21 +410,15 @@ export default function Aufgaben() {
     } else {
       setRecurrenceEndDate("");
     }
-    // Konvertiere reminderMinutes zurück zu Value und Unit
+    // Setze die alte einzelne Erinnerung als Array (für Abwärtskompatibilität)
     const mins = task.task.reminderMinutes || 0;
-    if (mins === 0) {
-      setReminderValue(0);
-      setReminderUnit("days");
-    } else if (mins % (60 * 24) === 0) {
-      setReminderValue(mins / (60 * 24));
-      setReminderUnit("days");
-    } else if (mins % 60 === 0) {
-      setReminderValue(mins / 60);
-      setReminderUnit("hours");
+    if (mins > 0) {
+      setReminders([mins]);
     } else {
-      setReminderValue(mins);
-      setReminderUnit("minutes");
+      setReminders([]);
     }
+    setReminderValue(0);
+    setReminderUnit("days");
     setEditDialogOpen(true);
   };
 
@@ -402,6 +437,10 @@ export default function Aufgaben() {
       }
     }
     
+    // Verwende die erste Erinnerung aus dem Array (für Abwärtskompatibilität mit dem alten System)
+    // In Zukunft könnte hier setReminders aufgerufen werden
+    const firstReminder = reminders.length > 0 ? reminders[0] : 0;
+    
     updateTask.mutate({
       id: editingTask.task.id,
       title: title.trim(),
@@ -409,7 +448,7 @@ export default function Aufgaben() {
       priority,
       dueDate: dueDateValue,
       assignedToId,
-      reminderMinutes: dueDate ? getReminderMinutes() : 0,
+      reminderMinutes: dueDate ? firstReminder : 0,
     }, {
       onSuccess: () => {
         toast.success("Aufgabe aktualisiert");
@@ -433,6 +472,9 @@ export default function Aufgaben() {
       }
     }
     
+    // Verwende die erste Erinnerung aus dem Array
+    const firstReminder = reminders.length > 0 ? reminders[0] : 0;
+    
     createTask.mutate({
       title: title.trim(),
       description: description.trim() || undefined,
@@ -441,7 +483,7 @@ export default function Aufgaben() {
       assignedToId,
       recurrencePattern,
       recurrenceEndDate: recurrenceEndDate ? new Date(recurrenceEndDate) : null,
-      reminderMinutes: dueDate ? getReminderMinutes() : 0,
+      reminderMinutes: dueDate ? firstReminder : 0,
     });
   };
 
@@ -780,25 +822,43 @@ export default function Aufgaben() {
               </div>
             )}
 
-            {/* Erinnerung */}
+            {/* Erinnerungen */}
             {dueDate && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
-                  Erinnerung vor Fälligkeit
+                  Erinnerungen
                 </Label>
+                
+                {/* Schnellauswahl */}
+                <div className="flex flex-wrap gap-1.5">
+                  {QUICK_REMINDERS.map((qr) => (
+                    <Button
+                      key={qr.minutes}
+                      type="button"
+                      variant={reminders.includes(qr.minutes) ? "default" : "outline"}
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => reminders.includes(qr.minutes) ? removeReminder(qr.minutes) : addQuickReminder(qr.minutes)}
+                    >
+                      {qr.label}
+                    </Button>
+                  ))}
+                </div>
+
+                {/* Benutzerdefinierte Erinnerung */}
                 <div className="flex gap-2">
                   <Input
                     type="number"
-                    min="0"
+                    min="1"
                     max="999"
                     value={reminderValue || ""}
                     onChange={(e) => setReminderValue(parseInt(e.target.value) || 0)}
-                    placeholder="0"
+                    placeholder="Zeit"
                     className="w-20"
                   />
                   <Select value={reminderUnit} onValueChange={(v) => setReminderUnit(v as "minutes" | "hours" | "days")}>
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger className="w-28">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -807,11 +867,38 @@ export default function Aufgaben() {
                       <SelectItem value="days">Tage</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addReminder}
+                    disabled={reminderValue === 0}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
+
+                {/* Aktive Erinnerungen */}
+                {reminders.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {reminders.map((mins) => (
+                      <Badge
+                        key={mins}
+                        variant="secondary"
+                        className="flex items-center gap-1 cursor-pointer hover:bg-destructive/20"
+                        onClick={() => removeReminder(mins)}
+                      >
+                        {formatReminderTime(mins)} vorher
+                        <X className="h-3 w-3" />
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                
                 <p className="text-xs text-muted-foreground">
-                  {reminderValue > 0 
-                    ? `Du erhältst eine Erinnerung ${reminderValue} ${reminderUnit === "minutes" ? "Minuten" : reminderUnit === "hours" ? "Stunden" : "Tage"} vorher.`
-                    : "Keine Erinnerung eingestellt."}
+                  {reminders.length > 0 
+                    ? `${reminders.length} Erinnerung(en) eingestellt`
+                    : "Keine Erinnerungen eingestellt. Wähle Schnelloptionen oder füge eigene hinzu."}
                 </p>
               </div>
             )}
@@ -939,24 +1026,43 @@ export default function Aufgaben() {
               </Select>
             </div>
 
+            {/* Erinnerungen */}
             {dueDate && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
-                  Erinnerung vor Fälligkeit
+                  Erinnerungen
                 </Label>
+                
+                {/* Schnellauswahl */}
+                <div className="flex flex-wrap gap-1.5">
+                  {QUICK_REMINDERS.map((qr) => (
+                    <Button
+                      key={qr.minutes}
+                      type="button"
+                      variant={reminders.includes(qr.minutes) ? "default" : "outline"}
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => reminders.includes(qr.minutes) ? removeReminder(qr.minutes) : addQuickReminder(qr.minutes)}
+                    >
+                      {qr.label}
+                    </Button>
+                  ))}
+                </div>
+
+                {/* Benutzerdefinierte Erinnerung */}
                 <div className="flex gap-2">
                   <Input
                     type="number"
-                    min="0"
+                    min="1"
                     max="999"
                     value={reminderValue || ""}
                     onChange={(e) => setReminderValue(parseInt(e.target.value) || 0)}
-                    placeholder="0"
+                    placeholder="Zeit"
                     className="w-20"
                   />
                   <Select value={reminderUnit} onValueChange={(v) => setReminderUnit(v as "minutes" | "hours" | "days")}>
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger className="w-28">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -965,11 +1071,38 @@ export default function Aufgaben() {
                       <SelectItem value="days">Tage</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addReminder}
+                    disabled={reminderValue === 0}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
+
+                {/* Aktive Erinnerungen */}
+                {reminders.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {reminders.map((mins) => (
+                      <Badge
+                        key={mins}
+                        variant="secondary"
+                        className="flex items-center gap-1 cursor-pointer hover:bg-destructive/20"
+                        onClick={() => removeReminder(mins)}
+                      >
+                        {formatReminderTime(mins)} vorher
+                        <X className="h-3 w-3" />
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                
                 <p className="text-xs text-muted-foreground">
-                  {reminderValue > 0 
-                    ? `Du erhältst eine Erinnerung ${reminderValue} ${reminderUnit === "minutes" ? "Minuten" : reminderUnit === "hours" ? "Stunden" : "Tage"} vorher.`
-                    : "Keine Erinnerung eingestellt."}
+                  {reminders.length > 0 
+                    ? `${reminders.length} Erinnerung(en) eingestellt`
+                    : "Keine Erinnerungen eingestellt. Wähle Schnelloptionen oder füge eigene hinzu."}
                 </p>
               </div>
             )}

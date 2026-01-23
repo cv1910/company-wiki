@@ -5800,6 +5800,117 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
       
       return { processed: tasksToRemind.length, sent: sentCount };
     }),
+
+    // ========== Multiple Reminders ==========
+
+    // Get reminders for a task
+    getReminders: protectedProcedure
+      .input(z.object({ taskId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getTaskReminders(input.taskId);
+      }),
+
+    // Set reminders for a task (replaces all existing reminders)
+    setReminders: protectedProcedure
+      .input(z.object({
+        taskId: z.number(),
+        reminders: z.array(z.number().min(0)), // Array of minutes before due date
+      }))
+      .mutation(async ({ input }) => {
+        await db.setTaskReminders(input.taskId, input.reminders);
+        return { success: true };
+      }),
+
+    // Add a single reminder to a task
+    addReminder: protectedProcedure
+      .input(z.object({
+        taskId: z.number(),
+        reminderMinutes: z.number().min(0),
+      }))
+      .mutation(async ({ input }) => {
+        const result = await db.addTaskReminder(input.taskId, input.reminderMinutes);
+        return result;
+      }),
+
+    // Delete a single reminder
+    deleteReminder: protectedProcedure
+      .input(z.object({ reminderId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteTaskReminder(input.reminderId);
+        return { success: true };
+      }),
+
+    // Process multiple reminders (for cron job)
+    processMultipleReminders: adminProcedure.mutation(async () => {
+      const remindersToSend = await db.getTasksWithPendingReminders();
+      let sentCount = 0;
+      
+      for (const { task, reminderId, reminderMinutes } of remindersToSend) {
+        if (!task.dueDate) continue;
+        
+        // Determine the recipient (assignee or creator)
+        const recipient = task.assignedToId 
+          ? await db.getUserById(task.assignedToId)
+          : await db.getUserById(task.createdById);
+        if (!recipient?.email) continue;
+        
+        const dueDate = new Date(task.dueDate);
+        const now = new Date();
+        const minutesUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60));
+        
+        // Format time until due
+        let timeUntilDue: string;
+        if (minutesUntilDue < 60) {
+          timeUntilDue = `${minutesUntilDue} Minute(n)`;
+        } else if (minutesUntilDue < 1440) {
+          timeUntilDue = `${Math.round(minutesUntilDue / 60)} Stunde(n)`;
+        } else {
+          timeUntilDue = `${Math.round(minutesUntilDue / 1440)} Tag(en)`;
+        }
+        
+        // Send reminder email
+        await sendTaskReminderEmail({
+          userId: recipient.id,
+          userEmail: recipient.email,
+          userName: recipient.name || "Teammitglied",
+          taskId: task.id,
+          taskTitle: task.title,
+          taskDescription: task.description,
+          priority: task.priority,
+          dueDate: dueDate,
+          daysUntilDue: Math.max(0, Math.ceil(minutesUntilDue / 1440)),
+        });
+        
+        // Create in-app notification
+        await db.createNotification({
+          userId: recipient.id,
+          type: "task_reminder",
+          title: minutesUntilDue <= 0 ? "Aufgabe jetzt fällig!" : `Erinnerung: Aufgabe in ${timeUntilDue} fällig`,
+          message: task.title,
+          link: "/aufgaben",
+        });
+        
+        // Mark this specific reminder as sent
+        await db.markTaskReminderAsSent(reminderId);
+        sentCount++;
+      }
+      
+      return { processed: remindersToSend.length, sent: sentCount };
+    }),
+
+    // ========== Calendar Integration ==========
+
+    // Get tasks with due dates for calendar view
+    getForCalendar: protectedProcedure
+      .input(z.object({
+        startDate: z.date(),
+        endDate: z.date(),
+        userId: z.number().optional(), // If not provided, get all tasks for current user
+      }))
+      .query(async ({ ctx, input }) => {
+        const userId = input.userId || ctx.user.id;
+        return db.getTasksWithDueDate(input.startDate, input.endDate, userId);
+      }),
   }),
 
   // ============================================================

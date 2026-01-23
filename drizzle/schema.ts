@@ -1324,6 +1324,22 @@ export const taskComments = mysqlTable("task_comments", {
 export type TaskComment = typeof taskComments.$inferSelect;
 export type InsertTaskComment = typeof taskComments.$inferInsert;
 
+/**
+ * Task reminders for multiple reminders per task.
+ * Allows setting multiple reminder times (e.g., 1 day and 1 hour before).
+ */
+export const taskReminders = mysqlTable("task_reminders", {
+  id: int("id").autoincrement().primaryKey(),
+  taskId: int("taskId").notNull(),
+  reminderMinutes: int("reminderMinutes").notNull(), // Minutes before due date
+  sent: boolean("sent").default(false).notNull(),
+  sentAt: timestamp("sentAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TaskReminder = typeof taskReminders.$inferSelect;
+export type InsertTaskReminder = typeof taskReminders.$inferInsert;
+
 
 /**
  * Shift templates for reusable shift patterns.
