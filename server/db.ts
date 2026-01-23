@@ -1,4 +1,4 @@
-import { eq, desc, and, like, or, sql, inArray, lte, gte, lt, asc, isNotNull, isNull, aliasedTable, ne } from "drizzle-orm";
+import { eq, desc, and, like, or, sql, inArray, lte, gte, lt, gt, asc, isNotNull, isNull, aliasedTable, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -5988,4 +5988,61 @@ export async function getLastTaskInstance(parentTaskId: number) {
     .orderBy(desc(tasks.dueDate))
     .limit(1);
   return result[0] || null;
+}
+
+
+// ===== Task Reminders =====
+
+export async function getTasksNeedingReminder() {
+  const db = await getDb();
+  const now = new Date();
+  
+  // Hole alle Aufgaben mit Erinnerung, die noch nicht gesendet wurden
+  // und deren Fälligkeitsdatum innerhalb der Erinnerungsfrist liegt
+  const result = await db!
+    .select({
+      task: tasks,
+      assignee: users,
+    })
+    .from(tasks)
+    .leftJoin(users, eq(tasks.assignedToId, users.id))
+    .where(
+      and(
+        gt(tasks.reminderDays, 0), // Hat eine Erinnerung konfiguriert
+        eq(tasks.reminderSent, false), // Erinnerung wurde noch nicht gesendet
+        isNotNull(tasks.dueDate), // Hat ein Fälligkeitsdatum
+        ne(tasks.status, "completed"), // Nicht erledigt
+        ne(tasks.status, "cancelled") // Nicht abgebrochen
+      )
+    );
+  
+  // Filtere nach Aufgaben, deren Fälligkeitsdatum innerhalb der Erinnerungsfrist liegt
+  const tasksToRemind = result.filter(({ task }) => {
+    if (!task.dueDate || !task.reminderDays) return false;
+    
+    const dueDate = new Date(task.dueDate);
+    const reminderDate = new Date(dueDate);
+    reminderDate.setDate(reminderDate.getDate() - task.reminderDays);
+    
+    // Erinnerung senden, wenn wir das Erinnerungsdatum erreicht oder überschritten haben
+    return now >= reminderDate;
+  });
+  
+  return tasksToRemind;
+}
+
+export async function markTaskReminderSent(taskId: number) {
+  const db = await getDb();
+  await db!
+    .update(tasks)
+    .set({ reminderSent: true })
+    .where(eq(tasks.id, taskId));
+}
+
+export async function resetTaskReminder(taskId: number) {
+  const db = await getDb();
+  await db!
+    .update(tasks)
+    .set({ reminderSent: false })
+    .where(eq(tasks.id, taskId));
 }

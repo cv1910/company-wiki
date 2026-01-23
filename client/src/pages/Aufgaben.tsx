@@ -227,6 +227,7 @@ export default function Aufgaben() {
   const [assignedToId, setAssignedToId] = useState<number | null>(null);
   const [recurrencePattern, setRecurrencePattern] = useState<"none" | "daily" | "weekly" | "monthly">("none");
   const [recurrenceEndDate, setRecurrenceEndDate] = useState("");
+  const [reminderDays, setReminderDays] = useState<number>(0);
 
   // Queries
   const { data: myTasks, isLoading: myTasksLoading, refetch: refetchMyTasks } = trpc.tasks.getMyTasks.useQuery();
@@ -305,6 +306,7 @@ export default function Aufgaben() {
     setAssignedToId(null);
     setRecurrencePattern("none");
     setRecurrenceEndDate("");
+    setReminderDays(0);
   };
 
   const handleCreate = () => {
@@ -320,6 +322,7 @@ export default function Aufgaben() {
       assignedToId,
       recurrencePattern,
       recurrenceEndDate: recurrenceEndDate ? new Date(recurrenceEndDate) : null,
+      reminderDays: dueDate ? reminderDays : 0, // Nur wenn Fälligkeitsdatum gesetzt
     });
   };
 
@@ -613,6 +616,32 @@ export default function Aufgaben() {
                 </div>
               )}
             </div>
+
+            {/* Erinnerung */}
+            {dueDate && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Erinnerung vor Fälligkeit
+                </Label>
+                <Select value={String(reminderDays)} onValueChange={(v) => setReminderDays(Number(v))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Keine Erinnerung</SelectItem>
+                    <SelectItem value="1">1 Tag vorher</SelectItem>
+                    <SelectItem value="2">2 Tage vorher</SelectItem>
+                    <SelectItem value="3">3 Tage vorher</SelectItem>
+                    <SelectItem value="7">1 Woche vorher</SelectItem>
+                    <SelectItem value="14">2 Wochen vorher</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Du erhältst eine Benachrichtigung und E-Mail vor dem Fälligkeitsdatum.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-3">

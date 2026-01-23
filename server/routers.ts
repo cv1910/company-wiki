@@ -10,7 +10,7 @@ import { nanoid } from "nanoid";
 import * as embeddings from "./embeddings";
 import DiffMatchPatch from "diff-match-patch";
 import * as googleCalendarService from "./googleCalendar";
-import { sendMentionEmail, sendTaskAssignedEmail } from "./email";
+import { sendMentionEmail, sendTaskAssignedEmail, sendTaskReminderEmail } from "./email";
 import { transcribeAudio } from "./_core/voiceTranscription";
 
 // Initialize diff-match-patch
@@ -5420,6 +5420,7 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           assignedToId: z.number().optional().nullable(),
           recurrencePattern: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
           recurrenceEndDate: z.date().optional().nullable(),
+          reminderDays: z.number().min(0).max(30).default(0),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -5433,6 +5434,8 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           status: "open",
           recurrencePattern: input.recurrencePattern,
           recurrenceEndDate: input.recurrenceEndDate || null,
+          reminderDays: input.reminderDays,
+          reminderSent: false,
         } as any);
 
         // Create notification for assigned user
@@ -5475,15 +5478,23 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
           dueDate: z.date().optional().nullable(),
           assignedToId: z.number().optional().nullable(),
+          reminderDays: z.number().min(0).max(30).optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
-        const { id, ...data } = input;
+        const { id, reminderDays, ...data } = input;
+        
+        // If reminderDays changed, reset reminderSent
+        const updateData: Record<string, unknown> = { ...data };
+        if (reminderDays !== undefined) {
+          updateData.reminderDays = reminderDays;
+          updateData.reminderSent = false; // Reset so reminder can be sent again
+        }
         
         // Get the current task to check if assignment changed
         const currentTask = await db.getTaskById(id);
         
-        await db.updateTask(id, data);
+        await db.updateTask(id, updateData);
 
         // Notify if assignment changed
         if (data.assignedToId && currentTask && data.assignedToId !== currentTask.task.assignedToId && data.assignedToId !== ctx.user.id) {
@@ -5606,6 +5617,52 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         await db.deleteTaskComment(input.id);
         return { success: true };
       }),
+
+    // Process task reminders (called by cron job or admin)
+    processReminders: adminProcedure.mutation(async () => {
+      const tasksToRemind = await db.getTasksNeedingReminder();
+      let sentCount = 0;
+      
+      for (const { task, assignee } of tasksToRemind) {
+        if (!task.dueDate) continue;
+        
+        // Determine the recipient (assignee or creator)
+        const recipient = assignee || await db.getUserById(task.createdById);
+        if (!recipient?.email) continue;
+        
+        const dueDate = new Date(task.dueDate);
+        const now = new Date();
+        const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        
+        // Send reminder email
+        await sendTaskReminderEmail({
+          userId: recipient.id,
+          userEmail: recipient.email,
+          userName: recipient.name || "Teammitglied",
+          taskId: task.id,
+          taskTitle: task.title,
+          taskDescription: task.description,
+          priority: task.priority,
+          dueDate: dueDate,
+          daysUntilDue: Math.max(0, daysUntilDue),
+        });
+        
+        // Create in-app notification
+        await db.createNotification({
+          userId: recipient.id,
+          type: "task_reminder",
+          title: daysUntilDue === 0 ? "Aufgabe heute fällig!" : `Erinnerung: Aufgabe in ${daysUntilDue} Tag(en) fällig`,
+          message: task.title,
+          link: "/aufgaben",
+        });
+        
+        // Mark reminder as sent
+        await db.markTaskReminderSent(task.id);
+        sentCount++;
+      }
+      
+      return { processed: tasksToRemind.length, sent: sentCount };
+    }),
   }),
 });
 

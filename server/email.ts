@@ -16,7 +16,8 @@ export type EmailType =
   | "daily_digest"
   | "weekly_digest"
   | "booking_confirmation"
-  | "task_assigned";
+  | "task_assigned"
+  | "task_reminder";
 
 interface SendEmailParams {
   recipientId: number;
@@ -778,5 +779,81 @@ Company Wiki
     console.log(`[Email] Task assigned notification sent to ${params.assigneeEmail}`);
   } catch (error) {
     console.error("[Email] Failed to send task assigned email:", error);
+  }
+}
+
+
+/**
+ * Send task reminder email before due date
+ */
+export async function sendTaskReminderEmail(params: {
+  userId: number;
+  userEmail: string;
+  userName: string;
+  taskId: number;
+  taskTitle: string;
+  taskDescription?: string | null;
+  priority: string;
+  dueDate: Date;
+  daysUntilDue: number;
+}) {
+  // Check if user wants to receive task reminder emails
+  const shouldSend = await shouldSendEmail(params.userId, "task_reminder");
+  if (!shouldSend) {
+    console.log(`[Email] User ${params.userId} has disabled task reminder emails`);
+    return;
+  }
+
+  const dueDateFormatted = params.dueDate.toLocaleDateString("de-DE", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const priorityLabels: Record<string, string> = {
+    low: "Niedrig",
+    medium: "Mittel",
+    high: "Hoch",
+    urgent: "Dringend",
+  };
+
+  let urgencyText = "";
+  if (params.daysUntilDue === 0) {
+    urgencyText = "**Heute fällig!**";
+  } else if (params.daysUntilDue === 1) {
+    urgencyText = "**Morgen fällig!**";
+  } else {
+    urgencyText = `Fällig in ${params.daysUntilDue} Tagen`;
+  }
+
+  const subject = params.daysUntilDue === 0 
+    ? `⚠️ Aufgabe heute fällig: ${params.taskTitle}`
+    : `📅 Erinnerung: Aufgabe "${params.taskTitle}" - ${urgencyText}`;
+
+  const content = `Hallo ${params.userName},
+
+dies ist eine Erinnerung an deine Aufgabe:
+
+**${params.taskTitle}**
+${params.taskDescription ? `\n${params.taskDescription}\n` : ""}
+Priorität: ${priorityLabels[params.priority] || params.priority}
+Fällig am: ${dueDateFormatted}
+${urgencyText}
+
+Öffne die Aufgaben-Seite, um die Aufgabe zu bearbeiten.
+
+---
+Company Wiki
+`;
+
+  try {
+    await notifyOwner({
+      title: subject,
+      content: `An: ${params.userEmail}\n\n${content}`,
+    });
+    console.log(`[Email] Task reminder sent to ${params.userEmail} for task ${params.taskId}`);
+  } catch (error) {
+    console.error("[Email] Failed to send task reminder email:", error);
   }
 }

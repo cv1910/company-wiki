@@ -1075,3 +1075,12 @@
 - [x] Wiederholungs-Badge auf Aufgaben-Karten
 - [x] Kommentar-Button auf Aufgaben-Karten
 - [x] Benachrichtigungen bei neuen Kommentaren
+
+
+## Aufgaben-Erinnerungen (Januar 2026)
+- [ ] Datenbank-Schema für Erinnerungseinstellungen (reminderDays-Feld in tasks)
+- [ ] Backend-API für Erinnerungen (Cron-Job für tägliche Prüfung)
+- [ ] E-Mail-Benachrichtigung bei bevorstehenden Aufgaben
+- [ ] In-App-Benachrichtigung bei bevorstehenden Aufgaben
+- [ ] Erinnerungs-Dropdown im Aufgaben-Erstellungsdialog
+- [ ] Tests für Erinnerungsfunktion

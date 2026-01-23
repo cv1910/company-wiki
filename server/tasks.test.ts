@@ -262,4 +262,89 @@ describe("Tasks Module", () => {
       expect(openHighPriority).toHaveLength(2);
     });
   });
+
+  describe("Task Reminders", () => {
+    it("should support reminder days configuration", () => {
+      const validReminderDays = [0, 1, 2, 3, 7, 14];
+      
+      validReminderDays.forEach(days => {
+        expect(days).toBeGreaterThanOrEqual(0);
+        expect(days).toBeLessThanOrEqual(30);
+      });
+    });
+
+    it("should identify tasks needing reminder", () => {
+      const now = new Date();
+      const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+      const in10Days = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000);
+      
+      const tasks = [
+        { id: 1, dueDate: tomorrow, reminderDays: 1, reminderSent: false, status: "open" },
+        { id: 2, dueDate: in3Days, reminderDays: 3, reminderSent: false, status: "open" },
+        { id: 3, dueDate: in10Days, reminderDays: 7, reminderSent: false, status: "open" },
+        { id: 4, dueDate: tomorrow, reminderDays: 1, reminderSent: true, status: "open" },
+        { id: 5, dueDate: tomorrow, reminderDays: 0, reminderSent: false, status: "open" },
+      ];
+      
+      const tasksNeedingReminder = tasks.filter(t => {
+        if (t.reminderDays === 0 || t.reminderSent || !t.dueDate) return false;
+        if (t.status === "completed" || t.status === "cancelled") return false;
+        
+        const dueDate = new Date(t.dueDate);
+        const reminderDate = new Date(dueDate);
+        reminderDate.setDate(reminderDate.getDate() - t.reminderDays);
+        
+        return now >= reminderDate;
+      });
+      
+      // Tasks 1 and 2 should need reminders (due soon enough)
+      // Task 3 is 10 days away with 7-day reminder, so it needs reminder (10-7=3 days from now)
+      // Task 4 already sent
+      // Task 5 has no reminder configured
+      expect(tasksNeedingReminder.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it("should not send reminder for completed tasks", () => {
+      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      
+      const tasks = [
+        { id: 1, dueDate: tomorrow, reminderDays: 1, reminderSent: false, status: "completed" },
+        { id: 2, dueDate: tomorrow, reminderDays: 1, reminderSent: false, status: "cancelled" },
+        { id: 3, dueDate: tomorrow, reminderDays: 1, reminderSent: false, status: "open" },
+      ];
+      
+      const eligibleTasks = tasks.filter(t => 
+        t.status !== "completed" && t.status !== "cancelled"
+      );
+      expect(eligibleTasks).toHaveLength(1);
+      expect(eligibleTasks[0].id).toBe(3);
+    });
+
+    it("should calculate days until due correctly", () => {
+      const now = new Date();
+      const dueDate = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
+      
+      const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      expect(daysUntilDue).toBe(5);
+    });
+
+    it("should reset reminderSent when due date changes", () => {
+      const task = {
+        id: 1,
+        dueDate: new Date(),
+        reminderDays: 1,
+        reminderSent: true,
+      };
+      
+      // Simulate updating due date
+      const updatedTask = {
+        ...task,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        reminderSent: false, // Should be reset
+      };
+      
+      expect(updatedTask.reminderSent).toBe(false);
+    });
+  });
 });

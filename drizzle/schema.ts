@@ -1281,6 +1281,9 @@ export const tasks = mysqlTable("tasks", {
   recurrencePattern: mysqlEnum("recurrencePattern", ["none", "daily", "weekly", "monthly"]).default("none").notNull(),
   recurrenceEndDate: timestamp("recurrenceEndDate"),
   parentTaskId: int("parentTaskId"), // Referenz zur ursprünglichen wiederkehrenden Aufgabe
+  // Erinnerungen
+  reminderDays: int("reminderDays").default(0), // Tage vor Fälligkeit für Erinnerung (0 = keine)
+  reminderSent: boolean("reminderSent").default(false), // Wurde die Erinnerung bereits gesendet?
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
