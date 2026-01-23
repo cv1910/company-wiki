@@ -510,14 +510,23 @@ function DashboardLayoutContent({
       </div>
 
       <SidebarInset className="bg-background">
-        {/* Desktop Header */}
+        {/* Desktop Header with Breadcrumbs */}
         {!isMobile && (
           <div className="flex border-b h-14 items-center justify-between bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
-            <div className="flex items-center gap-3">
-              <span className="font-medium text-foreground">
+            <nav className="flex items-center gap-2" aria-label="Breadcrumb">
+              {/* Breadcrumb navigation */}
+              <span className="font-semibold text-foreground tracking-tight">
                 {activeMenuItem?.label ?? "ohwee"}
               </span>
-            </div>
+              {location !== "/" && location !== activeMenuItem?.path && (
+                <>
+                  <span className="text-muted-foreground/50">/</span>
+                  <span className="text-sm text-muted-foreground truncate max-w-[200px]">
+                    {location.split("/").filter(Boolean).pop()?.replace(/-/g, " ")}
+                  </span>
+                </>
+              )}
+            </nav>
             <div className="flex items-center gap-2">
               <Popover>
                 <PopoverTrigger asChild>

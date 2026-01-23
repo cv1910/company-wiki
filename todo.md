@@ -1005,3 +1005,39 @@
 
 ## Bugfix (Januar 2026)
 - [x] Kalender-Dialog: DialogTitle für Accessibility hinzufügen (VisuallyHidden)
+
+## Visuelle Qualität auf Basecamp/Monday/Asana-Niveau (Januar 2026)
+
+### Micro-Interactions & Animationen
+- [ ] Sanfte Hover-Transitions für alle interaktiven Elemente
+- [ ] Skeleton-Loading für Daten statt Spinner
+- [ ] Smooth Page Transitions
+- [ ] Subtle Feedback-Animationen bei Aktionen (Buttons, Toggles)
+
+### Typografie & Spacing
+- [ ] Größere, mutigere Headlines
+- [ ] Mehr Whitespace zwischen Elementen
+- [ ] Konsistentere vertikale Rhythmen
+- [ ] Optimierte Zeilenhöhen für bessere Lesbarkeit
+
+### Navigation & Orientierung
+- [ ] Breadcrumbs für tiefe Seiten
+- [ ] Spotlight-Stil Suche verbessern
+- [ ] Kontextuelle Aktionen
+
+### Empty States & Onboarding
+- [ ] Illustrationen für leere Zustände
+- [ ] Bessere Tooltips für neue Features
+- [ ] Fortschrittsanzeigen
+
+### Visuelle Hierarchie
+- [ ] Subtile Schatten und Tiefe
+- [ ] Farbige Akzente strategischer einsetzen
+- [ ] Bessere Trennung von Bereichen
+
+## Visuelle Qualität - Basecamp/Monday/Asana Level (Januar 2026)
+- [x] Micro-Interactions: Hover-Effekte, sanfte Transitions, Feedback-Animationen
+- [x] Typografie: Größere Headlines, mehr Whitespace, bessere Lesbarkeit
+- [x] Navigation: Breadcrumbs im Desktop-Header
+- [x] Empty States: Wiederverwendbare EmptyState-Komponente mit Presets
+- [x] Visuelle Hierarchie: Section Dividers, Card Grid, Glass Effect, Status Indicators
