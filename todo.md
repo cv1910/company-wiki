@@ -1334,3 +1334,6 @@
 ## Layout-Fix - Bündigkeit und Menüleiste (Januar 2026)
 - [x] Inhalt oben links nicht bündig mit dem Rand (-m-6 entfernt)
 - [x] Elemente hinter der Menüleiste sichtbar (Hintergrund-Overlay hinzugefügt)
+
+## Layout-Fix - Elemente unter Bottom Navigation (Januar 2026)
+- [x] Elemente links und rechts unter dem unteren Menü sichtbar auf allen Seiten

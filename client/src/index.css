@@ -1512,3 +1512,62 @@ body {
   min-height: 100%;
   min-height: 100dvh;
 }
+
+
+/* ===== BOTTOM NAVIGATION COMPLETE COVERAGE FIX ===== */
+
+/* Ensure bottom navigation covers the entire bottom area including corners */
+@media (max-width: 768px) {
+  /* Fixed bottom navigation bar - ensure full coverage */
+  nav[class*="fixed bottom-0"] {
+    /* Extend beyond viewport edges to cover any gaps */
+    margin-left: -20px !important;
+    margin-right: -20px !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    width: calc(100% + 40px) !important;
+  }
+  
+  /* Bottom navigation background overlay - covers everything behind it */
+  nav[class*="fixed bottom-0"]::before {
+    content: "";
+    position: absolute;
+    top: -30px;
+    left: -50px;
+    right: -50px;
+    bottom: -50px;
+    background-color: var(--background);
+    z-index: -1;
+    pointer-events: none;
+  }
+  
+  /* Ensure content doesn't show through the bottom nav area */
+  main {
+    /* Add extra padding at the bottom to prevent content from appearing behind nav */
+    padding-bottom: 140px !important;
+  }
+  
+  /* Clip content that would otherwise show behind bottom nav */
+  [data-slot="sidebar-inset"] {
+    overflow: hidden;
+  }
+  
+  /* Ensure the scroll container clips content properly */
+  .overflow-y-auto {
+    /* Clip content at the bottom */
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* Safe area handling for notched devices */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  @media (max-width: 768px) {
+    nav[class*="fixed bottom-0"] {
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem) !important;
+    }
+    
+    nav[class*="fixed bottom-0"]::before {
+      bottom: calc(-50px - env(safe-area-inset-bottom, 0px));
+    }
+  }
+}

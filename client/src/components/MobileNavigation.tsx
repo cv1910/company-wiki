@@ -71,9 +71,31 @@ export function MobileNavigation() {
   return (
     <>
       {/* Bottom Tab Bar - Premium Design with Gradient Active States */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/30 pb-safe md:hidden shadow-[0_-8px_32px_rgba(0,0,0,0.12)] w-full max-w-full overflow-hidden" style={{ backgroundColor: 'var(--background)' }}>
-        {/* Solid background overlay to hide content behind */}
-        <div className="absolute inset-0 -top-4" style={{ backgroundColor: 'var(--background)', zIndex: -1 }} />
+      <nav 
+        className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/30 pb-safe md:hidden shadow-[0_-8px_32px_rgba(0,0,0,0.12)] w-full max-w-full overflow-hidden" 
+        style={{ 
+          backgroundColor: 'var(--background)',
+          // Ensure the nav covers the full width including any safe areas
+          marginLeft: 'env(safe-area-inset-left, 0px)',
+          marginRight: 'env(safe-area-inset-right, 0px)',
+          width: 'calc(100% + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
+          transform: 'translateX(calc(-1 * env(safe-area-inset-left, 0px)))',
+        }}
+      >
+        {/* Extended solid background overlay to hide ALL content behind - covers full width and extends above */}
+        <div 
+          className="absolute pointer-events-none"
+          style={{ 
+            backgroundColor: 'var(--background)', 
+            zIndex: -1,
+            top: '-20px',
+            bottom: '0',
+            left: '-50px',
+            right: '-50px',
+            // Extra coverage for safe areas
+            width: 'calc(100% + 100px)',
+          }} 
+        />
         <div className="flex items-center justify-around h-[76px] px-2">
           {mainNavItems.map((item) => {
             const Icon = item.icon;
