@@ -1299,3 +1299,8 @@
 - [x] Weißer/heller Bereich zwischen Inhalt und Bottom Navigation
 - [x] Rosa Bereich rechts unten neben "Mehr"-Button
 - [x] Grundlegende Layout-Überarbeitung für alle Mobile-Seiten
+
+## Layout-Probleme Mobile - Finale Behebung (Januar 2026)
+- [x] Exakte Ursache der rosa/roten Streifen identifizieren (SwipeNavigationWrapper Edge-Indikatoren)
+- [x] Problematische Elemente direkt in den Komponenten entfernen
+- [x] Alle dekorativen Gradient-Elemente auf Mobile deaktivieren (Home, Wiki, SOPs, SearchAssistant)

@@ -164,7 +164,7 @@ export default function SearchAssistant() {
     <div className="space-y-6 pb-[calc(var(--bottom-nav-height,64px)+1rem)] md:pb-6">
       {/* Header */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500/10 via-blue-500/5 to-transparent border border-purple-500/10 p-6">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl opacity-60" />
+        
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5 mb-2">

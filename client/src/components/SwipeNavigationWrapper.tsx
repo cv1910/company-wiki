@@ -71,13 +71,7 @@ export function SwipeNavigationWrapper({ children, enabled = true }: SwipeNaviga
         {children}
       </div>
 
-      {/* Edge indicators (subtle visual hint) */}
-      {prevRoute && (
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-r from-primary/20 to-transparent pointer-events-none md:hidden" />
-      )}
-      {nextRoute && (
-        <div className="absolute right-0 top-0 bottom-0 w-1 bg-gradient-to-l from-primary/20 to-transparent pointer-events-none md:hidden" />
-      )}
+      {/* Edge indicators removed to prevent visual artifacts on mobile */}
     </div>
   );
 }

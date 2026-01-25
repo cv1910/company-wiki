@@ -466,9 +466,7 @@ export default function Home() {
 
   const renderWelcomeHero = () => (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/8 to-secondary/5 border border-primary/15 p-5 sm:p-8 md:p-10 shadow-lg">
-      {/* Decorative elements - contained within bounds */}
-      <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-primary/15 to-transparent rounded-full blur-2xl opacity-60" />
-      <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-secondary-accent/10 to-transparent rounded-full blur-xl opacity-50" />
+      {/* Decorative elements removed to prevent visual artifacts on mobile */}
       
       <div className="relative">
         <div className="flex flex-col gap-5 sm:gap-6">
