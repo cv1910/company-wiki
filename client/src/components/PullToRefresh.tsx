@@ -110,17 +110,17 @@ export function PullToRefresh({
         </div>
       </div>
 
-      {/* Content with pull offset - show skeleton when refreshing */}
+      {/* Content with pull offset - schnellere Animation */}
       <div
         style={{
           transform: `translateY(${pullDistance}px)`,
-          transition: pullDistance === 0 && !isRefreshing ? "transform 0.3s ease-out" : "none",
+          transition: pullDistance === 0 ? "transform 0.15s ease-out" : "none",
         }}
       >
         {isRefreshing ? (
           <div className="relative">
-            {/* Skeleton overlay with fade effect */}
-            <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+            {/* Schnellere Skeleton-Animation */}
+            <div className="absolute inset-0 z-10 bg-background/60 backdrop-blur-[2px] animate-in fade-in duration-100">
               {skeleton || <DefaultSkeleton />}
             </div>
             {/* Keep children rendered but hidden for layout */}

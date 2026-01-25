@@ -76,6 +76,7 @@ export function usePullToRefresh({
         triggerHapticFeedback("heavy");
       }
       setIsRefreshing(true);
+      setPullDistance(0); // Sofort zurücksetzen für schnellere Animation
       try {
         await onRefresh();
       } finally {
@@ -84,11 +85,18 @@ export function usePullToRefresh({
         if (enableHaptics) {
           triggerHapticFeedback("light");
         }
+        // Nach oben scrollen nach erfolgreicher Aktualisierung
+        if (containerRef.current) {
+          containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        // Auch das window scrollen falls nötig
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
+    } else {
+      setPullDistance(0);
     }
 
     setIsPulling(false);
-    setPullDistance(0);
     hasTriggeredHaptic.current = false;
   }, [isPulling, pullDistance, threshold, isRefreshing, onRefresh, enableHaptics]);
 

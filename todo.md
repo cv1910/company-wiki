@@ -1223,3 +1223,7 @@
 - [x] Logo-Animation mit Fade-In und Scale-Effekt
 - [x] Splash-Screen beim App-Start anzeigen
 - [x] Automatisches Ausblenden nach Ladezeit
+
+## Pull-to-Refresh Verbesserungen (Januar 2026)
+- [x] Schnellere Aktualisierung (kürzere Animation)
+- [x] Nach Aktualisierung automatisch nach oben scrollen
