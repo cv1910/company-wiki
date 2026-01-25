@@ -1322,3 +1322,8 @@
 - [x] Festes Hintergrund-Element direkt im HTML-Body hinzugefügt (div#bg-fix)
 - [x] Inline-Styles für sofortige Anwendung verwendet
 - [x] JavaScript für Dark Mode Hintergrund-Synchronisation hinzugefügt
+
+## Layout-Fix - Scroll-Overflow-Problem (Januar 2026)
+- [x] Inhalt scrollt zu weit und wird unter der Bottom Navigation sichtbar
+- [x] Scroll-Container mit korrektem Padding-Bottom versehen (pb-[120px])
+- [x] Bottom Navigation mit solidem Hintergrund ohne Transparenz

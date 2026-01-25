@@ -632,7 +632,7 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-6 pb-48 md:pb-6 page-transition bg-background min-h-[100dvh] overflow-hidden w-full max-w-full">
+        <main className="flex-1 p-6 pb-[120px] md:pb-6 page-transition bg-background min-h-[100dvh] overflow-x-hidden overflow-y-auto w-full max-w-full">
           <SwipeNavigationWrapper enabled={isMobile}>
             {children}
           </SwipeNavigationWrapper>

@@ -71,7 +71,7 @@ export function MobileNavigation() {
   return (
     <>
       {/* Bottom Tab Bar - Premium Design with Gradient Active States */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background backdrop-blur-2xl border-t border-border/30 pb-safe md:hidden shadow-[0_-8px_32px_rgba(0,0,0,0.12)] w-full max-w-full overflow-hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border/30 pb-safe md:hidden shadow-[0_-8px_32px_rgba(0,0,0,0.12)] w-full max-w-full overflow-hidden" style={{ backgroundColor: 'var(--background)', backdropFilter: 'none' }}>
         <div className="flex items-center justify-around h-[76px] px-2">
           {mainNavItems.map((item) => {
             const Icon = item.icon;
