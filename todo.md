@@ -1310,3 +1310,6 @@
 
 ## Layout-Fix Bottom Navigation (Januar 2026)
 - [x] Roter Streifen unten rechts neben dem Mehr-Button beheben (blur-Effekt vom Plus-Button entfernt)
+
+## Layout-Fix Home-Seite Hintergrund (Januar 2026)
+- [x] Weißer/heller Bereich zwischen Inhalt und Bottom Navigation auf Home-Seite beheben (pb-48 und bottom-nav-height auf 76px erhöht)
