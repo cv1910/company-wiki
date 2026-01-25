@@ -1227,3 +1227,6 @@
 ## Pull-to-Refresh Verbesserungen (Januar 2026)
 - [x] Schnellere Aktualisierung (kürzere Animation)
 - [x] Nach Aktualisierung automatisch nach oben scrollen
+
+## Layout-Fix Bottom Navigation (Januar 2026)
+- [x] Bottom Navigation überlappt Inhalt - mehr Padding unten (pb-24 → pb-32)

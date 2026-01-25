@@ -631,7 +631,7 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-6 pb-24 md:pb-6 page-transition">{children}</main>
+        <main className="flex-1 p-6 pb-32 md:pb-6 page-transition">{children}</main>
         {showShortcuts && <KeyboardShortcutsHelp onClose={() => setShowShortcuts(false)} />}
         <NotificationSettings
           open={showNotificationSettings}
