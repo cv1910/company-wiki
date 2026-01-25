@@ -1277,3 +1277,8 @@
 ## Layout-Fix Mobile (Januar 2026) - Neuer Ansatz
 - [x] Weißer/heller Bereich zwischen Inhalt und Bottom Navigation endgültig beheben
 - [x] Roter Streifen rechts endgültig entfernen
+
+## Optimierungen (Januar 2026)
+- [x] Cache-Handling und Service Worker verbessern für automatisches Cache-Busting
+- [x] Dark Mode Layout-Fixes überprüfen und optimieren
+- [x] Layout-Fixes auf alle anderen Seiten anwenden (nicht nur Home)

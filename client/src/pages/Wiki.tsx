@@ -54,11 +54,12 @@ export default function Wiki() {
   return (
     <>
     {/* Mobile: PullToRefresh */}
-    <PullToRefresh onRefresh={handleRefresh} className="min-h-screen md:hidden">
-      <div className="space-y-8 pb-24">
+    <div className="md:hidden overflow-hidden w-full max-w-full">
+    <PullToRefresh onRefresh={handleRefresh} className="min-h-[100dvh] bg-background">
+      <div className="space-y-8 pb-24 min-h-[100dvh] bg-background w-full max-w-full">
       {/* Premium Header */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/10 p-6 md:p-8">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl opacity-60" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5 mb-2">
@@ -388,11 +389,12 @@ export default function Wiki() {
       </Tabs>
       </div>
     </PullToRefresh>
+    </div>
     {/* Desktop: Normal content */}
     <div className="hidden md:block space-y-8">
       {/* Premium Header */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/10 p-6 md:p-8">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl opacity-60" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5 mb-2">

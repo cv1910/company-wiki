@@ -1700,7 +1700,8 @@ export default function Calendar() {
   return (
     <>
     {/* Mobile: PullToRefresh */}
-    <PullToRefresh onRefresh={handleRefresh} className="min-h-screen md:hidden">
+    <div className="md:hidden overflow-hidden w-full max-w-full">
+    <PullToRefresh onRefresh={handleRefresh} className="min-h-[100dvh] bg-background">
       <div className={cn(
       "flex flex-col pb-24",
       isYearView ? "h-[calc(100vh-60px)]" : "h-[calc(100vh-120px)]"
@@ -2410,6 +2411,7 @@ export default function Calendar() {
       </Dialog>
       </div>
     </PullToRefresh>
+    </div>
     {/* Desktop: Normal content - same as mobile but without PullToRefresh wrapper */}
     <div className={cn(
       "hidden md:flex flex-col",
