@@ -218,7 +218,7 @@ export default function Profile() {
   const gradient = getAvatarGradient(userName);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 md:pb-6">
       {/* Profile Header - Premium Design */}
       <Card className="overflow-hidden border-0 shadow-xl">
         <div className="bg-gradient-to-r from-primary via-primary/90 to-orange-500 p-8 text-white">

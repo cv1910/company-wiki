@@ -29,7 +29,7 @@ export default function WikiCategory() {
 
   if (categoryLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 pb-24 md:pb-6">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-4 w-96" />
         <div className="space-y-4">
@@ -57,7 +57,7 @@ export default function WikiCategory() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 md:pb-6">
       {/* Header */}
       <div>
         <Button

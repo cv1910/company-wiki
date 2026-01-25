@@ -1702,7 +1702,7 @@ export default function Calendar() {
     {/* Mobile: PullToRefresh */}
     <PullToRefresh onRefresh={handleRefresh} className="min-h-screen md:hidden">
       <div className={cn(
-      "flex flex-col",
+      "flex flex-col pb-24",
       isYearView ? "h-[calc(100vh-60px)]" : "h-[calc(100vh-120px)]"
     )}>
       {/* Header - hidden in year view for more space */}

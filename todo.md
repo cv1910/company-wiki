@@ -1243,3 +1243,7 @@
 
 ## Layout-Fix Home-Seite (Januar 2026)
 - [x] Home-Seite: pb-24 zum Mobile-Container hinzugefügt
+
+## Layout-Fix Alle Seiten (Januar 2026)
+- [x] Alle Seiten auf Überlappungsprobleme mit Bottom Navigation prüfen und beheben
+- [x] pb-24 md:pb-6 zu allen Seiten hinzugefügt: Calendar, Wiki, Aufgaben, Chat, Leave, Notifications, Onboarding, OrgChart, Profile, SOPCategory, SOPEditor, SOPView, SOPs, Search, SearchAssistant, TeamDirectory, Teams, WikiArticle, WikiCategory, WikiEditor

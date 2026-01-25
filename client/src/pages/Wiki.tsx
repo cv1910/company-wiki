@@ -55,7 +55,7 @@ export default function Wiki() {
     <>
     {/* Mobile: PullToRefresh */}
     <PullToRefresh onRefresh={handleRefresh} className="min-h-screen md:hidden">
-      <div className="space-y-8">
+      <div className="space-y-8 pb-24">
       {/* Premium Header */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/10 p-6 md:p-8">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />

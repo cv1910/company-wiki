@@ -71,7 +71,7 @@ export default function SOPView() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 pb-24 md:pb-6">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-4 w-96" />
         <Skeleton className="h-[600px] rounded-xl" />
@@ -95,7 +95,7 @@ export default function SOPView() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 md:pb-6">
       {/* Header */}
       <div>
         <Button

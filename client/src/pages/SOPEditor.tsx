@@ -119,7 +119,7 @@ export default function SOPEditor() {
 
   if (isEditing && sopLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 pb-24 md:pb-6">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-12 rounded-lg" />
         <Skeleton className="h-64 rounded-xl" />
@@ -164,7 +164,7 @@ export default function SOPEditor() {
   const isSaving = createSOP.isPending || updateSOP.isPending;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 md:pb-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
