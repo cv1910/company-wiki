@@ -1084,6 +1084,9 @@
 .safe-area-bottom {
   padding-bottom: var(--safe-area-inset-bottom);
 }
+.safe-area-top {
+  padding-top: var(--safe-area-inset-top);
+}
 
 /* Touch-optimized tap targets */
 @media (max-width: 768px) {

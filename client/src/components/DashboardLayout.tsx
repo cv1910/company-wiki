@@ -601,9 +601,9 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        {/* Mobile Header */}
+        {/* Mobile Header - mit Safe Area für PWA */}
         {isMobile && (
-          <div className="flex border-b h-14 items-center justify-between bg-background/95 px-3 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
+          <div className="flex border-b items-center justify-between bg-background/95 px-3 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40 safe-area-top min-h-14">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="h-9 w-9 rounded-lg" />
               <div className="flex items-center gap-2">

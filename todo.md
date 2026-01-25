@@ -1213,3 +1213,7 @@
 - [x] Kalender: Toggle zum Ein-/Ausblenden von Aufgaben
 - [x] Kalender: Drag & Drop für Aufgaben zum Verschieben der Fälligkeit
 - [x] Kalender: Aufgaben-Fälligkeit per Drag & Drop ändern
+
+## PWA-Layout-Fix (Januar 2026)
+- [x] Safe-Area-Insets für PWA-Modus: Header wird oben abgeschnitten
+- [x] Viewport-Meta-Tag für iOS PWA anpassen
