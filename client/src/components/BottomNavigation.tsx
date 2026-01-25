@@ -134,11 +134,8 @@ export function BottomNavigation() {
               onClick={() => selection()}
               className="flex flex-col items-center justify-center flex-1 h-full py-1 text-muted-foreground hover:text-foreground transition-colors"
             >
-              <div className="relative">
-                <div className="absolute -inset-1 bg-primary/20 rounded-full blur-sm" />
-                <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground">
-                  <Plus className="h-5 w-5" />
-                </div>
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground shadow-md">
+                <Plus className="h-5 w-5" />
               </div>
             </button>
           </DropdownMenuTrigger>
