@@ -1217,3 +1217,9 @@
 ## PWA-Layout-Fix (Januar 2026)
 - [x] Safe-Area-Insets für PWA-Modus: Header wird oben abgeschnitten
 - [x] Viewport-Meta-Tag für iOS PWA anpassen
+
+## PWA Splash-Screen (Januar 2026)
+- [x] Animierte Splash-Screen Komponente erstellen
+- [x] Logo-Animation mit Fade-In und Scale-Effekt
+- [x] Splash-Screen beim App-Start anzeigen
+- [x] Automatisches Ausblenden nach Ladezeit

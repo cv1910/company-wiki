@@ -5,6 +5,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
+import { SplashScreen, useSplashScreen } from "./components/SplashScreen";
 
 // Pages
 import Home from "./pages/Home";
@@ -163,13 +164,24 @@ function Router() {
   );
 }
 
+function AppContent() {
+  const { showSplash, hideSplash } = useSplashScreen(true); // Nur in PWA anzeigen
+
+  return (
+    <>
+      {showSplash && <SplashScreen onComplete={hideSplash} minDuration={1800} />}
+      <Router />
+    </>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="system" switchable>
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <AppContent />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
