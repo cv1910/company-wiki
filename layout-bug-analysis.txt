@@ -1,0 +1,25 @@
+Screenshot-Analyse (IMG_3024.PNG):
+
+Das Problem ist klar sichtbar:
+1. Es gibt ein rotes/rosa Element links unten, das hinter der Bottom Navigation durchscheint
+2. Das Element erscheint direkt über dem "Home" Icon in der Bottom Navigation
+3. Es sieht aus wie ein Teil eines roten Hintergrunds oder einer Karte
+
+Das Sheet-Menü (Mehr-Menü) ist geöffnet und zeigt:
+- Benutzer-Header mit Avatar
+- Menüpunkte: How to Work, Einsatzplan POS, Team, Urlaub, Benachrichtigungen
+- Abmelden-Button
+
+Die Bottom Navigation ist sichtbar mit:
+- Home (aktiv, rot)
+- AI Such...
+
+Das rote Element links unten könnte sein:
+1. Ein Teil des aktiven Home-Icons mit Gradient-Hintergrund
+2. Ein dekoratives Element das durchscheint
+3. Ein Teil einer Karte oder eines Widgets
+
+Lösung:
+- Z-Index der Bottom Navigation erhöhen
+- Sicherstellen dass das Hintergrund-Overlay wirklich undurchsichtig ist
+- Prüfen ob es ein Element im DOM gibt das über die Bottom Navigation hinausragt

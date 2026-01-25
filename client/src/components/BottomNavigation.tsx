@@ -86,31 +86,33 @@ export function BottomNavigation() {
 
   return (
     <nav 
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border safe-area-bottom w-full max-w-full overflow-hidden"
+      className="fixed bottom-0 left-0 right-0 z-[9999] border-t border-border safe-area-bottom overflow-visible"
       style={{ 
         backgroundColor: 'var(--background)',
-        // Ensure the nav covers the full width including any safe areas
-        marginLeft: 'env(safe-area-inset-left, 0px)',
-        marginRight: 'env(safe-area-inset-right, 0px)',
-        width: 'calc(100% + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-        transform: 'translateX(calc(-1 * env(safe-area-inset-left, 0px)))',
       }}
     >
-      {/* Extended solid background overlay to hide ALL content behind - covers full width and extends above */}
+      {/* Solider Hintergrund-Blocker - deckt ALLES ab was dahinter liegt */}
       <div 
         className="absolute pointer-events-none"
         style={{ 
           backgroundColor: 'var(--background)', 
-          zIndex: -1,
-          top: '-20px',
-          bottom: '0',
-          left: '-50px',
-          right: '-50px',
-          // Extra coverage for safe areas
-          width: 'calc(100% + 100px)',
+          zIndex: 1,
+          top: '-100px',
+          bottom: '-100px',
+          left: '-100vw',
+          right: '-100vw',
+          width: '300vw',
         }} 
       />
-      <div className="flex items-center justify-around h-16 px-2">
+      {/* Zweite Schicht für zusätzliche Sicherheit */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{ 
+          backgroundColor: 'var(--background)', 
+          zIndex: 2,
+        }} 
+      />
+      <div className="relative flex items-center justify-around h-16 px-2" style={{ zIndex: 3 }}>
         {navItems.map((item) => {
           const isActive = location === item.path || 
             (item.path !== "/" && location.startsWith(item.path));

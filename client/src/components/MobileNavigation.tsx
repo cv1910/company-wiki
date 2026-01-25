@@ -71,32 +71,35 @@ export function MobileNavigation() {
   return (
     <>
       {/* Bottom Tab Bar - Premium Design with Gradient Active States */}
+      {/* WICHTIG: z-[9999] um sicherzustellen dass nichts darüber liegt */}
       <nav 
-        className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/30 pb-safe md:hidden shadow-[0_-8px_32px_rgba(0,0,0,0.12)] w-full max-w-full overflow-hidden" 
+        className="fixed bottom-0 left-0 right-0 z-[9999] border-t border-border/30 pb-safe md:hidden shadow-[0_-8px_32px_rgba(0,0,0,0.12)] overflow-visible" 
         style={{ 
           backgroundColor: 'var(--background)',
-          // Ensure the nav covers the full width including any safe areas
-          marginLeft: 'env(safe-area-inset-left, 0px)',
-          marginRight: 'env(safe-area-inset-right, 0px)',
-          width: 'calc(100% + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-          transform: 'translateX(calc(-1 * env(safe-area-inset-left, 0px)))',
         }}
       >
-        {/* Extended solid background overlay to hide ALL content behind - covers full width and extends above */}
+        {/* Solider Hintergrund-Blocker - deckt ALLES ab was dahinter liegt */}
         <div 
           className="absolute pointer-events-none"
           style={{ 
             backgroundColor: 'var(--background)', 
-            zIndex: -1,
-            top: '-20px',
-            bottom: '0',
-            left: '-50px',
-            right: '-50px',
-            // Extra coverage for safe areas
-            width: 'calc(100% + 100px)',
+            zIndex: 1,
+            top: '-100px',
+            bottom: '-100px',
+            left: '-100vw',
+            right: '-100vw',
+            width: '300vw',
           }} 
         />
-        <div className="flex items-center justify-around h-[76px] px-2">
+        {/* Zweite Schicht für zusätzliche Sicherheit */}
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{ 
+            backgroundColor: 'var(--background)', 
+            zIndex: 2,
+          }} 
+        />
+        <div className="relative flex items-center justify-around h-[76px] px-2" style={{ zIndex: 3 }}>
           {mainNavItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
