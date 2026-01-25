@@ -69,7 +69,7 @@ export function PullToRefresh({
   return (
     <div
       ref={containerRef}
-      className={cn("relative overflow-auto overflow-x-hidden", className)}
+      className={cn("relative overflow-y-auto overflow-x-hidden w-full max-w-full", className)}
       style={{
         // Add overscroll behavior for native feel
         overscrollBehavior: "contain",

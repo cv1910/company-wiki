@@ -1273,3 +1273,7 @@
 ## Layout-Fix Mobile (Januar 2026) - Endgültig
 - [x] Weißer/heller Bereich zwischen Inhalt und Bottom Navigation auf Mobile beheben
 - [x] Roter Streifen rechts auf Mobile-Ansicht entfernen
+
+## Layout-Fix Mobile (Januar 2026) - Neuer Ansatz
+- [x] Weißer/heller Bereich zwischen Inhalt und Bottom Navigation endgültig beheben
+- [x] Roter Streifen rechts endgültig entfernen

@@ -466,9 +466,9 @@ export default function Home() {
 
   const renderWelcomeHero = () => (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/8 to-secondary/5 border border-primary/15 p-5 sm:p-8 md:p-10 shadow-lg">
-      {/* Decorative elements */}
-      <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-      <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-secondary-accent/10 to-transparent rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
+      {/* Decorative elements - contained within bounds */}
+      <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-primary/15 to-transparent rounded-full blur-2xl opacity-60" />
+      <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-secondary-accent/10 to-transparent rounded-full blur-xl opacity-50" />
       
       <div className="relative">
         <div className="flex flex-col gap-5 sm:gap-6">
@@ -1278,9 +1278,9 @@ export default function Home() {
   return (
     <>
     {/* Mobile: PullToRefresh */}
-    <div className="md:hidden overflow-x-hidden">
-      <PullToRefresh onRefresh={handleRefresh} className="min-h-screen">
-        <div className="space-y-8 animate-fade-in pb-[calc(var(--bottom-nav-height,64px)+1rem)] min-h-screen bg-background overflow-x-hidden">
+    <div className="md:hidden overflow-hidden w-full max-w-full">
+      <PullToRefresh onRefresh={handleRefresh} className="min-h-[100dvh] bg-background">
+        <div className="space-y-8 animate-fade-in pb-[calc(var(--bottom-nav-height,64px)+2rem)] min-h-[100dvh] bg-background w-full max-w-full">
           {/* Settings Button */}
           <div className="flex justify-end">
             <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>

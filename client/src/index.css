@@ -1316,3 +1316,50 @@ body.modal-open {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
 }
+
+
+/* ===== MOBILE LAYOUT FIXES ===== */
+
+/* Prevent horizontal overflow on mobile */
+@media (max-width: 768px) {
+  html, body, #root {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+  
+  /* Ensure full background coverage */
+  #root {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-color: var(--background);
+  }
+  
+  /* Fix for iOS PWA bottom gap */
+  [data-slot="sidebar-wrapper"],
+  [data-slot="sidebar-inset"] {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-color: var(--background);
+  }
+}
+
+/* PWA standalone mode fixes */
+@media all and (display-mode: standalone) {
+  html, body, #root {
+    overflow-x: hidden !important;
+    background-color: var(--background);
+  }
+  
+  /* Ensure content fills the entire screen */
+  #root {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  
+  /* Fix bottom gap in PWA mode */
+  main {
+    min-height: calc(100vh - env(safe-area-inset-top, 0px));
+    min-height: calc(100dvh - env(safe-area-inset-top, 0px));
+    background-color: var(--background);
+  }
+}
