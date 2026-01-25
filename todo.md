@@ -1205,3 +1205,11 @@
 - [x] Mehrere Erinnerungen pro Aufgabe: Frontend-UI mit Hinzufügen/Entfernen
 - [x] Kalender-Integration: Aufgaben mit Fälligkeit im Kalender anzeigen
 - [x] Kalender-Integration: Aufgaben-Badge/Markierung an Tagen mit Aufgaben
+
+## Aufgaben-Erweiterungen Teil 2 (Januar 2026)
+- [x] Push-Benachrichtigungen: Browser Notification API Hook
+- [x] Push-Benachrichtigungen: Berechtigungsabfrage im Frontend (Banner)
+- [x] Push-Benachrichtigungen: Erinnerungen als Browser-Notifications anzeigen
+- [x] Kalender: Toggle zum Ein-/Ausblenden von Aufgaben
+- [x] Kalender: Drag & Drop für Aufgaben zum Verschieben der Fälligkeit
+- [x] Kalender: Aufgaben-Fälligkeit per Drag & Drop ändern

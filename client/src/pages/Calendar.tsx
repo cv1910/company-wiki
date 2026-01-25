@@ -31,6 +31,7 @@ import {
   X,
   ArrowRight,
   GripVertical,
+  ClipboardCheck,
 } from "lucide-react";
 import {
   format,
@@ -209,6 +210,12 @@ export default function Calendar() {
   const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null);
   const [dragOverDate, setDragOverDate] = useState<Date | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  
+  // Filter state - Aufgaben im Kalender anzeigen
+  const [showTasks, setShowTasks] = useState(() => {
+    const saved = localStorage.getItem('calendar-show-tasks');
+    return saved !== null ? saved === 'true' : true;
+  });
 
   const utils = trpc.useUtils();
 
@@ -382,8 +389,12 @@ export default function Calendar() {
 
   // Drag & Drop handlers
   const handleDragStart = (event: CalendarEvent, e: React.DragEvent) => {
-    if (event.id < 0) {
-      // Urlaube können nicht verschoben werden
+    // Urlaube (id < -1000 aber nicht Tasks) können nicht verschoben werden
+    // Tasks haben IDs von -1001 bis -2000 (id = -1000 - taskId)
+    const isTask = event.id <= -1001;
+    const isLeave = event.id < 0 && !isTask;
+    
+    if (isLeave) {
       e.preventDefault();
       return;
     }
@@ -414,11 +425,43 @@ export default function Calendar() {
     setDragOverDate(null);
   };
 
+  // Mutation für Task-Update
+  const updateTaskDueDate = trpc.tasks.update.useMutation({
+    onSuccess: () => {
+      utils.tasks.getForCalendar.invalidate();
+      toast.success("Aufgaben-Fälligkeit geändert");
+    },
+    onError: (error) => {
+      toast.error("Fehler: " + error.message);
+    },
+  });
+
   const handleDrop = (targetDate: Date, e: React.DragEvent) => {
     e.preventDefault();
     setDragOverDate(null);
     
     if (!draggedEvent) return;
+    
+    // Prüfe ob es eine Aufgabe ist (negative ID <= -1001)
+    const isTask = draggedEvent.id <= -1001;
+    
+    if (isTask) {
+      // Extrahiere die echte Task-ID (id = -1000 - taskId)
+      const taskId = -(draggedEvent.id + 1000);
+      
+      // Setze die neue Fälligkeit auf 23:59 des Zieldatums
+      const newDueDate = new Date(targetDate);
+      newDueDate.setHours(23, 59, 59, 999);
+      
+      updateTaskDueDate.mutate({
+        id: taskId,
+        dueDate: newDueDate,
+      });
+      
+      setDraggedEvent(null);
+      setIsDragging(false);
+      return;
+    }
     
     const eventStart = new Date(draggedEvent.startDate);
     const eventEnd = new Date(draggedEvent.endDate);
@@ -476,11 +519,11 @@ export default function Calendar() {
       ...calendarData.teamLeaves,
     ];
     
-    // Add tasks as calendar events
-    if (tasksForCalendar) {
+    // Add tasks as calendar events (only if showTasks is enabled)
+    if (showTasks && tasksForCalendar) {
       const taskEvents: CalendarEvent[] = tasksForCalendar.map(task => ({
         id: -1000 - task.id, // Negative ID to distinguish from real events
-        title: `\u2611 ${task.title}`,
+        title: `☑ ${task.title}`,
         description: task.description,
         startDate: task.dueDate!,
         endDate: task.dueDate!,
@@ -496,7 +539,7 @@ export default function Calendar() {
     }
     
     return events;
-  }, [calendarData, tasksForCalendar]);
+  }, [calendarData, tasksForCalendar, showTasks]);
 
   // Get events for a specific day
   const getEventsForDay = (date: Date): CalendarEvent[] => {
@@ -882,13 +925,13 @@ export default function Calendar() {
                           {singleDayEvents.slice(0, 2).map((event) => (
                             <div
                               key={event.id}
-                              draggable={event.id > 0}
+                              draggable={event.id > 0 || event.id <= -1001}
                               onDragStart={(e) => handleDragStart(event, e)}
                               onDragEnd={handleDragEnd}
                               className={cn(
                                 "text-xs px-1.5 py-0.5 rounded truncate cursor-pointer border group flex items-center gap-1",
                                 getColorClass(event.color),
-                                event.id > 0 && "cursor-grab active:cursor-grabbing",
+                                (event.id > 0 || event.id <= -1001) && "cursor-grab active:cursor-grabbing",
                                 draggedEvent?.id === event.id && "opacity-50"
                               )}
                               onClick={(e) => {
@@ -896,7 +939,7 @@ export default function Calendar() {
                                 openEditEventDialog(event);
                               }}
                             >
-                              {event.id > 0 && (
+                              {(event.id > 0 || event.id <= -1001) && (
                                 <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-50 flex-shrink-0" />
                               )}
                               <span className="truncate">{event.title}</span>
@@ -1012,18 +1055,18 @@ export default function Calendar() {
                 {allDayEvents.slice(0, 2).map((event) => (
                   <div
                     key={event.id}
-                    draggable={event.id > 0}
+                    draggable={event.id > 0 || event.id <= -1001}
                     onDragStart={(e) => handleDragStart(event, e)}
                     onDragEnd={handleDragEnd}
                     className={cn(
                       "text-[10px] md:text-xs px-0.5 md:px-1 py-0.5 rounded truncate mb-0.5 cursor-pointer border group flex items-center gap-0.5 md:gap-1",
                       getColorClass(event.color),
-                      event.id > 0 && "cursor-grab active:cursor-grabbing",
+                      (event.id > 0 || event.id <= -1001) && "cursor-grab active:cursor-grabbing",
                       draggedEvent?.id === event.id && "opacity-50"
                     )}
                     onClick={() => openEditEventDialog(event)}
                   >
-                    {event.id > 0 && (
+                    {(event.id > 0 || event.id <= -1001) && (
                       <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-50 flex-shrink-0 hidden md:block" />
                     )}
                     <span className="truncate">{event.title}</span>
@@ -1248,18 +1291,18 @@ export default function Calendar() {
               {allDayEvents.map((event) => (
                 <div
                   key={event.id}
-                  draggable={event.id > 0}
+                  draggable={event.id > 0 || event.id <= -1001}
                   onDragStart={(e) => handleDragStart(event, e)}
                   onDragEnd={handleDragEnd}
                   className={cn(
                     "text-sm px-2 py-1 rounded cursor-pointer border group flex items-center gap-1",
                     getColorClass(event.color),
-                    event.id > 0 && "cursor-grab active:cursor-grabbing",
+                    (event.id > 0 || event.id <= -1001) && "cursor-grab active:cursor-grabbing",
                     draggedEvent?.id === event.id && "opacity-50"
                   )}
                   onClick={() => openEditEventDialog(event)}
                 >
-                  {event.id > 0 && (
+                  {(event.id > 0 || event.id <= -1001) && (
                     <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-50 flex-shrink-0" />
                   )}
                   {event.title}
@@ -1305,13 +1348,13 @@ export default function Calendar() {
                     .map((event) => (
                       <div
                         key={event.id}
-                        draggable={event.id > 0}
+                        draggable={event.id > 0 || event.id <= -1001}
                         onDragStart={(e) => handleDragStart(event, e)}
                         onDragEnd={handleDragEnd}
                         className={cn(
                           "absolute left-1 right-1 px-2 py-1 rounded text-sm cursor-pointer border group",
                           getColorClass(event.color),
-                          event.id > 0 && "cursor-grab active:cursor-grabbing",
+                          (event.id > 0 || event.id <= -1001) && "cursor-grab active:cursor-grabbing",
                           draggedEvent?.id === event.id && "opacity-50"
                         )}
                         onClick={(e) => {
@@ -1320,7 +1363,7 @@ export default function Calendar() {
                         }}
                       >
                         <div className="flex items-center gap-1">
-                          {event.id > 0 && (
+                          {(event.id > 0 || event.id <= -1001) && (
                             <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-50 flex-shrink-0" />
                           )}
                           <span className="font-medium truncate">{event.title}</span>
@@ -1746,6 +1789,13 @@ export default function Calendar() {
                     Jahresansicht
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => {
+                    setShowTasks(!showTasks);
+                    localStorage.setItem('calendar-show-tasks', String(!showTasks));
+                  }} className="rounded-lg">
+                    <ClipboardCheck className="h-4 w-4 mr-2" />
+                    {showTasks ? "Aufgaben ausblenden" : "Aufgaben anzeigen"}
+                  </DropdownMenuItem>
                   {(user?.role === "admin" || user?.role === "editor") && (
                     <DropdownMenuItem onClick={() => setShowTeamLeaves(!showTeamLeaves)} className="rounded-lg">
                       <Users className="h-4 w-4 mr-2" />
@@ -1787,6 +1837,21 @@ export default function Calendar() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Aufgaben-Filter Toggle */}
+            <div className="flex items-center gap-2 mr-4">
+              <Switch
+                id="show-tasks"
+                checked={showTasks}
+                onCheckedChange={(checked) => {
+                  setShowTasks(checked);
+                  localStorage.setItem('calendar-show-tasks', String(checked));
+                }}
+              />
+              <Label htmlFor="show-tasks" className="text-sm">
+                Aufgaben
+              </Label>
+            </div>
+
             {(user?.role === "admin" || user?.role === "editor") && (
               <div className="flex items-center gap-2 mr-4">
                 <Switch

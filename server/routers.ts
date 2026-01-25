@@ -5898,6 +5898,34 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
       return { processed: remindersToSend.length, sent: sentCount };
     }),
 
+    // ========== Browser Notifications ==========
+
+    // Get tasks with upcoming reminders for browser notifications
+    getUpcomingReminders: protectedProcedure
+      .query(async ({ ctx }) => {
+        // Get tasks with due dates in the next 24 hours that have reminders set
+        const now = new Date();
+        const next24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        
+        const tasks = await db.getTasksWithDueDate(now, next24Hours, ctx.user.id);
+        
+        // Filter to only tasks with reminders that haven't been sent yet
+        return tasks.filter(task => 
+          task.dueDate &&
+          task.reminderMinutes &&
+          task.reminderMinutes > 0 && 
+          !task.reminderSent &&
+          task.status !== 'completed' &&
+          task.status !== 'cancelled'
+        ).map(task => ({
+          id: task.id,
+          title: task.title,
+          dueDate: task.dueDate!,
+          reminderMinutes: task.reminderMinutes!,
+          priority: task.priority,
+        }));
+      }),
+
     // ========== Calendar Integration ==========
 
     // Get tasks with due dates for calendar view

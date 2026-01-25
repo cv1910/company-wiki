@@ -30,6 +30,8 @@ import { formatDistanceToNow, format } from "date-fns";
 import { de } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SwipeableTaskCard } from "@/components/SwipeableTaskCard";
+import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
+import { useTaskReminders } from "@/hooks/useTaskReminders";
 import { useState, useMemo, useEffect } from "react";
 import {
   Dialog,
@@ -265,6 +267,9 @@ export default function Aufgaben() {
     { taskId: selectedTaskId! },
     { enabled: !!selectedTaskId }
   );
+
+  // Browser-Benachrichtigungen für Aufgaben-Erinnerungen
+  useTaskReminders();
 
   // Mutations
   const createTask = trpc.tasks.create.useMutation({
@@ -594,6 +599,9 @@ export default function Aufgaben() {
           Neue Aufgabe
         </Button>
       </div>
+
+      {/* Browser-Benachrichtigungen Banner */}
+      <NotificationPermissionBanner />
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
