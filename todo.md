@@ -1327,3 +1327,10 @@
 - [x] Inhalt scrollt zu weit und wird unter der Bottom Navigation sichtbar
 - [x] Scroll-Container mit korrektem Padding-Bottom versehen (pb-[120px])
 - [x] Bottom Navigation mit solidem Hintergrund ohne Transparenz
+
+## Layout-Fix - Dark Mode Hintergrund (Januar 2026)
+- [x] Heller/grauer Streifen oben auf der Taps-Seite im Dark Mode beheben (Gradient-Hintergrund entfernt)
+
+## Layout-Fix - Bündigkeit und Menüleiste (Januar 2026)
+- [x] Inhalt oben links nicht bündig mit dem Rand (-m-6 entfernt)
+- [x] Elemente hinter der Menüleiste sichtbar (Hintergrund-Overlay hinzugefügt)

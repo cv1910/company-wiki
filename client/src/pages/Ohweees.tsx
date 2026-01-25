@@ -1417,12 +1417,12 @@ export default function OhweeesPage() {
   // Mobile View
   if (isMobile) {
     return (
-      <div className="flex flex-col min-h-[100dvh] -m-6 bg-background">
+      <div className="flex flex-col min-h-[100dvh]" style={{ backgroundColor: 'var(--background)' }}>
         {mobileView === "list" ? (
           // Mobile Room List View
           <>
             {/* Mobile Header - Premium Design */}
-            <div className="px-4 pt-4 pb-3 safe-area-top bg-gradient-to-b from-primary/5 to-transparent">
+            <div className="px-4 pt-4 pb-3 safe-area-top">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg">
