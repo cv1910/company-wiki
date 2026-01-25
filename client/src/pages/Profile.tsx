@@ -34,7 +34,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useRef } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 import { formatDistanceToNow, format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useLocation } from "wouter";

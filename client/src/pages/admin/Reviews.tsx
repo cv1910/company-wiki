@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 

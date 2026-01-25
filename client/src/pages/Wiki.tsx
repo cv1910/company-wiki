@@ -10,7 +10,7 @@ import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 import { PullToRefresh } from "@/components/PullToRefresh";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Wiki() {

@@ -70,7 +70,7 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 import { PullToRefresh } from "@/components/PullToRefresh";
 
 // Widget size options

@@ -33,7 +33,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { MentionTextarea } from "@/components/MentionTextarea";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 import ArticleFeedback from "@/components/ArticleFeedback";
 import { SimilarArticles } from "@/components/SimilarArticles";
 import { DiffViewer } from "@/components/DiffViewer";

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar, Plus, Clock, CheckCircle, XCircle, AlertCircle, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 

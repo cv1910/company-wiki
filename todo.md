@@ -1230,3 +1230,10 @@
 
 ## Layout-Fix Bottom Navigation (Januar 2026)
 - [x] Bottom Navigation überlappt Inhalt - mehr Padding unten (pb-24 → pb-32)
+
+## Haptic Feedback Optimierung (Januar 2026)
+- [x] Haptic Feedback Hook erweitern (mehr Feedback-Typen: impact, notification, rigid, soft)
+- [x] Haptic bei Navigation und Tab-Wechsel (BottomNavigation)
+- [x] Haptic bei Button-Klicks (Button-Komponente mit haptic prop)
+- [x] Haptic bei Erfolgs- und Fehlermeldungen (hapticToast Wrapper)
+- [x] iOS Taptic Engine Unterstützung hinzugefügt

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 import { 
   CheckCircle2, 
   XCircle, 

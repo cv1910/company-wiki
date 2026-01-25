@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { Plus, Pencil, Trash2, Clock, Users, Briefcase } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 
 const employmentTypeLabels: Record<string, string> = {
   full_time: "Vollzeit",

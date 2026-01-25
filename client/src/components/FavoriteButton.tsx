@@ -2,7 +2,7 @@ import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 
 interface FavoriteButtonProps {
   articleId: number;

@@ -37,7 +37,7 @@ import {
   Check,
   Circle,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 
 interface UserProfileProps {
   open: boolean;

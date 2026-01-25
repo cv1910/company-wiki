@@ -45,7 +45,7 @@ export function BottomNavigation() {
   const isMobile = useIsMobile();
   const [location, setLocation] = useLocation();
   const { toggleSidebar } = useSidebar();
-  const { lightTap, selection } = useHapticFeedback();
+  const { lightTap, selection, impact } = useHapticFeedback();
   
   // Fetch unread Taps count
   const { data: unreadTapsCount } = trpc.ohweees.unreadCount.useQuery(undefined, {
@@ -63,8 +63,13 @@ export function BottomNavigation() {
     return null;
   }
 
-  const handleNavigation = (path: string) => {
-    lightTap();
+  const handleNavigation = (path: string, isActive: boolean) => {
+    // Nur Haptic wenn nicht bereits auf der Seite
+    if (!isActive) {
+      impact();
+    } else {
+      lightTap();
+    }
     setLocation(path);
   };
 
@@ -90,7 +95,7 @@ export function BottomNavigation() {
           return (
             <button
               key={item.path}
-              onClick={() => handleNavigation(item.path)}
+              onClick={() => handleNavigation(item.path, isActive)}
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors relative",
                 isActive 
@@ -141,7 +146,7 @@ export function BottomNavigation() {
             {quickActions.map((action) => (
               <DropdownMenuItem
                 key={action.path}
-                onClick={() => handleNavigation(action.path)}
+                onClick={() => handleNavigation(action.path, false)}
                 className="cursor-pointer"
               >
                 <action.icon className="h-4 w-4 mr-2" />

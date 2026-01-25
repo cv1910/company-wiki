@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, CheckCircle, XCircle, Clock, AlertCircle, Loader2, Users } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 

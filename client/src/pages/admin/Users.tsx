@@ -22,7 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 import { Shield, ShieldCheck, User, Users as UsersIcon } from "lucide-react";
 import { useLocation } from "wouter";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 

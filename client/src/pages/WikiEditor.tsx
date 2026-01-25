@@ -26,7 +26,7 @@ import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Eye, Save, Sparkles, Send, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 import { Streamdown } from "streamdown";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TemplateSelector from "@/components/TemplateSelector";

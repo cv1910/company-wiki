@@ -44,7 +44,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 
 type Assignment = {
   assignment: {

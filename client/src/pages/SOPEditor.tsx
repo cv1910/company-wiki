@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 
 export default function SOPEditor() {
   const { slug } = useParams<{ slug: string }>();

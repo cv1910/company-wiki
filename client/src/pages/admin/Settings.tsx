@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Settings as SettingsIcon, Database, Bot, Bell, Shield } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 
 export default function AdminSettings() {
   const { user } = useAuth();

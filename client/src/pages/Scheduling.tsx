@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 import { Plus, Clock, MapPin, Calendar, Settings, Copy, ExternalLink, Trash2, Edit, Video, Phone, Building, Link as LinkIcon, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 

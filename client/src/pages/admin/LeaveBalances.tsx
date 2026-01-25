@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Loader2, Users, Edit, Sun, Umbrella, ArrowRight, RefreshCw, Settings } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import DashboardLayout from "@/components/DashboardLayout";

@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 import { Image, Upload, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 

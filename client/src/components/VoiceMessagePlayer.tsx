@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, FileText, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 
 interface VoiceMessagePlayerProps {
   messageId: number;

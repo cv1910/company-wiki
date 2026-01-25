@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 import { Mail, Bell, Calendar, FileText, MessageSquare, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 

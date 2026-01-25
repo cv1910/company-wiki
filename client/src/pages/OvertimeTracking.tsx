@@ -22,7 +22,7 @@ import {
   Download,
   RefreshCw
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 
 const MONTHS = [
   "Januar", "Februar", "März", "April", "Mai", "Juni",

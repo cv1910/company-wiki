@@ -8,7 +8,7 @@ import { Streamdown } from "streamdown";
 import { useLocation, useParams } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 import { useEffect, useRef } from "react";
 
 export default function SOPView() {

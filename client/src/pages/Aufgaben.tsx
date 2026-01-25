@@ -56,7 +56,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/EmptyState";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 
 const PRIORITY_CONFIG = {
   low: { label: "Niedrig", color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300" },

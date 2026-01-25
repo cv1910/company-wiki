@@ -34,7 +34,7 @@ import {
   Play,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
-import { toast } from "sonner";
+import { toast } from "@/lib/hapticToast";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 interface NotificationSettingsProps {
