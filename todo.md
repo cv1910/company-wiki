@@ -1282,3 +1282,14 @@
 - [x] Cache-Handling und Service Worker verbessern für automatisches Cache-Busting
 - [x] Dark Mode Layout-Fixes überprüfen und optimieren
 - [x] Layout-Fixes auf alle anderen Seiten anwenden (nicht nur Home)
+
+## Layout-Fixes auf alle Seiten (Januar 2026)
+- [x] Taps-Seite Layout-Fix (keine problematischen Elemente gefunden)
+- [x] Aufgaben-Seite Layout-Fix (keine problematischen Elemente gefunden)
+- [x] Search-Seite Layout-Fix (SearchAssistant.tsx dekoratives Element verkleinert)
+- [x] Leave-Seite Layout-Fix (keine problematischen Elemente gefunden)
+- [x] Notifications-Seite Layout-Fix (keine problematischen Elemente gefunden)
+- [x] OrgChart-Seite Layout-Fix (keine problematischen Elemente gefunden)
+- [x] Profile-Seite Layout-Fix (keine problematischen Elemente gefunden)
+- [x] SOPs-Seite Layout-Fix (dekoratives Element verkleinert)
+- [x] Alle anderen Seiten geprüft - keine weiteren problematischen Elemente

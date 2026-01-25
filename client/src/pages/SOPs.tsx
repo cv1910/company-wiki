@@ -30,7 +30,7 @@ export default function SOPs() {
     <div className="space-y-8 pb-[calc(var(--bottom-nav-height,64px)+1rem)] md:pb-6">
       {/* Premium Header */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500/10 via-green-500/5 to-transparent border border-green-500/10 p-6 md:p-8">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-2xl opacity-60" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5 mb-2">
