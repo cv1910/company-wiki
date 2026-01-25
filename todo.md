@@ -1256,3 +1256,7 @@
 
 ## Layout-Fix Home-Seite Teil 2 (Januar 2026)
 - [x] Home-Seite: pb-24 auf pb-40 erhöht (10rem)
+
+## Layout-Fix Bottom Navigation Teil 3 (Januar 2026)
+- [x] Schwarzer Bereich zwischen Inhalt und Bottom Navigation entfernen
+- [x] Padding auf pb-20 (5rem) reduziert - ausreichend für Bottom Navigation
