@@ -1253,3 +1253,6 @@
 - [x] Swipe-Gesten für Links/Rechts Navigation
 - [x] Visuelle Feedback-Animation beim Swipen
 - [x] Integration in die Hauptseiten (DashboardLayout)
+
+## Layout-Fix Home-Seite Teil 2 (Januar 2026)
+- [x] Home-Seite: pb-24 auf pb-40 erhöht (10rem)
