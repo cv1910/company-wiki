@@ -1240,3 +1240,6 @@
 
 ## Layout-Fix Bottom Navigation Teil 2 (Januar 2026)
 - [x] Bottom Navigation überlappt Inhalt noch - pb-32 auf pb-40 erhöht (10rem)
+
+## Layout-Fix Home-Seite (Januar 2026)
+- [x] Home-Seite: pb-24 zum Mobile-Container hinzugefügt
