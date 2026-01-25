@@ -1317,3 +1317,8 @@
 ## Layout-Fix Weißer Bereich - Radikaler Ansatz (Januar 2026)
 - [x] Weißer Bereich zwischen Inhalt und Bottom Navigation endgültig beheben (html::before Overlay hinzugefügt)
 - [x] Alle Container mit gleichem Hintergrund versehen (radikale CSS-Fixes in index.css)
+
+## Layout-Fix - Inline-Styles Ansatz (Januar 2026)
+- [x] Festes Hintergrund-Element direkt im HTML-Body hinzugefügt (div#bg-fix)
+- [x] Inline-Styles für sofortige Anwendung verwendet
+- [x] JavaScript für Dark Mode Hintergrund-Synchronisation hinzugefügt

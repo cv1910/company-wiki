@@ -163,8 +163,27 @@
     </style>
   </head>
 
-  <body>
+  <body style="background-color: oklch(0.988 0.003 80); min-height: 100vh; min-height: 100dvh;">
+    <!-- Festes Hintergrund-Element das den gesamten Viewport abdeckt -->
+    <div id="bg-fix" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: oklch(0.988 0.003 80); z-index: -9999; pointer-events: none;"></div>
     <div id="root"></div>
+    <script>
+      // Dark Mode Hintergrund-Fix
+      (function() {
+        var bgFix = document.getElementById('bg-fix');
+        var body = document.body;
+        function updateBg() {
+          var isDark = document.documentElement.classList.contains('dark') || 
+                       window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var color = isDark ? 'oklch(0.12 0.01 280)' : 'oklch(0.988 0.003 80)';
+          if (bgFix) bgFix.style.backgroundColor = color;
+          body.style.backgroundColor = color;
+        }
+        updateBg();
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateBg);
+        new MutationObserver(updateBg).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
     <script
       defer
