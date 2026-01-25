@@ -5,6 +5,7 @@ import { UserProfile } from "@/components/UserProfile";
 import { Spotlight, useSpotlight } from "@/components/Spotlight";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { SwipeNavigationWrapper } from "@/components/SwipeNavigationWrapper";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -631,7 +632,11 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-6 pb-40 md:pb-6 page-transition">{children}</main>
+        <main className="flex-1 p-6 pb-40 md:pb-6 page-transition">
+          <SwipeNavigationWrapper enabled={isMobile}>
+            {children}
+          </SwipeNavigationWrapper>
+        </main>
         {showShortcuts && <KeyboardShortcutsHelp onClose={() => setShowShortcuts(false)} />}
         <NotificationSettings
           open={showNotificationSettings}

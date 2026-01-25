@@ -1247,3 +1247,9 @@
 ## Layout-Fix Alle Seiten (Januar 2026)
 - [x] Alle Seiten auf Überlappungsprobleme mit Bottom Navigation prüfen und beheben
 - [x] pb-24 md:pb-6 zu allen Seiten hinzugefügt: Calendar, Wiki, Aufgaben, Chat, Leave, Notifications, Onboarding, OrgChart, Profile, SOPCategory, SOPEditor, SOPView, SOPs, Search, SearchAssistant, TeamDirectory, Teams, WikiArticle, WikiCategory, WikiEditor
+
+## Swipe-Navigation (Januar 2026)
+- [x] Swipe-Navigation Hook erstellen (useSwipeNavigation)
+- [x] Swipe-Gesten für Links/Rechts Navigation
+- [x] Visuelle Feedback-Animation beim Swipen
+- [x] Integration in die Hauptseiten (DashboardLayout)
