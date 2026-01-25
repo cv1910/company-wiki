@@ -1320,36 +1320,73 @@ body.modal-open {
 
 /* ===== MOBILE LAYOUT FIXES ===== */
 
-/* Prevent horizontal overflow on mobile */
+/* Prevent horizontal overflow on ALL devices */
+html, body, #root {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+  width: 100% !important;
+}
+
+/* Ensure background color is set globally */
+html {
+  background-color: var(--background);
+}
+
+body {
+  background-color: var(--background);
+}
+
+#root {
+  background-color: var(--background);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Fix sidebar wrapper background */
+[data-slot="sidebar-wrapper"] {
+  background-color: var(--background) !important;
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+}
+
+/* Fix sidebar inset background */
+[data-slot="sidebar-inset"] {
+  background-color: var(--background) !important;
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Fix main content area */
+main {
+  background-color: var(--background) !important;
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Mobile specific fixes */
 @media (max-width: 768px) {
-  html, body, #root {
-    overflow-x: hidden !important;
-    max-width: 100vw !important;
-  }
-  
   /* Ensure full background coverage */
-  #root {
+  [data-slot="sidebar-wrapper"],
+  [data-slot="sidebar-inset"],
+  main {
     min-height: 100vh;
     min-height: 100dvh;
-    background-color: var(--background);
   }
   
-  /* Fix for iOS PWA bottom gap */
-  [data-slot="sidebar-wrapper"],
-  [data-slot="sidebar-inset"] {
-    min-height: 100vh;
-    min-height: 100dvh;
-    background-color: var(--background);
+  /* Fix bottom navigation background */
+  nav[class*="fixed bottom-0"] {
+    background-color: var(--background) !important;
+    width: 100vw !important;
+    left: 0 !important;
+    right: 0 !important;
   }
 }
 
 /* PWA standalone mode fixes */
 @media all and (display-mode: standalone) {
-  html, body, #root {
-    overflow-x: hidden !important;
-    background-color: var(--background);
-  }
-  
   /* Ensure content fills the entire screen */
   #root {
     min-height: 100vh;
@@ -1360,6 +1397,10 @@ body.modal-open {
   main {
     min-height: calc(100vh - env(safe-area-inset-top, 0px));
     min-height: calc(100dvh - env(safe-area-inset-top, 0px));
-    background-color: var(--background);
+  }
+  
+  /* Ensure bottom nav has correct background in PWA */
+  nav[class*="fixed bottom-0"] {
+    background-color: var(--background) !important;
   }
 }

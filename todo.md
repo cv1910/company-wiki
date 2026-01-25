@@ -1293,3 +1293,9 @@
 - [x] Profile-Seite Layout-Fix (keine problematischen Elemente gefunden)
 - [x] SOPs-Seite Layout-Fix (dekoratives Element verkleinert)
 - [x] Alle anderen Seiten geprüft - keine weiteren problematischen Elemente
+
+## Layout-Probleme Mobile - Nachhaltige Behebung (Januar 2026)
+- [x] Rosa/roter Streifen links und rechts auf AI Suche und Taps-Seite
+- [x] Weißer/heller Bereich zwischen Inhalt und Bottom Navigation
+- [x] Rosa Bereich rechts unten neben "Mehr"-Button
+- [x] Grundlegende Layout-Überarbeitung für alle Mobile-Seiten

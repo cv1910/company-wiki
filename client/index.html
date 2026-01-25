@@ -87,20 +87,30 @@
         -webkit-tap-highlight-color: transparent;
       }
       
-      /* Prevent pull-to-refresh on iOS */
+      /* Prevent pull-to-refresh on iOS and fix overflow */
       html, body {
         overscroll-behavior-y: contain;
+        background-color: oklch(0.988 0.003 80);
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+      }
+      
+      #root {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+        width: 100% !important;
         background-color: oklch(0.988 0.003 80);
       }
       
       /* Dark mode background */
       @media (prefers-color-scheme: dark) {
-        html, body {
+        html, body, #root {
           background-color: oklch(0.12 0.01 280);
         }
       }
       
-      .dark html, .dark body, html.dark, body.dark {
+      .dark html, .dark body, html.dark, body.dark, .dark #root {
         background-color: oklch(0.12 0.01 280);
       }
       
