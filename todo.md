@@ -1260,3 +1260,8 @@
 ## Layout-Fix Bottom Navigation Teil 3 (Januar 2026)
 - [x] Schwarzer Bereich zwischen Inhalt und Bottom Navigation entfernen
 - [x] Padding auf pb-20 (5rem) reduziert - ausreichend für Bottom Navigation
+
+## Dynamisches Bottom-Padding (Januar 2026)
+- [x] Hook für dynamisches Bottom-Padding erstellen (useBottomNavHeight)
+- [x] CSS-Variable für Bottom Navigation Höhe setzen (--bottom-nav-height)
+- [x] Alle Seiten auf dynamisches Padding umgestellt (pb-[calc(var(--bottom-nav-height,64px)+1rem)])

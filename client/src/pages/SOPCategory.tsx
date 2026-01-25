@@ -23,7 +23,7 @@ export default function SOPCategory() {
 
   if (categoriesLoading) {
     return (
-      <div className="space-y-6 pb-24 md:pb-6">
+      <div className="space-y-6 pb-[calc(var(--bottom-nav-height,64px)+1rem)] md:pb-6">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-4 w-96" />
         <div className="grid md:grid-cols-2 gap-4">
@@ -51,7 +51,7 @@ export default function SOPCategory() {
   }
 
   return (
-    <div className="space-y-6 pb-24 md:pb-6">
+    <div className="space-y-6 pb-[calc(var(--bottom-nav-height,64px)+1rem)] md:pb-6">
       {/* Header */}
       <div>
         <Button

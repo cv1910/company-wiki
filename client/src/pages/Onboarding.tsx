@@ -44,7 +44,7 @@ export default function Onboarding() {
   const recentlyCompleted = assignments?.filter(a => a.status === "completed").slice(0, 3) || [];
 
   return (
-    <div className="space-y-6 pb-24 md:pb-6">
+    <div className="space-y-6 pb-[calc(var(--bottom-nav-height,64px)+1rem)] md:pb-6">
       {/* Header - Premium Design */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">

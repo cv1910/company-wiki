@@ -177,7 +177,7 @@ export default function WikiArticle() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 pb-24 md:pb-6">
+      <div className="space-y-6 pb-[calc(var(--bottom-nav-height,64px)+1rem)] md:pb-6">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-4 w-96" />
         <Skeleton className="h-64 rounded-xl" />
@@ -201,7 +201,7 @@ export default function WikiArticle() {
   }
 
   return (
-    <div className="space-y-6 pb-24 md:pb-6">
+    <div className="space-y-6 pb-[calc(var(--bottom-nav-height,64px)+1rem)] md:pb-6">
       {/* Header */}
       <div>
         <Button
