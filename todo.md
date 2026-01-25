@@ -1304,3 +1304,6 @@
 - [x] Exakte Ursache der rosa/roten Streifen identifizieren (SwipeNavigationWrapper Edge-Indikatoren)
 - [x] Problematische Elemente direkt in den Komponenten entfernen
 - [x] Alle dekorativen Gradient-Elemente auf Mobile deaktivieren (Home, Wiki, SOPs, SearchAssistant)
+
+## Layout-Fix Taps-Seite (Januar 2026)
+- [x] Weißer/heller Bereich zwischen Inhalt und Bottom Navigation auf Taps-Seite beheben

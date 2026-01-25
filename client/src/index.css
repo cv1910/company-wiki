@@ -1404,3 +1404,25 @@ main {
     background-color: var(--background) !important;
   }
 }
+
+
+/* ===== TAPS PAGE SPECIFIC FIXES ===== */
+
+/* Ensure Taps page fills the entire viewport */
+@media (max-width: 768px) {
+  /* Fix for Taps/Chat page container */
+  [class*="flex flex-col"][class*="min-h-[100dvh]"] {
+    background-color: var(--background) !important;
+  }
+  
+  /* Ensure all page containers have correct background */
+  .flex.flex-col {
+    background-color: var(--background);
+  }
+  
+  /* Fix gap between content and bottom navigation */
+  [class*="pb-24"],
+  [class*="pb-[calc"] {
+    background-color: var(--background) !important;
+  }
+}

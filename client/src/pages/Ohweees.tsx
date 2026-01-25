@@ -1417,7 +1417,7 @@ export default function OhweeesPage() {
   // Mobile View
   if (isMobile) {
     return (
-      <div className="flex flex-col h-[calc(100vh-60px)] -m-6 bg-background">
+      <div className="flex flex-col min-h-[100dvh] -m-6 bg-background">
         {mobileView === "list" ? (
           // Mobile Room List View
           <>
