@@ -1269,3 +1269,7 @@
 ## Layout-Fix Weißer Bereich (Januar 2026)
 - [x] Weißer Bereich zwischen Inhalt und Bottom Navigation entfernen
 - [x] Hintergrundfarbe konsistent machen (bg-background auf main und Container)
+
+## Layout-Fix Mobile (Januar 2026) - Endgültig
+- [x] Weißer/heller Bereich zwischen Inhalt und Bottom Navigation auf Mobile beheben
+- [x] Roter Streifen rechts auf Mobile-Ansicht entfernen
