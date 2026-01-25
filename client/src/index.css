@@ -1426,3 +1426,89 @@ main {
     background-color: var(--background) !important;
   }
 }
+
+
+/* ===== RADIKALE FIXES FÜR WEISSEN BEREICH ===== */
+
+/* Setze Hintergrundfarbe auf ALLE möglichen Container */
+@media (max-width: 768px) {
+  /* Alle div-Elemente im Root */
+  #root > div,
+  #root > div > div,
+  #root > div > div > div {
+    background-color: var(--background) !important;
+  }
+  
+  /* Alle Container mit flex */
+  .flex,
+  .flex-col,
+  .flex-1 {
+    background-color: var(--background);
+  }
+  
+  /* PullToRefresh Container */
+  [class*="PullToRefresh"],
+  [class*="pull-to-refresh"],
+  .relative.overflow-y-auto {
+    background-color: var(--background) !important;
+  }
+  
+  /* Alle space-y Container */
+  [class*="space-y"] {
+    background-color: var(--background);
+  }
+  
+  /* Alle animate-fade-in Container */
+  .animate-fade-in {
+    background-color: var(--background);
+  }
+  
+  /* Alle Container mit pb- (padding-bottom) */
+  [class*="pb-"] {
+    background-color: var(--background);
+  }
+  
+  /* Alle Container mit min-h- */
+  [class*="min-h-"] {
+    background-color: var(--background);
+  }
+  
+  /* Spezifisch: Der Bereich zwischen Content und Bottom Nav */
+  body::after {
+    content: "";
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 200px;
+    background-color: var(--background);
+    z-index: -1;
+    pointer-events: none;
+  }
+  
+  /* Stelle sicher, dass der Hintergrund bis zum unteren Rand reicht */
+  html::after {
+    content: "";
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background-color: var(--background);
+    z-index: -2;
+    pointer-events: none;
+  }
+}
+
+/* Für alle Geräte: Hintergrund auf dem gesamten Viewport */
+html {
+  background-color: var(--background) !important;
+  min-height: 100%;
+  min-height: 100dvh;
+}
+
+body {
+  background-color: var(--background) !important;
+  min-height: 100%;
+  min-height: 100dvh;
+}

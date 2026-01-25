@@ -119,6 +119,29 @@
         scroll-behavior: smooth;
       }
       
+      /* Fester Hintergrund für den gesamten Viewport */
+      html::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: oklch(0.988 0.003 80);
+        z-index: -9999;
+        pointer-events: none;
+      }
+      
+      @media (prefers-color-scheme: dark) {
+        html::before {
+          background-color: oklch(0.12 0.01 280);
+        }
+      }
+      
+      .dark html::before, html.dark::before {
+        background-color: oklch(0.12 0.01 280);
+      }
+      
       /* Loading state before React hydrates */
       #root:empty::before {
         content: '';

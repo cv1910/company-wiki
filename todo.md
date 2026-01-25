@@ -1313,3 +1313,7 @@
 
 ## Layout-Fix Home-Seite Hintergrund (Januar 2026)
 - [x] Weißer/heller Bereich zwischen Inhalt und Bottom Navigation auf Home-Seite beheben (pb-48 und bottom-nav-height auf 76px erhöht)
+
+## Layout-Fix Weißer Bereich - Radikaler Ansatz (Januar 2026)
+- [x] Weißer Bereich zwischen Inhalt und Bottom Navigation endgültig beheben (html::before Overlay hinzugefügt)
+- [x] Alle Container mit gleichem Hintergrund versehen (radikale CSS-Fixes in index.css)
