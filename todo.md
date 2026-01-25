@@ -1265,3 +1265,7 @@
 - [x] Hook für dynamisches Bottom-Padding erstellen (useBottomNavHeight)
 - [x] CSS-Variable für Bottom Navigation Höhe setzen (--bottom-nav-height)
 - [x] Alle Seiten auf dynamisches Padding umgestellt (pb-[calc(var(--bottom-nav-height,64px)+1rem)])
+
+## Layout-Fix Weißer Bereich (Januar 2026)
+- [x] Weißer Bereich zwischen Inhalt und Bottom Navigation entfernen
+- [x] Hintergrundfarbe konsistent machen (bg-background auf main und Container)

@@ -1280,7 +1280,7 @@ export default function Home() {
     {/* Mobile: PullToRefresh */}
     <div className="md:hidden">
       <PullToRefresh onRefresh={handleRefresh} className="min-h-screen">
-        <div className="space-y-8 animate-fade-in pb-[calc(var(--bottom-nav-height,64px)+1rem)]">
+        <div className="space-y-8 animate-fade-in pb-[calc(var(--bottom-nav-height,64px)+1rem)] min-h-screen bg-background">
           {/* Settings Button */}
           <div className="flex justify-end">
             <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
