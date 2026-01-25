@@ -1237,3 +1237,6 @@
 - [x] Haptic bei Button-Klicks (Button-Komponente mit haptic prop)
 - [x] Haptic bei Erfolgs- und Fehlermeldungen (hapticToast Wrapper)
 - [x] iOS Taptic Engine Unterstützung hinzugefügt
+
+## Layout-Fix Bottom Navigation Teil 2 (Januar 2026)
+- [x] Bottom Navigation überlappt Inhalt noch - pb-32 auf pb-40 erhöht (10rem)
