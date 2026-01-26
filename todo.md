@@ -1474,3 +1474,11 @@
 
 ## Bug-Fix Chat-Eingabefeld 26.01.2026
 - [x] Chat-Eingabefeld wird auf Mobile von der Navigation überdeckt - Layout korrigieren
+
+## Chat-Design Komplett-Überarbeitung (Basecamp-Style) 26.01.2026
+- [x] Chat-Layout wie Basecamp/Teams/Asana gestalten
+- [x] Eingabefeld immer fixiert am unteren Rand anzeigen
+- [x] Nachrichten mit hellgrauem Hintergrund und abgerundeten Ecken
+- [x] Professionelles, modernes Erscheinungsbild
+- [x] Header mit Kontaktname zentriert
+- [x] Datum-Trenner wie bei Basecamp (HEUTE)

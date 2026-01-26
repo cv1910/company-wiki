@@ -1417,7 +1417,7 @@ export default function OhweeesPage() {
   // Mobile View
   if (isMobile) {
     return (
-      <div className="flex flex-col h-[100dvh] pb-20 overflow-hidden" style={{ backgroundColor: 'var(--background)' }}>
+      <div className="flex flex-col h-[100dvh] overflow-hidden bg-white dark:bg-gray-900">
         {mobileView === "list" ? (
           // Mobile Room List View
           <>
@@ -1486,7 +1486,7 @@ export default function OhweeesPage() {
             </div>
 
             {activeTab === "chats" ? (
-              <>
+              <div className="flex flex-col flex-1 overflow-hidden pb-20">
                 {/* Horizontal Avatar Bar */}
                 <MobileAvatarBar
               rooms={rooms?.map(r => ({
@@ -1554,10 +1554,10 @@ export default function OhweeesPage() {
                 )}
               </div>
             </ScrollArea>
-              </>
+              </div>
             ) : (
               // Mentions Tab Content
-              <ScrollArea className="flex-1">
+              <ScrollArea className="flex-1 pb-20">
                 <div className="p-4 space-y-3">
                   {mentionsLoading ? (
                     <div className="flex items-center justify-center py-12">
@@ -1627,8 +1627,8 @@ export default function OhweeesPage() {
             )}
           </>
         ) : (
-          // Mobile Chat View
-          <>
+          // Mobile Chat View - Basecamp style with fixed input at bottom
+          <div className="flex flex-col h-full">
             {/* Mobile Chat Header with Search */}
             {currentRoom && !showChatSearch && (
               <MobileChatHeader
@@ -1741,27 +1741,29 @@ export default function OhweeesPage() {
               </div>
             )}
 
-            {/* Mobile Input */}
-            <MobileChatInput
-              value={messageInput}
-              onChange={(value) => {
-                setMessageInput(value);
-                // Trigger typing indicator
-                if (selectedRoomId) {
-                  const now = Date.now();
-                  if (now - lastTypingTime > 2000) {
-                    setLastTypingTime(now);
-                    setTyping.mutate({ roomId: selectedRoomId });
+            {/* Mobile Input - Fixed at bottom */}
+            <div className="shrink-0 pb-20">
+              <MobileChatInput
+                value={messageInput}
+                onChange={(value) => {
+                  setMessageInput(value);
+                  // Trigger typing indicator
+                  if (selectedRoomId) {
+                    const now = Date.now();
+                    if (now - lastTypingTime > 2000) {
+                      setLastTypingTime(now);
+                      setTyping.mutate({ roomId: selectedRoomId });
+                    }
                   }
-                }
-              }}
-              onSend={handleSendMessage}
-              onAttach={() => fileInputRef.current?.click()}
-              onVoice={() => setIsRecordingVoice(true)}
-              placeholder="Schreibe ein Tap... (@ für Erwähnung)"
-              isLoading={sendMessage.isPending}
-            />
-          </>
+                }}
+                onSend={handleSendMessage}
+                onAttach={() => fileInputRef.current?.click()}
+                onVoice={() => setIsRecordingVoice(true)}
+                placeholder="Schreibe ein Tap... (@ für Erwähnung)"
+                isLoading={sendMessage.isPending}
+              />
+            </div>
+          </div>
         )}
 
         {/* Hidden file input */}

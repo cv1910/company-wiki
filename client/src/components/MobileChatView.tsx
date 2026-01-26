@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,9 +21,11 @@ import {
   CheckSquare,
   Mic,
   BarChart3,
+  Plus,
 } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
 import { de } from "date-fns/locale";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Types
 type Message = {
@@ -122,7 +124,7 @@ function useSwipeGesture(
   };
 }
 
-// Mobile Date Separator - Basecamp style (pill badge)
+// Mobile Date Separator - Basecamp style (pill badge centered)
 export function MobileDateSeparator({ date }: { date: Date }) {
   let label = format(date, "d. MMMM", { locale: de });
   if (isToday(date)) {
@@ -134,17 +136,17 @@ export function MobileDateSeparator({ date }: { date: Date }) {
   }
 
   return (
-    <div className="flex items-center justify-center my-6">
-      <div className="flex-1 h-px bg-border/50" />
-      <span className="mx-4 px-4 py-1.5 text-xs font-bold tracking-wide text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400 rounded-full">
+    <div className="flex items-center justify-center py-4">
+      <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+      <span className="mx-4 px-4 py-1.5 text-xs font-bold tracking-wider text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400 rounded-full uppercase">
         {label}
       </span>
-      <div className="flex-1 h-px bg-border/50" />
+      <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
     </div>
   );
 }
 
-// Mobile Message Component - Basecamp/Hey style
+// Mobile Message Component - Basecamp/Hey style with card background
 export function MobileMessage({
   message,
   isOwn,
@@ -241,32 +243,23 @@ export function MobileMessage({
   const readByOthers = readReceipts?.filter(r => r.id !== currentUserId) || [];
 
   if (isOwn) {
-    // Own message - right aligned with blue background
+    // Own message - right aligned with blue bubble
     return (
-      <div className="flex justify-end px-4 py-2" {...handlers}>
+      <div className="px-4 py-1.5" {...handlers}>
         <div 
-          className="flex flex-row-reverse items-start gap-3 max-w-[85%]"
+          className="flex justify-end items-start gap-2"
           style={{ transform: `translateX(${swipeOffset * 0.3}px)` }}
         >
-          {/* Avatar */}
-          <Avatar className="h-11 w-11 shrink-0 ring-2 ring-white dark:ring-gray-800 shadow-sm">
-            <AvatarImage src={message.sender.avatarUrl || undefined} className="object-cover" />
-            <AvatarFallback className="text-sm font-bold bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-              {getInitials(message.sender.name || message.sender.email || "")}
-            </AvatarFallback>
-          </Avatar>
-
-          {/* Message bubble */}
-          <div className="flex flex-col items-end">
-            {/* Time and menu */}
-            <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-col items-end max-w-[80%]">
+            {/* Header: Menu, Time, Name */}
+            <div className="flex items-center gap-2 mb-1 pr-1">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-6 px-1 text-muted-foreground hover:text-foreground">
+                  <Button variant="ghost" size="sm" className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-44">
                   <DropdownMenuItem onClick={onReply}>
                     <Reply className="h-4 w-4 mr-2" />
                     Antworten
@@ -287,93 +280,91 @@ export function MobileMessage({
                     <CheckSquare className="h-4 w-4 mr-2" />
                     Aufgabe erstellen
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={onDelete} className="text-destructive">
+                  <DropdownMenuItem onClick={onDelete} className="text-red-600">
                     <Trash2 className="h-4 w-4 mr-2" />
                     Löschen
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <span className="text-sm text-muted-foreground">{time}</span>
-              <span className="text-sm font-semibold text-foreground">Me</span>
+              <span className="text-xs text-gray-500">{time}</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Me</span>
             </div>
 
-            {/* Message content */}
-            <div className="bg-blue-100 dark:bg-blue-900/40 rounded-2xl rounded-tr-md px-4 py-3 shadow-sm">
+            {/* Message bubble - blue background */}
+            <div className="bg-blue-500 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 shadow-sm">
               {/* Quoted message */}
               {quotedMessage && (
-                <div className="mb-2 pl-3 border-l-2 border-blue-300 dark:border-blue-600">
-                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-                    {quotedMessage.senderName}
-                  </p>
-                  <p className="text-sm text-blue-600/80 dark:text-blue-400/80 line-clamp-2">
-                    {quotedMessage.content}
-                  </p>
+                <div className="mb-2 pl-3 border-l-2 border-blue-300 opacity-80">
+                  <p className="text-xs font-semibold">{quotedMessage.senderName}</p>
+                  <p className="text-sm line-clamp-2">{quotedMessage.content}</p>
                 </div>
               )}
-              <p className="text-base text-gray-900 dark:text-gray-100 leading-relaxed whitespace-pre-wrap">
+              <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
                 {renderContent(message.ohweee.content)}
               </p>
+              {message.ohweee.isEdited && (
+                <span className="text-xs opacity-70 ml-1">(bearbeitet)</span>
+              )}
             </div>
 
             {/* Reactions */}
             {Object.keys(groupedReactions).length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2 justify-end">
+              <div className="flex flex-wrap gap-1 mt-1">
                 {Object.entries(groupedReactions).map(([emoji, users]) => (
                   <button
                     key={emoji}
                     onClick={() => onAddReaction(emoji)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    className="flex items-center gap-1 px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <Avatar className="h-5 w-5 -ml-0.5">
-                      <AvatarImage src={users[0]?.avatarUrl || undefined} />
-                      <AvatarFallback className="text-[10px]">
-                        {users[0]?.name?.charAt(0) || "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-base">{emoji}</span>
-                    {users.length > 1 && (
-                      <span className="text-xs text-muted-foreground font-medium">{users.length}</span>
-                    )}
+                    <span>{emoji}</span>
+                    {users.length > 1 && <span className="text-xs text-gray-500">{users.length}</span>}
                   </button>
                 ))}
               </div>
             )}
           </div>
+
+          {/* Avatar */}
+          <Avatar className="h-9 w-9 shrink-0 ring-2 ring-white dark:ring-gray-900 shadow-sm">
+            <AvatarImage src={message.sender.avatarUrl || undefined} className="object-cover" />
+            <AvatarFallback className="text-xs font-bold bg-blue-600 text-white">
+              {getInitials(message.sender.name || message.sender.email || "")}
+            </AvatarFallback>
+          </Avatar>
         </div>
       </div>
     );
   }
 
-  // Other's message - left aligned with gray background
+  // Other's message - left aligned with gray card background
   return (
-    <div className="px-4 py-2" {...handlers}>
+    <div className="px-4 py-1.5" {...handlers}>
       <div 
-        className="flex items-start gap-3 max-w-[85%]"
+        className="flex items-start gap-2"
         style={{ transform: `translateX(${swipeOffset * 0.3}px)` }}
       >
         {/* Avatar */}
-        <Avatar className="h-11 w-11 shrink-0 ring-2 ring-white dark:ring-gray-800 shadow-sm">
+        <Avatar className="h-9 w-9 shrink-0 ring-2 ring-white dark:ring-gray-900 shadow-sm">
           <AvatarImage src={message.sender.avatarUrl || undefined} className="object-cover" />
-          <AvatarFallback className="text-sm font-bold bg-gradient-to-br from-gray-400 to-gray-500 text-white">
+          <AvatarFallback className="text-xs font-bold bg-gradient-to-br from-gray-400 to-gray-500 text-white">
             {getInitials(message.sender.name || message.sender.email || "")}
           </AvatarFallback>
         </Avatar>
 
-        {/* Message content */}
-        <div className="flex flex-col">
-          {/* Name, time and menu */}
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-semibold text-foreground">
+        <div className="flex flex-col items-start max-w-[80%]">
+          {/* Header: Name, Time, Menu */}
+          <div className="flex items-center gap-2 mb-1 pl-1">
+            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
               {message.sender.name || message.sender.email?.split("@")[0]}
             </span>
-            <span className="text-sm text-muted-foreground">{time}</span>
+            <span className="text-xs text-gray-500">{time}</span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 px-1 text-muted-foreground hover:text-foreground">
+                <Button variant="ghost" size="sm" className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuContent align="start" className="w-44">
                 <DropdownMenuItem onClick={onReply}>
                   <Reply className="h-4 w-4 mr-2" />
                   Antworten
@@ -394,43 +385,34 @@ export function MobileMessage({
             </DropdownMenu>
           </div>
 
-          {/* Message bubble */}
-          <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
+          {/* Message card - gray background like Basecamp */}
+          <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-tl-sm px-4 py-2.5 shadow-sm">
             {/* Quoted message */}
             {quotedMessage && (
-              <div className="mb-2 pl-3 border-l-2 border-gray-300 dark:border-gray-600">
-                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                  {quotedMessage.senderName}
-                </p>
-                <p className="text-sm text-gray-600/80 dark:text-gray-400/80 line-clamp-2">
-                  {quotedMessage.content}
-                </p>
+              <div className="mb-2 pl-3 border-l-2 border-gray-400 dark:border-gray-600">
+                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{quotedMessage.senderName}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{quotedMessage.content}</p>
               </div>
             )}
-            <p className="text-base text-gray-900 dark:text-gray-100 leading-relaxed whitespace-pre-wrap">
+            <p className="text-[15px] text-gray-900 dark:text-gray-100 leading-relaxed whitespace-pre-wrap">
               {renderContent(message.ohweee.content)}
             </p>
+            {message.ohweee.isEdited && (
+              <span className="text-xs text-gray-500 ml-1">(bearbeitet)</span>
+            )}
           </div>
 
           {/* Reactions */}
           {Object.keys(groupedReactions).length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
+            <div className="flex flex-wrap gap-1 mt-1">
               {Object.entries(groupedReactions).map(([emoji, users]) => (
                 <button
                   key={emoji}
                   onClick={() => onAddReaction(emoji)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="flex items-center gap-1 px-2 py-0.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full text-sm hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                 >
-                  <Avatar className="h-5 w-5 -ml-0.5">
-                    <AvatarImage src={users[0]?.avatarUrl || undefined} />
-                    <AvatarFallback className="text-[10px]">
-                      {users[0]?.name?.charAt(0) || "?"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-base">{emoji}</span>
-                  {users.length > 1 && (
-                    <span className="text-xs text-muted-foreground font-medium">{users.length}</span>
-                  )}
+                  <span>{emoji}</span>
+                  {users.length > 1 && <span className="text-xs text-gray-500">{users.length}</span>}
                 </button>
               ))}
             </div>
@@ -441,21 +423,7 @@ export function MobileMessage({
   );
 }
 
-// Avatar gradient helper
-function getAvatarGradient(name: string): string {
-  const gradients = [
-    "from-blue-500 to-blue-600",
-    "from-green-500 to-green-600",
-    "from-purple-500 to-purple-600",
-    "from-orange-500 to-orange-600",
-    "from-pink-500 to-pink-600",
-    "from-teal-500 to-teal-600",
-  ];
-  const index = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % gradients.length;
-  return gradients[index];
-}
-
-// Mobile Chat Header - Basecamp style
+// Mobile Chat Header - Basecamp style with centered name
 export function MobileChatHeader({
   room,
   currentUserId,
@@ -467,39 +435,19 @@ export function MobileChatHeader({
   onBack: () => void;
   onMenuClick: () => void;
 }) {
-  const getDisplayName = () => {
-    if (room.type === "direct") {
-      const otherUser = room.participants?.find((p) => p.id !== currentUserId);
-      return otherUser?.name || "Chat";
-    }
-    return room.name || "Gruppe";
-  };
-
-  const getAvatar = () => {
-    if (room.type === "direct") {
-      const otherUser = room.participants?.find((p) => p.id !== currentUserId);
-      return otherUser?.avatarUrl;
-    }
-    return null;
-  };
-
-  const displayName = getDisplayName();
-  const gradient = getAvatarGradient(displayName);
-  const initials = displayName
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  // Get display name for direct chats
+  const displayName = room.type === "direct" && room.participants
+    ? room.participants.find(p => p.id !== currentUserId)?.name || room.name
+    : room.name;
 
   return (
-    <div className="flex items-center gap-3 px-2 py-3 border-b bg-white dark:bg-gray-900 shrink-0">
+    <div className="flex items-center justify-between px-2 py-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0">
       <Button variant="ghost" size="icon" onClick={onBack} className="h-10 w-10 shrink-0 text-blue-600">
         <ChevronLeft className="h-6 w-6" />
       </Button>
       
       <div className="flex-1 min-w-0 text-center">
-        <h2 className="font-bold text-lg truncate">{displayName}</h2>
+        <h2 className="font-bold text-lg text-gray-900 dark:text-gray-100 truncate">{displayName}</h2>
       </div>
       
       <Button variant="ghost" size="icon" onClick={onMenuClick} className="h-10 w-10 shrink-0 text-blue-600">
@@ -509,7 +457,7 @@ export function MobileChatHeader({
   );
 }
 
-// Mobile Chat Input - Basecamp style
+// Mobile Chat Input - Basecamp style with rounded input field
 export function MobileChatInput({
   value,
   onChange,
@@ -540,8 +488,16 @@ export function MobileChatInput({
     }
   };
 
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + "px";
+    }
+  }, [value]);
+
   return (
-    <div className="border-t bg-white dark:bg-gray-900 px-4 py-3 shrink-0 pb-safe">
+    <div className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-3 py-2 shrink-0">
       <div className="flex items-end gap-2">
         {/* Attachment button */}
         {onAttach && (
@@ -549,13 +505,13 @@ export function MobileChatInput({
             variant="ghost"
             size="icon"
             onClick={onAttach}
-            className="h-10 w-10 shrink-0 text-muted-foreground hover:text-foreground"
+            className="h-9 w-9 shrink-0 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-full"
           >
             <Paperclip className="h-5 w-5" />
           </Button>
         )}
 
-        {/* Input field */}
+        {/* Input field - rounded like Basecamp */}
         <div className="flex-1 relative">
           <Textarea
             ref={textareaRef}
@@ -563,7 +519,7 @@ export function MobileChatInput({
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className="min-h-[44px] max-h-[120px] resize-none rounded-full px-4 py-2.5 text-base bg-gray-100 dark:bg-gray-800 border-0 focus-visible:ring-1 focus-visible:ring-blue-500"
+            className="min-h-[40px] max-h-[120px] resize-none rounded-2xl px-4 py-2 text-[15px] bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent"
             rows={1}
           />
         </div>
@@ -574,18 +530,18 @@ export function MobileChatInput({
             onClick={onSend}
             disabled={isLoading}
             size="icon"
-            className="h-10 w-10 shrink-0 rounded-full bg-blue-600 hover:bg-blue-700 text-white"
+            className="h-9 w-9 shrink-0 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
           >
-            <Send className="h-5 w-5" />
+            <Send className="h-4 w-4" />
           </Button>
         ) : (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center">
             {onVoice && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={onVoice}
-                className="h-10 w-10 shrink-0 text-muted-foreground hover:text-foreground"
+                className="h-9 w-9 shrink-0 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-full"
               >
                 <Mic className="h-5 w-5" />
               </Button>
@@ -595,7 +551,7 @@ export function MobileChatInput({
                 variant="ghost"
                 size="icon"
                 onClick={onPoll}
-                className="h-10 w-10 shrink-0 text-muted-foreground hover:text-foreground"
+                className="h-9 w-9 shrink-0 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-full"
               >
                 <BarChart3 className="h-5 w-5" />
               </Button>
@@ -607,115 +563,71 @@ export function MobileChatInput({
   );
 }
 
-// Export all components
-export { MobileDateSeparator as DateSeparator };
-
-
-// Room type for list
-type RoomForList = {
-  id: number;
-  name: string | null;
-  type: "direct" | "group" | "team";
-  participants?: { id: number; name: string | null; avatarUrl: string | null }[];
-  unreadCount: number;
-  lastMessage?: {
-    content: string;
-    createdAt: Date;
-    senderId: number;
-    senderName: string | null;
-  };
-};
-
-// Helper functions
-function formatTime(date: Date): string {
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-
-  if (minutes < 1) return "Jetzt";
-  if (minutes < 60) return `${minutes}m`;
-  if (hours < 24) return `${hours}h`;
-  if (days < 7) return `${days}d`;
-  return format(date, "d.M.", { locale: de });
-}
-
-function getMessagePreview(content: string): string {
-  // Remove mentions
-  const withoutMentions = content.replace(/@\[(.*?)\]\(\d+\)/g, "@$1");
-  return withoutMentions.length > 50 ? withoutMentions.substring(0, 50) + "..." : withoutMentions;
-}
-
 // Mobile Room List Item - Basecamp style
 export function MobileRoomListItem({
   room,
   currentUserId,
   onSelect,
 }: {
-  room: RoomForList;
+  room: Room;
   currentUserId: number;
   onSelect: () => void;
 }) {
-  const getDisplayName = () => {
-    if (room.type === "direct") {
-      const otherUser = room.participants?.find((p) => p.id !== currentUserId);
-      return otherUser?.name || "Chat";
-    }
-    return room.name || "Gruppe";
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
-  const getAvatar = () => {
-    if (room.type === "direct") {
-      const otherUser = room.participants?.find((p) => p.id !== currentUserId);
-      return otherUser?.avatarUrl;
-    }
-    return null;
-  };
+  // Get display info for direct chats
+  const otherParticipant = room.type === "direct" && room.participants
+    ? room.participants.find(p => p.id !== currentUserId)
+    : null;
+  
+  const displayName = otherParticipant?.name || room.name || "Chat";
+  const avatarUrl = otherParticipant?.avatarUrl;
 
-  const displayName = getDisplayName();
-  const gradient = getAvatarGradient(displayName);
-  const initials = displayName
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  const lastMessageTime = room.lastMessage?.createdAt
+    ? format(new Date(room.lastMessage.createdAt), "HH:mm")
+    : "";
 
   return (
     <button
       onClick={onSelect}
-      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 active:bg-muted transition-colors"
+      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-left"
     >
-      {/* Avatar with unread indicator */}
-      <div className="relative shrink-0">
-        <Avatar className="h-12 w-12 ring-2 ring-white dark:ring-gray-800 shadow-sm">
-          <AvatarImage src={getAvatar() || undefined} className="object-cover" />
-          <AvatarFallback className={`text-base font-bold text-white bg-gradient-to-br ${gradient}`}>
-            {initials}
+      {/* Avatar */}
+      <div className="relative">
+        <Avatar className="h-12 w-12 ring-2 ring-white dark:ring-gray-900 shadow-sm">
+          <AvatarImage src={avatarUrl || undefined} className="object-cover" />
+          <AvatarFallback className="text-sm font-bold bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+            {room.type === "team" ? "#" : getInitials(displayName)}
           </AvatarFallback>
         </Avatar>
         {room.unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 h-5 w-5 bg-orange-500 text-white text-xs font-bold rounded-full flex items-center justify-center ring-2 ring-background">
+          <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full ring-2 ring-white dark:ring-gray-900">
             {room.unreadCount > 9 ? "9+" : room.unreadCount}
           </span>
         )}
       </div>
+
       {/* Content */}
-      <div className="flex-1 min-w-0 text-left">
-        <div className="flex items-center justify-between gap-2">
-          <span className={`font-semibold text-base truncate ${room.unreadCount > 0 ? "text-foreground" : "text-foreground/80"}`}>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between">
+          <span className={`font-semibold text-[15px] truncate ${room.unreadCount > 0 ? "text-gray-900 dark:text-gray-100" : "text-gray-700 dark:text-gray-300"}`}>
             {displayName}
           </span>
-          {room.lastMessage && (
-            <span className="text-sm text-muted-foreground shrink-0">
-              {formatTime(new Date(room.lastMessage.createdAt))}
-            </span>
-          )}
+          <span className="text-xs text-gray-500 shrink-0 ml-2">{lastMessageTime}</span>
         </div>
         {room.lastMessage && (
-          <p className={`text-sm truncate mt-0.5 ${room.unreadCount > 0 ? "text-foreground/80 font-medium" : "text-muted-foreground"}`}>
-            {getMessagePreview(room.lastMessage.content)}
+          <p className={`text-sm truncate mt-0.5 ${room.unreadCount > 0 ? "text-gray-700 dark:text-gray-300 font-medium" : "text-gray-500"}`}>
+            {room.lastMessage.senderName && room.type !== "direct" && (
+              <span className="font-medium">{room.lastMessage.senderName}: </span>
+            )}
+            {room.lastMessage.content}
           </p>
         )}
       </div>
@@ -723,14 +635,14 @@ export function MobileRoomListItem({
   );
 }
 
-// Horizontal Avatar Bar for Quick Access - Basecamp style
+// Mobile Avatar Bar - horizontal scrollable avatars for quick access
 export function MobileAvatarBar({
   rooms,
   currentUserId,
   onRoomSelect,
   onNewChat,
 }: {
-  rooms: RoomForList[];
+  rooms: Room[];
   currentUserId: number;
   onRoomSelect: (roomId: number) => void;
   onNewChat: () => void;
@@ -744,58 +656,67 @@ export function MobileAvatarBar({
       .slice(0, 2);
   };
 
-  // Get recent direct chats
-  const recentDMs = rooms
-    .filter((r) => r.type === "direct")
-    .slice(0, 8);
+  // Sort by unread first, then by last message time
+  const sortedRooms = [...rooms].sort((a, b) => {
+    if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
+    if (a.unreadCount === 0 && b.unreadCount > 0) return 1;
+    const aTime = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+    const bTime = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+    return bTime - aTime;
+  });
 
   return (
-    <div className="px-4 py-3 border-b overflow-x-auto shrink-0 bg-white dark:bg-gray-900">
-      <div className="flex gap-4">
-        {/* New Chat Button */}
-        <button
-          onClick={onNewChat}
-          className="flex flex-col items-center gap-1.5 shrink-0"
-        >
-          <div className="h-14 w-14 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center border-2 border-dashed border-blue-300 dark:border-blue-700 hover:border-blue-500 transition-colors">
-            <Send className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-          </div>
-          <span className="text-xs text-muted-foreground font-medium">Neu</span>
-        </button>
+    <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+      <ScrollArea className="w-full">
+        <div className="flex gap-3 pb-1">
+          {/* New chat button */}
+          <button
+            onClick={onNewChat}
+            className="flex flex-col items-center gap-1 shrink-0"
+          >
+            <div className="h-14 w-14 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center border-2 border-dashed border-blue-400 dark:border-blue-600">
+              <Plus className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">Neu</span>
+          </button>
 
-        {/* Recent Contacts */}
-        {recentDMs.map((room) => {
-          const otherUser = room.participants?.find((p) => p.id !== currentUserId);
-          const name = otherUser?.name || "Chat";
-          const firstName = name.split(" ")[0];
-          const gradient = getAvatarGradient(name);
-          
-          return (
-            <button
-              key={room.id}
-              onClick={() => onRoomSelect(room.id)}
-              className="flex flex-col items-center gap-1.5 shrink-0"
-            >
-              <div className="relative">
-                <Avatar className="h-14 w-14 ring-2 ring-white dark:ring-gray-800 shadow-sm">
-                  <AvatarImage src={otherUser?.avatarUrl || undefined} className="object-cover" />
-                  <AvatarFallback className={`text-base font-bold text-white bg-gradient-to-br ${gradient}`}>
-                    {getInitials(name)}
-                  </AvatarFallback>
-                </Avatar>
-                {room.unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 h-5 w-5 bg-orange-500 text-white text-xs font-bold rounded-full flex items-center justify-center ring-2 ring-background">
-                    {room.unreadCount > 9 ? "9+" : room.unreadCount}
-                  </span>
-                )}
-              </div>
-              <span className="text-xs text-muted-foreground font-medium truncate max-w-[56px]">
-                {firstName}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+          {/* Room avatars */}
+          {sortedRooms.slice(0, 10).map((room) => {
+            const otherParticipant = room.type === "direct" && room.participants
+              ? room.participants.find(p => p.id !== currentUserId)
+              : null;
+            
+            const displayName = otherParticipant?.name || room.name || "Chat";
+            const avatarUrl = otherParticipant?.avatarUrl;
+            const firstName = displayName.split(" ")[0];
+
+            return (
+              <button
+                key={room.id}
+                onClick={() => onRoomSelect(room.id)}
+                className="flex flex-col items-center gap-1 shrink-0"
+              >
+                <div className="relative">
+                  <Avatar className="h-14 w-14 ring-2 ring-white dark:ring-gray-900 shadow-sm">
+                    <AvatarImage src={avatarUrl || undefined} className="object-cover" />
+                    <AvatarFallback className="text-sm font-bold bg-gradient-to-br from-gray-400 to-gray-500 text-white">
+                      {room.type === "team" ? "#" : getInitials(displayName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  {room.unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 h-5 w-5 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full ring-2 ring-white dark:ring-gray-900">
+                      {room.unreadCount > 9 ? "9+" : room.unreadCount}
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs text-gray-600 dark:text-gray-400 font-medium truncate max-w-[56px]">
+                  {firstName}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </ScrollArea>
     </div>
   );
 }
