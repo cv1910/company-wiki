@@ -125,6 +125,26 @@ export default function Schichtplan() {
     return loc?.shortName || value;
   };
   
+  // Get location color class for shift display
+  const getLocationColorClass = (locationId: string) => {
+    const loc = locations?.find(l => l.id.toString() === locationId || l.shortName === locationId);
+    const color = loc?.color || "blue";
+    const colorMap: Record<string, string> = {
+      rose: "bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/30",
+      blue: "bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30",
+      green: "bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30",
+      orange: "bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/30",
+      purple: "bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30",
+      yellow: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-yellow-500/30",
+      cyan: "bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-500/30",
+      gray: "bg-gray-500/20 text-gray-700 dark:text-gray-300 border-gray-500/30",
+      red: "bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/30",
+      pink: "bg-pink-500/20 text-pink-700 dark:text-pink-300 border-pink-500/30",
+      teal: "bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-500/30",
+    };
+    return colorMap[color] || colorMap.blue;
+  };
+  
   // Fetch events for the week
   const { data: events, refetch: refetchEvents, isLoading: eventsLoading } = trpc.calendar.getEvents.useQuery({
     startDate: weekStart.toISOString(),
@@ -593,28 +613,34 @@ export default function Schichtplan() {
                               )}
                             >
                               <div className="space-y-1 min-h-[60px]">
-                                {dayShifts.map((shift) => (
-                                  <div
-                                    key={shift.id}
-                                    className={cn(
-                                      "p-2 rounded-md text-xs cursor-pointer border transition-colors hover:opacity-80",
-                                      getColorClass(shift.color)
-                                    )}
-                                    onClick={() => isAdmin && openEditDialog(shift)}
-                                  >
-                                    <div className="font-medium truncate">{shift.title}</div>
-                                    {(shift as any).location && (
-                                      <div className="text-[10px] opacity-70 font-medium">
-                                        {getLocationShort((shift as any).location)}
-                                      </div>
-                                    )}
-                                    {!shift.isAllDay && (
-                                      <div className="text-[10px] opacity-80">
-                                        {format(new Date(shift.startDate), "HH:mm")} - {format(new Date(shift.endDate), "HH:mm")}
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
+                                {dayShifts.map((shift) => {
+                                  // Use location color if available, otherwise fall back to shift color
+                                  const colorClass = (shift as any).location 
+                                    ? getLocationColorClass((shift as any).location)
+                                    : getColorClass(shift.color);
+                                  return (
+                                    <div
+                                      key={shift.id}
+                                      className={cn(
+                                        "p-2 rounded-md text-xs cursor-pointer border transition-colors hover:opacity-80",
+                                        colorClass
+                                      )}
+                                      onClick={() => isAdmin && openEditDialog(shift)}
+                                    >
+                                      <div className="font-medium truncate">{shift.title}</div>
+                                      {(shift as any).location && (
+                                        <div className="text-[10px] opacity-70 font-medium">
+                                          {getLocationShort((shift as any).location)}
+                                        </div>
+                                      )}
+                                      {!shift.isAllDay && (
+                                        <div className="text-[10px] opacity-80">
+                                          {format(new Date(shift.startDate), "HH:mm")} - {format(new Date(shift.endDate), "HH:mm")}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
                                 {isAdmin && dayShifts.length === 0 && (
                                   <button
                                     className="w-full h-full min-h-[60px] rounded-md border-2 border-dashed border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/5 transition-colors flex items-center justify-center"

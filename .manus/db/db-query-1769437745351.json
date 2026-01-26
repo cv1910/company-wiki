@@ -1,0 +1,31 @@
+{
+  "query": "SELECT id, name, shortName, color, isActive FROM locations ORDER BY sortOrder;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute SELECT id, name, shortName, color, isActive FROM locations ORDER BY sortOrder;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Eppendorfer Landstrasse 60 (POS)",
+      "shortName": "EL60",
+      "color": "rose",
+      "isActive": "1"
+    },
+    {
+      "id": "2",
+      "name": "Eppendorfer Baum 20 (POS)",
+      "shortName": "EB20",
+      "color": "blue",
+      "isActive": "1"
+    },
+    {
+      "id": "3",
+      "name": "Versand",
+      "shortName": "Versand",
+      "color": "green",
+      "isActive": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tshortName\tcolor\tisActive\n1\tEppendorfer Landstrasse 60 (POS)\tEL60\trose\t1\n2\tEppendorfer Baum 20 (POS)\tEB20\tblue\t1\n3\tVersand\tVersand\tgreen\t1\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

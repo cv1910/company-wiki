@@ -1,0 +1,49 @@
+{
+  "query": "SELECT * FROM locations ORDER BY sortOrder;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute SELECT * FROM locations ORDER BY sortOrder;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Eppendorfer Landstrasse 60 (POS)",
+      "shortName": "EL60",
+      "address": "Eppendorfer Landstrasse 60, Hamburg",
+      "description": "Point of Sale - Hauptstandort",
+      "color": "rose",
+      "isActive": "1",
+      "sortOrder": "1",
+      "createdAt": "2026-01-26 13:55:02",
+      "updatedAt": "2026-01-26 13:55:02",
+      "createdById": "1"
+    },
+    {
+      "id": "2",
+      "name": "Eppendorfer Baum 20 (POS)",
+      "shortName": "EB20",
+      "address": "Eppendorfer Baum 20, Hamburg",
+      "description": "Point of Sale - Zweiter Standort",
+      "color": "blue",
+      "isActive": "1",
+      "sortOrder": "2",
+      "createdAt": "2026-01-26 13:55:02",
+      "updatedAt": "2026-01-26 13:55:02",
+      "createdById": "1"
+    },
+    {
+      "id": "3",
+      "name": "Versand",
+      "shortName": "Versand",
+      "address": "Lagerstandort",
+      "description": "Versand und Logistik",
+      "color": "green",
+      "isActive": "1",
+      "sortOrder": "3",
+      "createdAt": "2026-01-26 13:55:02",
+      "updatedAt": "2026-01-26 13:55:02",
+      "createdById": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tshortName\taddress\tdescription\tcolor\tisActive\tsortOrder\tcreatedAt\tupdatedAt\tcreatedById\n1\tEppendorfer Landstrasse 60 (POS)\tEL60\tEppendorfer Landstrasse 60, Hamburg\tPoint of Sale - Hauptstandort\trose\t1\t1\t2026-01-26 13:55:02\t2026-01-26 13:55:02\t1\n2\tEppendorfer Baum 20 (POS)\tEB20\tEppendorfer Baum 20, Hamburg\tPoint of Sale - Zweiter Standort\tblue\t1\t2\t2026-01-26 13:55:02\t2026-01-26 13:55:02\t1\n3\tVersand\tVersand\tLagerstandort\tVersand und Logistik\tgreen\t1\t3\t2026-01-26 13:55:02\t2026-01-26 13:55:02\t1\n",
+  "stderr": "",
+  "execution_time_ms": 204
+}

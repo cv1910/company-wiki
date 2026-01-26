@@ -1420,3 +1420,8 @@
 - [x] Standort-Verwaltungs-UI (Admin-Bereich)
 - [x] Schichtplan mit dynamischen Standorten verbinden
 - [x] Standard-Standorte als Seed-Daten einfügen
+
+## Test-Schichten und Farbcodierung 26.01.2026
+- [x] Test-Schichten für verschiedene Standorte erstellen
+- [x] Farbcodierung für Standorte in der Wochenübersicht implementieren
+- [x] Farben in der Standort-Verwaltung konfigurierbar machen
