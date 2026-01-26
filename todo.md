@@ -1357,3 +1357,7 @@
 - [x] Home-Seite: Mehr Abstand zwischen Schrift und Box-Rand (p-6)
 - [x] Aufgaben-Seite: Design wie Inbox-Screenshot (Offen, Snoozed, Erledigt - Archiviert entfernt)
 - [x] Aufgaben-Seite: Tab-Logik für Offen/Snoozed/Erledigt implementiert
+
+## Aufgaben-Seite Fixes (Januar 2026)
+- [x] Tabs: Schwarzer Rahmen um "Offen" entfernen - nur Unterstreichung wie Inbox
+- [x] Dark Mode: Schwarzer Block unten beheben (min-h-screen bg-background)

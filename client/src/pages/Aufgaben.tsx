@@ -630,7 +630,7 @@ export default function Aufgaben() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 pb-[calc(var(--bottom-nav-height,64px)+1rem)] md:pb-6">
+    <div className="p-4 sm:p-6 space-y-6 pb-[calc(var(--bottom-nav-height,64px)+1rem)] md:pb-6 min-h-screen bg-background">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -656,22 +656,22 @@ export default function Aufgaben() {
         <div className="flex flex-col gap-3">
           {/* Tab-Leiste - Inbox Style */}
           <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
-            <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 bg-transparent gap-1 p-0 h-auto">
+            <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 bg-transparent gap-4 p-0 h-auto border-0">
               <TabsTrigger 
                 value="all" 
-                className="text-sm font-medium px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent"
+                className="text-sm font-medium px-0 py-2 rounded-none border-0 border-b-2 border-transparent data-[state=active]:border-b-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent hover:bg-transparent focus:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
               >
                 Offen
               </TabsTrigger>
               <TabsTrigger 
                 value="created" 
-                className="text-sm font-medium px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent"
+                className="text-sm font-medium px-0 py-2 rounded-none border-0 border-b-2 border-transparent data-[state=active]:border-b-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent hover:bg-transparent focus:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
               >
                 Snoozed
               </TabsTrigger>
               <TabsTrigger 
                 value="trash" 
-                className="text-sm font-medium px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent"
+                className="text-sm font-medium px-0 py-2 rounded-none border-0 border-b-2 border-transparent data-[state=active]:border-b-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent hover:bg-transparent focus:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
               >
                 Erledigt
               </TabsTrigger>
