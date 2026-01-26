@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { 
@@ -55,7 +56,6 @@ import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Checkbox } from "@/components/ui/checkbox";
 
 // Color options for shifts
 const SHIFT_COLORS = [
@@ -96,6 +96,8 @@ export default function Schichtplan() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [shiftLocation, setShiftLocation] = useState<string>("");
+  const [shiftIsSickLeave, setShiftIsSickLeave] = useState(false);
+  const [shiftSickLeaveNote, setShiftSickLeaveNote] = useState("");
   
   // Template form state
   const [newTemplateName, setNewTemplateName] = useState("");
@@ -268,6 +270,8 @@ export default function Schichtplan() {
     setShiftIsAllDay(false);
     setSelectedTemplateId(null);
     setShiftLocation("eppendorfer-landstrasse");
+    setShiftIsSickLeave(false);
+    setShiftSickLeaveNote("");
   };
   
   // Open create dialog for a specific day
@@ -291,6 +295,8 @@ export default function Schichtplan() {
     setShiftUserId((shift as any).userId);
     setShiftIsAllDay(shift.isAllDay);
     setShiftLocation(shift.location || "eppendorfer-landstrasse");
+    setShiftIsSickLeave(shift.isSickLeave || false);
+    setShiftSickLeaveNote(shift.sickLeaveNote || "");
     setShowCreateDialog(true);
   };
   
@@ -328,6 +334,8 @@ export default function Schichtplan() {
         eventType: "shift",
         teamId: shiftTeamId || undefined,
         location: shiftLocation,
+        isSickLeave: shiftIsSickLeave,
+        sickLeaveNote: shiftIsSickLeave ? shiftSickLeaveNote : null,
       });
     } else {
       createEvent.mutate({
@@ -624,16 +632,22 @@ export default function Schichtplan() {
                                   const colorClass = (shift as any).location 
                                     ? getLocationColorClass((shift as any).location)
                                     : getColorClass(shift.color);
+                                  const isSickLeave = (shift as any).isSickLeave;
                                   return (
                                     <div
                                       key={shift.id}
                                       className={cn(
-                                        "p-2 rounded-md text-xs cursor-pointer border transition-colors hover:opacity-80",
-                                        colorClass
+                                        "p-2 rounded-md text-xs cursor-pointer border transition-colors hover:opacity-80 relative",
+                                        isSickLeave ? "bg-red-100 border-red-300 dark:bg-red-900/30 dark:border-red-700" : colorClass
                                       )}
                                       onClick={() => isAdmin && openEditDialog(shift)}
                                     >
-                                      <div className="font-medium truncate">{shift.title}</div>
+                                      {isSickLeave && (
+                                        <div className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5" title="Krankmeldung">
+                                          <X className="h-2.5 w-2.5" />
+                                        </div>
+                                      )}
+                                      <div className={cn("font-medium truncate", isSickLeave && "line-through opacity-70")}>{shift.title}</div>
                                       {(shift as any).location && (
                                         <div className="text-[10px] opacity-70 font-medium">
                                           {getLocationShort((shift as any).location)}
@@ -643,6 +657,9 @@ export default function Schichtplan() {
                                         <div className="text-[10px] opacity-80">
                                           {format(new Date(shift.startDate), "HH:mm")} - {format(new Date(shift.endDate), "HH:mm")}
                                         </div>
+                                      )}
+                                      {isSickLeave && (
+                                        <div className="text-[10px] text-red-600 dark:text-red-400 font-medium mt-0.5">Krank</div>
                                       )}
                                     </div>
                                   );
@@ -920,6 +937,35 @@ export default function Schichtplan() {
                 rows={2}
               />
             </div>
+            
+            {/* Sick Leave - only show when editing */}
+            {editingShift && (
+              <div className="space-y-3 pt-3 border-t border-red-200 dark:border-red-800">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="sickLeave"
+                    checked={shiftIsSickLeave}
+                    onCheckedChange={(checked) => setShiftIsSickLeave(checked === true)}
+                  />
+                  <Label htmlFor="sickLeave" className="text-red-600 dark:text-red-400 font-medium cursor-pointer">
+                    Krankmeldung
+                  </Label>
+                </div>
+                {shiftIsSickLeave && (
+                  <div className="space-y-2">
+                    <Label htmlFor="sickLeaveNote">Notiz zur Krankmeldung</Label>
+                    <Textarea
+                      id="sickLeaveNote"
+                      value={shiftSickLeaveNote}
+                      onChange={(e) => setShiftSickLeaveNote(e.target.value)}
+                      placeholder="z.B. Attest liegt vor, voraussichtliche Dauer..."
+                      rows={2}
+                      className="border-red-200 dark:border-red-800"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           
           <DialogFooter className="flex-col sm:flex-row gap-2">

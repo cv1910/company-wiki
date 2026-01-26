@@ -3012,6 +3012,8 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           showCountdown: z.boolean().optional(),
           reminderMinutes: z.number().optional().nullable(),
           link: z.string().optional(),
+          isSickLeave: z.boolean().optional(),
+          sickLeaveNote: z.string().optional().nullable(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -3032,6 +3034,17 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         if (updates.showCountdown !== undefined) updateData.showCountdown = updates.showCountdown;
         if (updates.reminderMinutes !== undefined) updateData.reminderMinutes = updates.reminderMinutes;
         if (updates.link !== undefined) updateData.link = updates.link;
+        if (updates.isSickLeave !== undefined) {
+          updateData.isSickLeave = updates.isSickLeave;
+          if (updates.isSickLeave) {
+            updateData.sickLeaveMarkedAt = new Date();
+            updateData.sickLeaveMarkedById = ctx.user.id;
+          } else {
+            updateData.sickLeaveMarkedAt = null;
+            updateData.sickLeaveMarkedById = null;
+          }
+        }
+        if (updates.sickLeaveNote !== undefined) updateData.sickLeaveNote = updates.sickLeaveNote;
         
         // Get old event data for comparison
         const oldEvent = await db.getCalendarEvent(id, ctx.user.id);
@@ -3280,6 +3293,67 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           total: events.length,
           errors: errors.length > 0 ? errors : undefined,
         };
+      }),
+
+    // Mark shift as sick leave
+    markSickLeave: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          isSickLeave: z.boolean(),
+          sickLeaveNote: z.string().optional().nullable(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        // Only admins/editors can mark sick leave
+        if (ctx.user.role !== "admin" && ctx.user.role !== "editor") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Nur Admins und Editoren können Krankmeldungen markieren",
+          });
+        }
+        
+        const updateData: Record<string, unknown> = {
+          isSickLeave: input.isSickLeave,
+          sickLeaveNote: input.sickLeaveNote || null,
+        };
+        
+        if (input.isSickLeave) {
+          updateData.sickLeaveMarkedAt = new Date();
+          updateData.sickLeaveMarkedById = ctx.user.id;
+        } else {
+          updateData.sickLeaveMarkedAt = null;
+          updateData.sickLeaveMarkedById = null;
+          updateData.sickLeaveNote = null;
+        }
+        
+        // Use admin update that doesn't check user ownership
+        await db.updateCalendarEventAdmin(input.id, updateData);
+        
+        return { success: true };
+      }),
+
+    // Get sick leave report for a month
+    getSickLeaveReport: protectedProcedure
+      .input(
+        z.object({
+          year: z.number(),
+          month: z.number().min(1).max(12),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        // Only admins/editors can view sick leave reports
+        if (ctx.user.role !== "admin" && ctx.user.role !== "editor") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Nur Admins und Editoren können Krankmeldungsberichte einsehen",
+          });
+        }
+        
+        const startDate = new Date(input.year, input.month - 1, 1);
+        const endDate = new Date(input.year, input.month, 0, 23, 59, 59);
+        
+        return db.getSickLeaveReport(startDate, endDate);
       }),
   }),
 

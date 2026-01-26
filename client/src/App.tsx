@@ -80,6 +80,7 @@ import Schichtplan from "./pages/Schichtplan";
 import AdminTargetHours from "./pages/AdminTargetHours";
 import AdminLocations from "./pages/admin/Locations";
 import OvertimeTracking from "./pages/OvertimeTracking";
+import SickLeaveReport from "./pages/admin/SickLeaveReport";
 
 function Router() {
   return (
@@ -165,6 +166,7 @@ function Router() {
         <Route path="/admin/assignments" component={AdminAssignments} />
         <Route path="/admin/analytics" component={AdminAnalytics} />
         <Route path="/admin/locations" component={AdminLocations} />
+        <Route path="/admin/krankmeldungen" component={SickLeaveReport} />
         <Route path="/admin/verification" component={AdminVerification} />
         
         {/* Fallback */}

@@ -1429,3 +1429,9 @@
 ## Farblegende und Schicht-Vorlagen 26.01.2026
 - [x] Farblegende unter dem Schichtplan hinzufügen
 - [x] Schicht-Vorlagen mit Standard-Standort erweitern
+
+## Krankmeldungs-Funktion 26.01.2026
+- [x] Datenbank-Schema für Krankmeldungen erweitern (isSickLeave Feld)
+- [x] Backend-API für Krankmeldungs-Markierung erstellen
+- [x] Krankmeldungs-Markierung im Schichtplan UI hinzufügen
+- [x] Monatliche Fehltage-Übersicht für Vorgesetzte erstellen

@@ -2503,6 +2503,28 @@ export async function updateCalendarEvent(
   return updated[0] || null;
 }
 
+// Admin update without user ownership check
+export async function updateCalendarEventAdmin(
+  eventId: number,
+  updates: Partial<InsertCalendarEvent>
+) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db
+    .update(calendarEvents)
+    .set(updates)
+    .where(eq(calendarEvents.id, eventId));
+  
+  const updated = await db
+    .select()
+    .from(calendarEvents)
+    .where(eq(calendarEvents.id, eventId))
+    .limit(1);
+  
+  return updated[0] || null;
+}
+
 export async function deleteCalendarEvent(eventId: number, userId: number) {
   const db = await getDb();
   if (!db) return false;
@@ -2512,6 +2534,42 @@ export async function deleteCalendarEvent(eventId: number, userId: number) {
     .where(and(eq(calendarEvents.id, eventId), eq(calendarEvents.userId, userId)));
   
   return true;
+}
+
+// Get sick leave report for a date range
+export async function getSickLeaveReport(startDate: Date, endDate: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db
+    .select({
+      id: calendarEvents.id,
+      userId: calendarEvents.userId,
+      title: calendarEvents.title,
+      startDate: calendarEvents.startDate,
+      endDate: calendarEvents.endDate,
+      location: calendarEvents.location,
+      teamId: calendarEvents.teamId,
+      isSickLeave: calendarEvents.isSickLeave,
+      sickLeaveNote: calendarEvents.sickLeaveNote,
+      sickLeaveMarkedAt: calendarEvents.sickLeaveMarkedAt,
+      sickLeaveMarkedById: calendarEvents.sickLeaveMarkedById,
+      userName: users.name,
+      userEmail: users.email,
+    })
+    .from(calendarEvents)
+    .leftJoin(users, eq(calendarEvents.userId, users.id))
+    .where(
+      and(
+        eq(calendarEvents.eventType, "shift"),
+        eq(calendarEvents.isSickLeave, true),
+        lte(calendarEvents.startDate, endDate),
+        gte(calendarEvents.endDate, startDate)
+      )
+    )
+    .orderBy(calendarEvents.startDate);
+  
+  return result;
 }
 
 export async function getCalendarEvent(eventId: number, userId: number) {

@@ -707,6 +707,11 @@ export const calendarEvents = mysqlTable("calendarEvents", {
   isCircleEvent: boolean("isCircleEvent").default(false).notNull(),
   showCountdown: boolean("showCountdown").default(false).notNull(),
   reminderMinutes: int("reminderMinutes"), // Minutes before event to send reminder
+  // Sick leave tracking
+  isSickLeave: boolean("isSickLeave").default(false).notNull(),
+  sickLeaveNote: text("sickLeaveNote"),
+  sickLeaveMarkedAt: timestamp("sickLeaveMarkedAt"),
+  sickLeaveMarkedById: int("sickLeaveMarkedById"),
   // Metadata
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
