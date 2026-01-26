@@ -41,6 +41,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 import { InviteUserDialog } from "@/components/InviteUserDialog";
 import { useState } from "react";
+import { getSignUpUrl } from "@/const";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -167,8 +168,7 @@ export default function AdminUsers() {
   };
 
   const handleResendInvitation = (id: number) => {
-    const baseUrl = window.location.origin;
-    const inviteLink = `${baseUrl}/login`;
+    const inviteLink = getSignUpUrl();
     resendInvitation.mutate({ id, inviteLink });
   };
 

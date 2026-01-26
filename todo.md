@@ -1444,3 +1444,6 @@
 - [x] Jahresübersicht für Krankmeldungen mit Trend-Anzeige
 - [x] Ausstehende Einladungen in Benutzerverwaltung anzeigen
 - [x] Anmeldeprozess für neue Benutzer prüfen
+
+## Bug-Fix Einladungs-Flow 26.01.2026
+- [x] Einladungs-Link korrigieren - neue Benutzer können sich nicht anmelden (Permission-Fehler)

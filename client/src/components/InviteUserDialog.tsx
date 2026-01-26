@@ -21,6 +21,7 @@ import {
 import { UserPlus, Copy, Check, Mail, Loader2 } from "lucide-react";
 import { toast } from "@/lib/hapticToast";
 import { trpc } from "@/lib/trpc";
+import { getSignUpUrl } from "@/const";
 
 interface InviteUserDialogProps {
   trigger?: React.ReactNode;
@@ -32,8 +33,8 @@ export function InviteUserDialog({ trigger }: InviteUserDialogProps) {
   const [role, setRole] = useState<"user" | "editor" | "admin">("user");
   const [copied, setCopied] = useState(false);
 
-  // Get the current app URL for the invite link
-  const inviteLink = typeof window !== "undefined" ? window.location.origin : "";
+  // Get the signup URL for the invite link (allows new users to register)
+  const inviteLink = typeof window !== "undefined" ? getSignUpUrl() : "";
 
   const inviteMutation = trpc.users.invite.useMutation({
     onSuccess: () => {
