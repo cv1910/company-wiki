@@ -1338,3 +1338,5 @@
 ## Layout-Fix - Elemente unter Bottom Navigation (Januar 2026)
 - [x] Elemente links und rechts unter dem unteren Menü sichtbar auf allen Seiten
 - [x] Rotes/rosa Element links unten hinter der Bottom Navigation sichtbar (Screenshot zeigt Home-Icon mit rotem Hintergrund)
+- [x] Bottom Navigation Design wie Asana Mobile App - kein weißer Block, sauberes Design
+- [x] Übermäßiges Padding entfernen das den weißen Block verursacht
