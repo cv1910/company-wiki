@@ -1346,3 +1346,8 @@
 - [x] Bottom Navigation: Kalender-Tab hinzufügen
 - [x] Aufgaben-Seite: Swipe nach links zum Archivieren/Ausblenden
 - [x] Aufgaben-Seite: Swipe nach rechts zum Verschieben mit Erinnerungs-Popup
+
+## UI-Fixes (Januar 2026 - Teil 2)
+- [x] Home-Seite: Schrift noch weiter nach rechts (mehr Padding im Welcome-Kasten)
+- [x] AI Suche: Toggle breiter für bessere Bedienbarkeit
+- [x] Kalender: Mehrtägige Termine zusammenhängend darstellen (bereits implementiert - funktioniert korrekt)

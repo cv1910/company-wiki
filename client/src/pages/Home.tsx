@@ -465,7 +465,7 @@ export default function Home() {
   };
 
   const renderWelcomeHero = () => (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/8 to-secondary/5 border border-primary/15 p-5 sm:p-8 md:p-10 shadow-lg">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/8 to-secondary/5 border border-primary/15 p-6 sm:p-8 md:p-10 shadow-lg">
       {/* Decorative elements removed to prevent visual artifacts on mobile */}
       
       <div className="relative">
