@@ -1378,3 +1378,8 @@
 - [x] Scrolling: Main-Container CSS verbessert für besseres Trackpad-Scrolling
 - [x] Benutzereinladung: InviteUserDialog Komponente erstellt
 - [x] Admin Users: Einladungs-Button hinzugefügt
+
+## Bug-Fixes 26.01.2026 (Runde 2)
+- [x] Sidebar beim Ausblenden noch teilweise sichtbar (schmaler Streifen mit Symbolen)
+- [x] Trackpad-Scrolling funktioniert nicht auf Desktop
+- [x] E-Mail-Einladung über Server versenden (nicht mailto)

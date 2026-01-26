@@ -10,7 +10,7 @@ import { nanoid } from "nanoid";
 import * as embeddings from "./embeddings";
 import DiffMatchPatch from "diff-match-patch";
 import * as googleCalendarService from "./googleCalendar";
-import { sendMentionEmail, sendTaskAssignedEmail, sendTaskReminderEmail, sendShiftAssignedEmail, sendShiftChangedEmail, sendShiftCancelledEmail, sendShiftSwapRequestEmail, sendShiftSwapResponseEmail } from "./email";
+import { sendMentionEmail, sendTaskAssignedEmail, sendTaskReminderEmail, sendShiftAssignedEmail, sendShiftChangedEmail, sendShiftCancelledEmail, sendShiftSwapRequestEmail, sendShiftSwapResponseEmail, sendInvitationEmail } from "./email";
 import { transcribeAudio } from "./_core/voiceTranscription";
 
 // Initialize diff-match-patch
@@ -236,6 +236,27 @@ export const appRouter = router({
       .input(z.object({ userId: z.number(), role: z.enum(["user", "editor", "admin"]) }))
       .mutation(async ({ input }) => {
         await db.updateUserRole(input.userId, input.role);
+        return { success: true };
+      }),
+
+    invite: adminProcedure
+      .input(z.object({
+        email: z.string().email(),
+        role: z.enum(["user", "editor", "admin"]).optional().default("user"),
+        inviteLink: z.string().url(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const success = await sendInvitationEmail({
+          recipientEmail: input.email,
+          inviterName: ctx.user.name || "Admin",
+          inviteLink: input.inviteLink,
+          suggestedRole: input.role,
+        });
+        
+        if (!success) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Einladung konnte nicht gesendet werden" });
+        }
+        
         return { success: true };
       }),
   }),

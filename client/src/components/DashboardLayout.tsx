@@ -303,7 +303,7 @@ function DashboardLayoutContent({
     <>
       <div className="relative" ref={sidebarRef}>
         <Sidebar
-          collapsible="icon"
+          collapsible="offcanvas"
           className="border-r-0 bg-sidebar"
           disableTransition={isResizing}
         >

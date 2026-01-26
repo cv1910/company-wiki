@@ -18,8 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserPlus, Copy, Check, Mail } from "lucide-react";
+import { UserPlus, Copy, Check, Mail, Loader2 } from "lucide-react";
 import { toast } from "@/lib/hapticToast";
+import { trpc } from "@/lib/trpc";
 
 interface InviteUserDialogProps {
   trigger?: React.ReactNode;
@@ -33,6 +34,17 @@ export function InviteUserDialog({ trigger }: InviteUserDialogProps) {
 
   // Get the current app URL for the invite link
   const inviteLink = typeof window !== "undefined" ? window.location.origin : "";
+
+  const inviteMutation = trpc.users.invite.useMutation({
+    onSuccess: () => {
+      toast.success("Einladung wurde gesendet!");
+      setEmail("");
+      setOpen(false);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Einladung konnte nicht gesendet werden");
+    },
+  });
 
   const handleCopyLink = async () => {
     try {
@@ -51,16 +63,11 @@ export function InviteUserDialog({ trigger }: InviteUserDialogProps) {
       return;
     }
     
-    // Open email client with pre-filled content
-    const subject = encodeURIComponent("Einladung zum Company Wiki");
-    const body = encodeURIComponent(
-      `Hallo,\n\ndu wurdest zum Company Wiki eingeladen!\n\nKlicke auf den folgenden Link, um dich anzumelden:\n${inviteLink}\n\nNach der Anmeldung mit deinem Google-Konto erhältst du automatisch Zugang.\n\nBei Fragen wende dich an das Admin-Team.\n\nViele Grüße`
-    );
-    
-    window.open(`mailto:${email}?subject=${subject}&body=${body}`, "_blank");
-    toast.success("E-Mail-Client geöffnet");
-    setEmail("");
-    setOpen(false);
+    inviteMutation.mutate({
+      email,
+      role,
+      inviteLink,
+    });
   };
 
   return (
@@ -129,12 +136,17 @@ export function InviteUserDialog({ trigger }: InviteUserDialogProps) {
               placeholder="name@beispiel.de"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={inviteMutation.isPending}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="role">Vorgeschlagene Rolle</Label>
-            <Select value={role} onValueChange={(v) => setRole(v as typeof role)}>
+            <Select 
+              value={role} 
+              onValueChange={(v) => setRole(v as typeof role)}
+              disabled={inviteMutation.isPending}
+            >
               <SelectTrigger id="role">
                 <SelectValue />
               </SelectTrigger>
@@ -151,12 +163,21 @@ export function InviteUserDialog({ trigger }: InviteUserDialogProps) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={inviteMutation.isPending}>
             Abbrechen
           </Button>
-          <Button onClick={handleSendInvite} disabled={!email}>
-            <Mail className="h-4 w-4 mr-2" />
-            Einladung senden
+          <Button onClick={handleSendInvite} disabled={!email || inviteMutation.isPending}>
+            {inviteMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Wird gesendet...
+              </>
+            ) : (
+              <>
+                <Mail className="h-4 w-4 mr-2" />
+                Einladung senden
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

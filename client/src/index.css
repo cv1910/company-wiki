@@ -256,6 +256,9 @@
   }
   html {
     @apply bg-background;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   body {
     @apply bg-background text-foreground antialiased;
@@ -263,6 +266,9 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   
   /* ===== MICRO-INTERACTIONS - Basecamp/Monday/Asana Level ===== */

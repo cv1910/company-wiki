@@ -1141,3 +1141,49 @@ Dein Company Wiki Team
     console.error("[Email] Failed to send shift swap response email:", error);
   }
 }
+
+
+/**
+ * Send user invitation email
+ */
+export async function sendInvitationEmail(params: {
+  recipientEmail: string;
+  inviterName: string;
+  inviteLink: string;
+  suggestedRole?: string;
+}): Promise<boolean> {
+  const roleText = params.suggestedRole 
+    ? `Du wirst als ${params.suggestedRole === 'admin' ? 'Administrator' : params.suggestedRole === 'editor' ? 'Editor' : 'Benutzer'} eingeladen.`
+    : '';
+
+  const subject = `Einladung zum Company Wiki von ${params.inviterName}`;
+  const content = `
+Hallo,
+
+${params.inviterName} hat dich zum Company Wiki eingeladen!
+
+${roleText}
+
+Klicke auf den folgenden Link, um dich anzumelden:
+${params.inviteLink}
+
+Nach der Anmeldung mit deinem Google-Konto erhältst du automatisch Zugang.
+
+Bei Fragen wende dich an das Admin-Team.
+
+Viele Grüße,
+Das Company Wiki Team
+  `.trim();
+
+  try {
+    const success = await notifyOwner({
+      title: subject,
+      content: `An: ${params.recipientEmail}\n\n${content}`,
+    });
+    console.log(`[Email] Invitation sent to ${params.recipientEmail}`);
+    return success;
+  } catch (error) {
+    console.error("[Email] Failed to send invitation email:", error);
+    return false;
+  }
+}
