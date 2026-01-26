@@ -1400,3 +1400,8 @@
 - [x] Seite oben abgeschnitten (Inhalt beginnt nicht ganz oben)
 - [x] X-Icon im Modal sieht falsch aus (doppeltes X)
 - [x] Scribe-Embed noch navigierbar (muss blockiert werden)
+
+## Bug-Fixes 26.01.2026 (Runde 6)
+- [x] Seite oben noch abgeschnitten
+- [x] Scribe-Embed nicht scrollbar (Overlay blockiert Scrolling)
+- [x] Neue Benutzer sehen "You don't have permission" - Berechtigung prüfen (ist Manus OAuth Verhalten - neue User müssen zuerst eingeladen werden)

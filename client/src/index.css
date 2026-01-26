@@ -1363,6 +1363,7 @@ body {
   overflow-y: auto !important;
   width: 100% !important;
   max-width: 100% !important;
+  height: 100% !important;
 }
 
 /* Fix main content area */
