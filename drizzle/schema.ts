@@ -1352,6 +1352,7 @@ export const shiftTemplates = mysqlTable("shift_templates", {
   startTime: varchar("startTime", { length: 5 }).notNull(), // HH:MM format
   endTime: varchar("endTime", { length: 5 }).notNull(), // HH:MM format
   color: varchar("color", { length: 50 }).default("blue"),
+  locationId: int("locationId"), // Optional default location for this template
   isActive: boolean("isActive").default(true).notNull(),
   createdById: int("createdById").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

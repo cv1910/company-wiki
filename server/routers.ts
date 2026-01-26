@@ -6046,6 +6046,7 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         startTime: z.string().regex(/^\d{2}:\d{2}$/),
         endTime: z.string().regex(/^\d{2}:\d{2}$/),
         color: z.string().optional(),
+        locationId: z.number().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const id = await db.createShiftTemplate({
@@ -6063,6 +6064,7 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         startTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
         endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
         color: z.string().optional(),
+        locationId: z.number().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;

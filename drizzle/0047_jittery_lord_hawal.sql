@@ -1,0 +1,1 @@
+ALTER TABLE `shift_templates` ADD `locationId` int;

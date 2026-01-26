@@ -33,7 +33,8 @@ import {
   X,
   ArrowLeftRight,
   Settings,
-  Filter
+  Filter,
+  MapPin
 } from "lucide-react";
 import { 
   format, 
@@ -102,6 +103,7 @@ export default function Schichtplan() {
   const [newTemplateStartTime, setNewTemplateStartTime] = useState("09:00");
   const [newTemplateEndTime, setNewTemplateEndTime] = useState("17:00");
   const [newTemplateColor, setNewTemplateColor] = useState("blue");
+  const [newTemplateLocationId, setNewTemplateLocationId] = useState<number | null>(null);
   
   // Week range
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
@@ -302,6 +304,10 @@ export default function Schichtplan() {
       setShiftEndTime(template.endTime);
       setShiftColor(template.color || "blue");
       setSelectedTemplateId(templateId);
+      // Set location from template if available
+      if ((template as any).locationId) {
+        setShiftLocation((template as any).locationId.toString());
+      }
     }
   };
   
@@ -663,6 +669,37 @@ export default function Schichtplan() {
         </CardContent>
       </Card>
       
+      {/* Location Legend */}
+      {locations && locations.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Standort-Legende
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              {locations.map((loc) => {
+                const colorClass = getLocationColorClass(loc.id.toString());
+                return (
+                  <div
+                    key={loc.id}
+                    className={cn(
+                      "px-3 py-1.5 rounded-md text-xs font-medium border",
+                      colorClass
+                    )}
+                  >
+                    <span className="font-semibold">{loc.shortName}</span>
+                    <span className="opacity-70 ml-1">- {loc.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       {/* Summary */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -975,27 +1012,38 @@ export default function Schichtplan() {
               <div className="space-y-2">
                 <Label>Vorhandene Vorlagen</Label>
                 <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                  {shiftTemplates.map((template) => (
-                    <div key={template.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-                      <div>
-                        <div className="font-medium">{template.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {template.startTime} - {template.endTime}
+                  {shiftTemplates.map((template) => {
+                    const templateLocation = (template as any).locationId 
+                      ? locations?.find(l => l.id === (template as any).locationId)
+                      : null;
+                    return (
+                      <div key={template.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                        <div>
+                          <div className="font-medium">{template.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {template.startTime} - {template.endTime}
+                            {templateLocation && (
+                              <span className="ml-2">
+                                <MapPin className="h-3 w-3 inline mr-1" />
+                                {templateLocation.shortName}
+                              </span>
+                            )}
+                          </div>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            if (confirm("Vorlage wirklich löschen?")) {
+                              deleteTemplate.mutate({ id: template.id });
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          if (confirm("Vorlage wirklich löschen?")) {
-                            deleteTemplate.mutate({ id: template.id });
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -1045,6 +1093,28 @@ export default function Schichtplan() {
                 />
               </div>
               
+              {/* Location Selection */}
+              <div className="space-y-2">
+                <Label>Standard-Standort</Label>
+                <Select
+                  value={newTemplateLocationId?.toString() || "none"}
+                  onValueChange={(v) => setNewTemplateLocationId(v === "none" ? null : parseInt(v))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Kein Standort" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Kein Standort</SelectItem>
+                    {locations?.map((loc) => (
+                      <SelectItem key={loc.id} value={loc.id.toString()}>
+                        {loc.shortName} - {loc.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Wird automatisch bei Verwendung der Vorlage gesetzt</p>
+              </div>
+              
               <Button
                 onClick={() => {
                   if (!newTemplateName || !selectedTeamId) {
@@ -1058,6 +1128,7 @@ export default function Schichtplan() {
                     startTime: newTemplateStartTime,
                     endTime: newTemplateEndTime,
                     color: newTemplateColor,
+                    locationId: newTemplateLocationId || undefined,
                   });
                 }}
                 disabled={!newTemplateName || createTemplate.isPending}

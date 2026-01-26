@@ -1425,3 +1425,7 @@
 - [x] Test-Schichten für verschiedene Standorte erstellen
 - [x] Farbcodierung für Standorte in der Wochenübersicht implementieren
 - [x] Farben in der Standort-Verwaltung konfigurierbar machen
+
+## Farblegende und Schicht-Vorlagen 26.01.2026
+- [x] Farblegende unter dem Schichtplan hinzufügen
+- [x] Schicht-Vorlagen mit Standard-Standort erweitern
