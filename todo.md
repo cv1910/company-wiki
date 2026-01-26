@@ -1383,3 +1383,8 @@
 - [x] Sidebar beim Ausblenden noch teilweise sichtbar (schmaler Streifen mit Symbolen)
 - [x] Trackpad-Scrolling funktioniert nicht auf Desktop
 - [x] E-Mail-Einladung über Server versenden (nicht mailto)
+
+## Bug-Fixes 26.01.2026 (Runde 3)
+- [x] Scribe-Embed auf SOP-Seite ist navigierbar (sollte nur anzeigen)
+- [x] Navigation Hover-Effekt: Alle Punkte werden rosa unterlegt statt nur der aktuelle
+- [x] Sidebar-Streifen links noch sichtbar beim Ausblenden
