@@ -1757,8 +1757,8 @@ export default function OhweeesPage() {
               }}
               onSend={handleSendMessage}
               onAttach={() => fileInputRef.current?.click()}
-              onEmoji={() => setShowInputEmojiPicker(true)}
               onVoice={() => setIsRecordingVoice(true)}
+              placeholder="Schreibe ein Tap... (@ für Erwähnung)"
               isLoading={sendMessage.isPending}
             />
           </>

@@ -1464,3 +1464,10 @@
 - [x] Eingabefeld wird auf Mobile abgeschnitten - Layout korrigieren
 - [x] Chat-Design auf Slack-Niveau verbessern (professionell, modern)
 - [x] Mobile-optimiertes Layout mit fixiertem Eingabefeld
+
+## Chat-Design Basecamp/Hey-Style 26.01.2026
+- [x] Nachrichten mit hellgrauem Hintergrund unterlegen
+- [x] Schriftgröße anpassen (größer wie im Screenshot)
+- [x] Avatar neben Nachrichten anzeigen
+- [x] Layout wie Basecamp: Fremde Nachrichten links mit grauem Hintergrund, eigene rechts mit blauem Hintergrund
+- [x] Zitat-Nachrichten mit eingerücktem Block darstellen
