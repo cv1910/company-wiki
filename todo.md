@@ -1435,3 +1435,6 @@
 - [x] Backend-API für Krankmeldungs-Markierung erstellen
 - [x] Krankmeldungs-Markierung im Schichtplan UI hinzufügen
 - [x] Monatliche Fehltage-Übersicht für Vorgesetzte erstellen
+
+## Bug-Fix 26.01.2026
+- [x] Schicht-Bearbeiten-Dialog scrollbar machen (Buttons werden abgeschnitten)

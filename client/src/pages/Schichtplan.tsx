@@ -759,15 +759,15 @@ export default function Schichtplan() {
           resetForm();
         }
       }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>{editingShift ? "Schicht bearbeiten" : "Neue Schicht erstellen"}</DialogTitle>
             <DialogDescription>
               {editingShift ? "Bearbeiten Sie die Schichtdetails." : "Erstellen Sie eine neue Schicht für das Team."}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 overflow-y-auto flex-1">
             {/* Template Selection */}
             {shiftTemplates && shiftTemplates.length > 0 && !editingShift && (
               <div className="space-y-2">
@@ -968,7 +968,7 @@ export default function Schichtplan() {
             )}
           </div>
           
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex-col sm:flex-row gap-2 flex-shrink-0 pt-4 border-t">
             {editingShift && (
               <Button
                 variant="destructive"
