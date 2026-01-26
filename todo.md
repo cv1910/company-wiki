@@ -1453,3 +1453,6 @@
 - [x] Einladungs-Status automatisch aktualisieren wenn Benutzer sich anmeldet
 - [x] Willkommens-E-Mail nach erfolgreicher Registrierung senden
 - [x] Einladungs-Ablauf-Erinnerung nach 3 Tagen senden
+
+## Bug-Fix Einladungs-Anmeldung 26.01.2026
+- [x] Einladungs-Link funktioniert nicht - App muss veröffentlicht werden damit neue Benutzer sich anmelden können
