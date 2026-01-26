@@ -1934,7 +1934,7 @@ export default function Calendar() {
 
       {/* Event Dialog - Hey Calendar Style */}
       <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
-        <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden">
+        <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden" showCloseButton={false}>
           <VisuallyHidden>
             <DialogTitle>
               {editingEvent ? "Termin bearbeiten" : "Neuer Termin"}

@@ -1395,3 +1395,8 @@
 - [x] Trackpad-Scrolling funktioniert nicht
 - [x] Navigation Hover-Effekt: Rosa Markierung nur beim jeweiligen Punkt beim Hovern
 - [x] Google-Anmeldung: Möglichkeit mit anderem Konto anzumelden prüfen (bereits vorhanden: "Ein anderes Konto verwenden" Button)
+
+## Bug-Fixes 26.01.2026 (Runde 5)
+- [x] Seite oben abgeschnitten (Inhalt beginnt nicht ganz oben)
+- [x] X-Icon im Modal sieht falsch aus (doppeltes X)
+- [x] Scribe-Embed noch navigierbar (muss blockiert werden)
