@@ -71,6 +71,21 @@ const getColorClass = (color: string) => {
   return SHIFT_COLORS.find(c => c.value === color)?.class || SHIFT_COLORS[0].class;
 };
 
+// Standorte
+const LOCATIONS = [
+  { value: "eppendorfer-landstrasse", label: "Eppendorfer Landstrasse 60 (POS)", short: "EL60" },
+  { value: "eppendorfer-baum", label: "Eppendorfer Baum 20 (POS)", short: "EB20" },
+  { value: "versand", label: "Versand", short: "Versand" },
+];
+
+const getLocationLabel = (value: string) => {
+  return LOCATIONS.find(l => l.value === value)?.label || value;
+};
+
+const getLocationShort = (value: string) => {
+  return LOCATIONS.find(l => l.value === value)?.short || value;
+};
+
 export default function Schichtplan() {
   const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -91,6 +106,8 @@ export default function Schichtplan() {
   const [shiftUserId, setShiftUserId] = useState<number | null>(null);
   const [shiftIsAllDay, setShiftIsAllDay] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+  const [shiftLocation, setShiftLocation] = useState<string>("eppendorfer-landstrasse");
   
   // Template form state
   const [newTemplateName, setNewTemplateName] = useState("");
@@ -121,8 +138,15 @@ export default function Schichtplan() {
   // Filter shift events
   const shiftEvents = useMemo(() => {
     if (!events?.events) return [];
-    return events.events.filter((e: CalendarEvent) => e.eventType === "shift");
-  }, [events]);
+    let filtered = events.events.filter((e: CalendarEvent) => e.eventType === "shift");
+    
+    // Filter by location if selected
+    if (selectedLocation) {
+      filtered = filtered.filter((e: CalendarEvent) => (e as any).location === selectedLocation);
+    }
+    
+    return filtered;
+  }, [events, selectedLocation]);
   
   // Group shifts by team and user
   const shiftsByTeamAndUser = useMemo(() => {
@@ -222,6 +246,7 @@ export default function Schichtplan() {
     setShiftUserId(null);
     setShiftIsAllDay(false);
     setSelectedTemplateId(null);
+    setShiftLocation("eppendorfer-landstrasse");
   };
   
   // Open create dialog for a specific day
@@ -244,6 +269,7 @@ export default function Schichtplan() {
     setShiftTeamId((shift as any).teamId);
     setShiftUserId((shift as any).userId);
     setShiftIsAllDay(shift.isAllDay);
+    setShiftLocation(shift.location || "eppendorfer-landstrasse");
     setShowCreateDialog(true);
   };
   
@@ -276,6 +302,7 @@ export default function Schichtplan() {
         color: shiftColor,
         eventType: "shift",
         teamId: shiftTeamId || undefined,
+        location: shiftLocation,
       });
     } else {
       createEvent.mutate({
@@ -287,6 +314,7 @@ export default function Schichtplan() {
         color: shiftColor,
         eventType: "shift",
         teamId: shiftTeamId || undefined,
+        location: shiftLocation,
       });
     }
   };
@@ -309,7 +337,7 @@ export default function Schichtplan() {
   
   // Export as CSV
   const exportCSV = () => {
-    const headers = ["Datum", "Tag", "Mitarbeiter", "Team", "Schicht", "Start", "Ende", "Stunden"];
+    const headers = ["Datum", "Tag", "Mitarbeiter", "Team", "Standort", "Schicht", "Start", "Ende", "Stunden"];
     const rows: string[][] = [];
     
     weekDays.forEach(day => {
@@ -323,6 +351,7 @@ export default function Schichtplan() {
             format(day, "EEEE", { locale: de }),
             getUserName((shift as any).userId || 0),
             getTeamName((shift as any).teamId || 0),
+            getLocationLabel((shift as any).location || ""),
             shift.title,
             format(shiftStart, "HH:mm"),
             format(shiftEnd, "HH:mm"),
@@ -392,13 +421,32 @@ export default function Schichtplan() {
         </div>
         
         <div className="flex flex-wrap items-center gap-2">
+          {/* Standort Filter */}
+          <Select
+            value={selectedLocation || "all"}
+            onValueChange={(v) => setSelectedLocation(v === "all" ? null : v)}
+          >
+            <SelectTrigger className="w-[220px]">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Alle Standorte" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle Standorte</SelectItem>
+              {LOCATIONS.map((loc) => (
+                <SelectItem key={loc.value} value={loc.value}>
+                  {loc.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
           {/* Team Filter */}
           <Select
             value={selectedTeamId?.toString() || "all"}
             onValueChange={(v) => setSelectedTeamId(v === "all" ? null : parseInt(v))}
           >
             <SelectTrigger className="w-[180px]">
-              <Filter className="h-4 w-4 mr-2" />
+              <Users className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Alle Teams" />
             </SelectTrigger>
             <SelectContent>
@@ -556,6 +604,11 @@ export default function Schichtplan() {
                                     onClick={() => isAdmin && openEditDialog(shift)}
                                   >
                                     <div className="font-medium truncate">{shift.title}</div>
+                                    {(shift as any).location && (
+                                      <div className="text-[10px] opacity-70 font-medium">
+                                        {getLocationShort((shift as any).location)}
+                                      </div>
+                                    )}
                                     {!shift.isAllDay && (
                                       <div className="text-[10px] opacity-80">
                                         {format(new Date(shift.startDate), "HH:mm")} - {format(new Date(shift.endDate), "HH:mm")}
@@ -667,6 +720,26 @@ export default function Schichtplan() {
                 onChange={(e) => setShiftTitle(e.target.value)}
                 placeholder="z.B. Frühschicht, Spätschicht..."
               />
+            </div>
+            
+            {/* Standort */}
+            <div className="space-y-2">
+              <Label>Standort *</Label>
+              <Select
+                value={shiftLocation}
+                onValueChange={(v) => setShiftLocation(v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Standort auswählen..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {LOCATIONS.map((loc) => (
+                    <SelectItem key={loc.value} value={loc.value}>
+                      {loc.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             {/* Team */}

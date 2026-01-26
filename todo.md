@@ -1410,3 +1410,6 @@
 - [x] Seite oben abgeschnitten endgültig beheben
 - [x] Scribe-Embed Navigation blockieren aber Scrolling erlauben
 - [x] Schichtplan-Modul implementieren (erstellen und teilen)
+
+## Schichtplan-Erweiterung 26.01.2026
+- [x] Standorte im Schichtplan implementieren (Eppendorfer Landstrasse 60 POS, Eppendorfer Baum 20 POS, Versand)
