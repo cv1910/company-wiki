@@ -10,7 +10,7 @@ import { nanoid } from "nanoid";
 import * as embeddings from "./embeddings";
 import DiffMatchPatch from "diff-match-patch";
 import * as googleCalendarService from "./googleCalendar";
-import { sendMentionEmail, sendTaskAssignedEmail, sendTaskReminderEmail, sendShiftAssignedEmail, sendShiftChangedEmail, sendShiftCancelledEmail, sendShiftSwapRequestEmail, sendShiftSwapResponseEmail, sendInvitationEmail } from "./email";
+import { sendMentionEmail, sendTaskAssignedEmail, sendTaskReminderEmail, sendShiftAssignedEmail, sendShiftChangedEmail, sendShiftCancelledEmail, sendShiftSwapRequestEmail, sendShiftSwapResponseEmail, sendInvitationEmail, sendSickLeaveNotificationEmail } from "./email";
 import { transcribeAudio } from "./_core/voiceTranscription";
 
 // Initialize diff-match-patch
@@ -246,6 +246,29 @@ export const appRouter = router({
         inviteLink: z.string().url(),
       }))
       .mutation(async ({ input, ctx }) => {
+        // Generate unique invite token
+        const inviteToken = nanoid(32);
+        
+        // Check if there's already a pending invitation for this email
+        const existingInvitation = await db.getPendingInvitationByEmail(input.email);
+        if (existingInvitation) {
+          // Delete old invitation and create new one
+          await db.deletePendingInvitation(existingInvitation.id);
+        }
+        
+        // Create pending invitation record (expires in 7 days)
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
+        
+        await db.createPendingInvitation({
+          email: input.email,
+          role: input.role,
+          invitedById: ctx.user.id,
+          inviteToken,
+          status: "pending",
+          expiresAt,
+        });
+        
         const success = await sendInvitationEmail({
           recipientEmail: input.email,
           inviterName: ctx.user.name || "Admin",
@@ -257,6 +280,54 @@ export const appRouter = router({
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Einladung konnte nicht gesendet werden" });
         }
         
+        return { success: true };
+      }),
+    
+    // Get pending invitations
+    getPendingInvitations: adminProcedure
+      .query(async () => {
+        // First expire old invitations
+        await db.expireOldInvitations();
+        return db.getPendingInvitations();
+      }),
+    
+    // Resend invitation
+    resendInvitation: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        inviteLink: z.string().url(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const invitations = await db.getPendingInvitations();
+        const invitation = invitations.find(i => i.id === input.id);
+        
+        if (!invitation) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Einladung nicht gefunden" });
+        }
+        
+        if (invitation.status !== "pending") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Einladung ist nicht mehr ausstehend" });
+        }
+        
+        const success = await sendInvitationEmail({
+          recipientEmail: invitation.email,
+          inviterName: ctx.user.name || "Admin",
+          inviteLink: input.inviteLink,
+          suggestedRole: invitation.role,
+        });
+        
+        if (!success) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Einladung konnte nicht erneut gesendet werden" });
+        }
+        
+        return { success: true };
+      }),
+    
+    // Delete/cancel invitation
+    cancelInvitation: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deletePendingInvitation(input.id);
         return { success: true };
       }),
   }),
@@ -3034,11 +3105,14 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         if (updates.showCountdown !== undefined) updateData.showCountdown = updates.showCountdown;
         if (updates.reminderMinutes !== undefined) updateData.reminderMinutes = updates.reminderMinutes;
         if (updates.link !== undefined) updateData.link = updates.link;
+        // Track if this is a new sick leave marking
+        let isNewSickLeave = false;
         if (updates.isSickLeave !== undefined) {
           updateData.isSickLeave = updates.isSickLeave;
           if (updates.isSickLeave) {
             updateData.sickLeaveMarkedAt = new Date();
             updateData.sickLeaveMarkedById = ctx.user.id;
+            isNewSickLeave = true;
           } else {
             updateData.sickLeaveMarkedAt = null;
             updateData.sickLeaveMarkedById = null;
@@ -3088,6 +3162,42 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
               newTime: !event.isAllDay ? formatTime(event.startDate) + " - " + formatTime(event.endDate) : undefined,
               teamName: team?.name || "Kein Team",
               changedByName: ctx.user.name || "Admin",
+            });
+          }
+        }
+        
+        // Send sick leave notification if newly marked as sick
+        if (isNewSickLeave && event.eventType === "shift" && !oldEvent?.isSickLeave) {
+          const assignedUser = event.userId ? await db.getUserById(event.userId) : null;
+          const team = event.teamId ? await db.getTeamById(event.teamId) : null;
+          // Try to get location by slug - location field stores the slug
+          let location = null;
+          if (event.location) {
+            const locations = await db.getAllLocations();
+            location = locations.find((l) => l.shortName === event.location || l.name === event.location);
+          }
+          
+          if (assignedUser) {
+            const shiftDate = event.startDate.toLocaleDateString("de-DE", {
+              weekday: "long",
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            });
+            const shiftTime = !event.isAllDay 
+              ? event.startDate.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + 
+                " - " + event.endDate.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
+              : "Ganztägig";
+            
+            await sendSickLeaveNotificationEmail({
+              employeeName: assignedUser.name || "Mitarbeiter",
+              employeeEmail: assignedUser.email || "",
+              shiftTitle: event.title,
+              shiftDate,
+              shiftTime,
+              location: location?.name,
+              sickLeaveNote: updates.sickLeaveNote || undefined,
+              teamName: team?.name,
             });
           }
         }
@@ -3354,6 +3464,62 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         const endDate = new Date(input.year, input.month, 0, 23, 59, 59);
         
         return db.getSickLeaveReport(startDate, endDate);
+      }),
+    
+    // Get sick leave yearly summary
+    getSickLeaveYearlySummary: protectedProcedure
+      .input(
+        z.object({
+          year: z.number(),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        // Only admins/editors can view sick leave reports
+        if (ctx.user.role !== "admin" && ctx.user.role !== "editor") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Nur Admins und Editoren können Krankmeldungsberichte einsehen",
+          });
+        }
+        
+        // Get data for all 12 months
+        const monthlyData = await Promise.all(
+          Array.from({ length: 12 }, async (_, i) => {
+            const month = i + 1;
+            const startDate = new Date(input.year, i, 1);
+            const endDate = new Date(input.year, i + 1, 0, 23, 59, 59);
+            const data = await db.getSickLeaveReport(startDate, endDate);
+            
+            // Calculate totals
+            const totalEntries = data.length;
+            const totalHours = data.reduce((sum, entry) => {
+              const hours = (new Date(entry.endDate).getTime() - new Date(entry.startDate).getTime()) / (1000 * 60 * 60);
+              return sum + hours;
+            }, 0);
+            const uniqueEmployees = new Set(data.map(d => d.userId)).size;
+            
+            return {
+              month,
+              monthName: ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"][i],
+              totalEntries,
+              totalHours: Math.round(totalHours),
+              uniqueEmployees,
+            };
+          })
+        );
+        
+        // Calculate yearly totals
+        const yearlyTotal = {
+          totalEntries: monthlyData.reduce((sum, m) => sum + m.totalEntries, 0),
+          totalHours: monthlyData.reduce((sum, m) => sum + m.totalHours, 0),
+          averagePerMonth: Math.round(monthlyData.reduce((sum, m) => sum + m.totalEntries, 0) / 12 * 10) / 10,
+        };
+        
+        return {
+          year: input.year,
+          monthlyData,
+          yearlyTotal,
+        };
       }),
   }),
 

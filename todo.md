@@ -1438,3 +1438,9 @@
 
 ## Bug-Fix 26.01.2026
 - [x] Schicht-Bearbeiten-Dialog scrollbar machen (Buttons werden abgeschnitten)
+
+## Neue Features 26.01.2026
+- [x] Krankmeldungs-Benachrichtigung an Vorgesetzte bei neuer Krankmeldung
+- [x] Jahresübersicht für Krankmeldungen mit Trend-Anzeige
+- [x] Ausstehende Einladungen in Benutzerverwaltung anzeigen
+- [x] Anmeldeprozess für neue Benutzer prüfen

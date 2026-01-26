@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { 
   Calendar as CalendarIcon, 
@@ -16,9 +17,12 @@ import {
   Download,
   AlertCircle,
   User,
-  Clock
+  Clock,
+  TrendingUp,
+  TrendingDown,
+  BarChart3
 } from "lucide-react";
-import { format, startOfMonth, endOfMonth, differenceInHours } from "date-fns";
+import { format, differenceInHours } from "date-fns";
 import { de } from "date-fns/locale";
 
 const MONTHS = [
@@ -40,13 +44,20 @@ export default function SickLeaveReport() {
   const { user } = useAuth();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [activeTab, setActiveTab] = useState<"monthly" | "yearly">("monthly");
   
   const isAdmin = user?.role === "admin" || user?.role === "editor";
   
-  // Fetch sick leave report
+  // Fetch sick leave report for month
   const { data: sickLeaveData, isLoading } = trpc.calendar.getSickLeaveReport.useQuery(
     { year: selectedYear, month: selectedMonth },
-    { enabled: isAdmin }
+    { enabled: isAdmin && activeTab === "monthly" }
+  );
+  
+  // Fetch yearly summary
+  const { data: yearlySummary, isLoading: isLoadingYearly } = trpc.calendar.getSickLeaveYearlySummary.useQuery(
+    { year: selectedYear },
+    { enabled: isAdmin && activeTab === "yearly" }
   );
   
   // Navigate months
@@ -116,6 +127,51 @@ export default function SickLeaveReport() {
     link.click();
   };
   
+  // Export yearly to CSV
+  const exportYearlyToCSV = () => {
+    if (!yearlySummary) return;
+    
+    const headers = ["Monat", "Krankmeldungen", "Ausgefallene Stunden", "Betroffene Mitarbeiter"];
+    const rows = yearlySummary.monthlyData.map(month => [
+      month.monthName,
+      month.totalEntries.toString(),
+      month.totalHours.toString(),
+      month.uniqueEmployees.toString(),
+    ]);
+    
+    // Add total row
+    rows.push([
+      "GESAMT",
+      yearlySummary.yearlyTotal.totalEntries.toString(),
+      yearlySummary.yearlyTotal.totalHours.toString(),
+      "-",
+    ]);
+    
+    const csvContent = [
+      headers.join(";"),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(";")),
+    ].join("\n");
+    
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `krankmeldungen_jahresuebersicht_${selectedYear}.csv`;
+    link.click();
+  };
+  
+  // Calculate trend for yearly view
+  const getTrend = (currentMonth: number) => {
+    if (!yearlySummary || currentMonth === 0) return null;
+    const current = yearlySummary.monthlyData[currentMonth];
+    const previous = yearlySummary.monthlyData[currentMonth - 1];
+    if (!previous || previous.totalEntries === 0) return null;
+    const change = ((current.totalEntries - previous.totalEntries) / previous.totalEntries) * 100;
+    return change;
+  };
+  
+  // Get max value for bar chart scaling
+  const maxEntries = yearlySummary?.monthlyData.reduce((max, m) => Math.max(max, m.totalEntries), 0) || 1;
+  
   if (!isAdmin) {
     return (
       <div className="container py-8">
@@ -139,233 +195,505 @@ export default function SickLeaveReport() {
         <div>
           <h1 className="text-2xl font-bold">Krankmeldungen</h1>
           <p className="text-muted-foreground">
-            Monatliche Übersicht aller Fehltage durch Krankmeldung
+            Übersicht aller Fehltage durch Krankmeldung
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={exportToCSV}
-          disabled={!sickLeaveData || sickLeaveData.length === 0}
-        >
-          <Download className="h-4 w-4 mr-2" />
-          CSV Export
-        </Button>
       </div>
       
-      {/* Month Navigation */}
-      <Card>
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between">
-            <Button variant="outline" size="icon" onClick={goToPreviousMonth}>
-              <ChevronLeft className="h-4 w-4" />
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "monthly" | "yearly")}>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <TabsList>
+            <TabsTrigger value="monthly" className="gap-2">
+              <CalendarIcon className="h-4 w-4" />
+              Monatsübersicht
+            </TabsTrigger>
+            <TabsTrigger value="yearly" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Jahresübersicht
+            </TabsTrigger>
+          </TabsList>
+          
+          {activeTab === "monthly" ? (
+            <Button 
+              variant="outline" 
+              onClick={exportToCSV}
+              disabled={!sickLeaveData || sickLeaveData.length === 0}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              CSV Export
             </Button>
-            
-            <div className="flex items-center gap-4">
-              <Select
-                value={selectedMonth.toString()}
-                onValueChange={(v) => setSelectedMonth(parseInt(v))}
-              >
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {MONTHS.map((month) => (
-                    <SelectItem key={month.value} value={month.value.toString()}>
-                      {month.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select
-                value={selectedYear.toString()}
-                onValueChange={(v) => setSelectedYear(parseInt(v))}
-              >
-                <SelectTrigger className="w-[100px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[2024, 2025, 2026, 2027].map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <Button variant="outline" size="icon" onClick={goToNextMonth}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/30">
-                <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Krankmeldungen</p>
-                <p className="text-2xl font-bold">{totalSickDays}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-full bg-orange-100 dark:bg-orange-900/30">
-                <Clock className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Ausgefallene Stunden</p>
-                <p className="text-2xl font-bold">{totalSickHours}h</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30">
-                <User className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Betroffene Mitarbeiter</p>
-                <p className="text-2xl font-bold">{employeeList.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Sick Leave Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Detailübersicht
-          </CardTitle>
-          <CardDescription>
-            Alle Krankmeldungen im {MONTHS.find(m => m.value === selectedMonth)?.label} {selectedYear}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-4">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          ) : sickLeaveData && sickLeaveData.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Mitarbeiter</TableHead>
-                  <TableHead>Datum</TableHead>
-                  <TableHead>Schicht</TableHead>
-                  <TableHead>Stunden</TableHead>
-                  <TableHead>Notiz</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sickLeaveData.map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{entry.userName || "Unbekannt"}</p>
-                        {entry.userEmail && (
-                          <p className="text-xs text-muted-foreground">{entry.userEmail}</p>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(entry.startDate), "EEE, dd.MM.yyyy", { locale: de })}
-                    </TableCell>
-                    <TableCell>{entry.title}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">
-                        {differenceInHours(new Date(entry.endDate), new Date(entry.startDate))}h
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="max-w-[200px]">
-                      {entry.sickLeaveNote ? (
-                        <span className="text-sm text-muted-foreground truncate block">
-                          {entry.sickLeaveNote}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground/50">-</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
           ) : (
-            <div className="text-center py-12">
-              <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-              <p className="text-lg font-medium">Keine Krankmeldungen</p>
-              <p className="text-muted-foreground">
-                Im {MONTHS.find(m => m.value === selectedMonth)?.label} {selectedYear} wurden keine Krankmeldungen erfasst.
-              </p>
+            <Button 
+              variant="outline" 
+              onClick={exportYearlyToCSV}
+              disabled={!yearlySummary}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Jahres-CSV Export
+            </Button>
+          )}
+        </div>
+        
+        {/* Monthly View */}
+        <TabsContent value="monthly" className="space-y-6 mt-6">
+          {/* Month Navigation */}
+          <Card>
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between">
+                <Button variant="outline" size="icon" onClick={goToPreviousMonth}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <div className="flex items-center gap-4">
+                  <Select
+                    value={selectedMonth.toString()}
+                    onValueChange={(v) => setSelectedMonth(parseInt(v))}
+                  >
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MONTHS.map((month) => (
+                        <SelectItem key={month.value} value={month.value.toString()}>
+                          {month.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select
+                    value={selectedYear.toString()}
+                    onValueChange={(v) => setSelectedYear(parseInt(v))}
+                  >
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[2024, 2025, 2026, 2027].map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <Button variant="outline" size="icon" onClick={goToNextMonth}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/30">
+                    <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Krankmeldungen</p>
+                    <p className="text-2xl font-bold">{totalSickDays}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-full bg-orange-100 dark:bg-orange-900/30">
+                    <Clock className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Ausgefallene Stunden</p>
+                    <p className="text-2xl font-bold">{totalSickHours}h</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                    <User className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Betroffene Mitarbeiter</p>
+                    <p className="text-2xl font-bold">{employeeList.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Sick Leave Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Detailübersicht
+              </CardTitle>
+              <CardDescription>
+                Alle Krankmeldungen im {MONTHS.find(m => m.value === selectedMonth)?.label} {selectedYear}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ) : sickLeaveData && sickLeaveData.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Mitarbeiter</TableHead>
+                      <TableHead>Datum</TableHead>
+                      <TableHead>Schicht</TableHead>
+                      <TableHead>Stunden</TableHead>
+                      <TableHead>Notiz</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sickLeaveData.map((entry) => (
+                      <TableRow key={entry.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{entry.userName || "Unbekannt"}</p>
+                            {entry.userEmail && (
+                              <p className="text-xs text-muted-foreground">{entry.userEmail}</p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(entry.startDate), "EEE, dd.MM.yyyy", { locale: de })}
+                        </TableCell>
+                        <TableCell>{entry.title}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">
+                            {differenceInHours(new Date(entry.endDate), new Date(entry.startDate))}h
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="max-w-[200px]">
+                          {entry.sickLeaveNote ? (
+                            <span className="text-sm text-muted-foreground truncate block">
+                              {entry.sickLeaveNote}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-muted-foreground/50">-</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-12">
+                  <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                  <p className="text-lg font-medium">Keine Krankmeldungen</p>
+                  <p className="text-muted-foreground">
+                    Im {MONTHS.find(m => m.value === selectedMonth)?.label} {selectedYear} wurden keine Krankmeldungen erfasst.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Per Employee Summary */}
+          {employeeList.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Zusammenfassung pro Mitarbeiter
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Mitarbeiter</TableHead>
+                      <TableHead className="text-center">Anzahl Krankmeldungen</TableHead>
+                      <TableHead className="text-center">Ausgefallene Stunden</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {employeeList
+                      .sort((a, b) => b.totalHours - a.totalHours)
+                      .map((employee) => (
+                        <TableRow key={employee.userId}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{employee.userName}</p>
+                              {employee.userEmail && (
+                                <p className="text-xs text-muted-foreground">{employee.userEmail}</p>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline">{employee.entries.length}</Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                              {employee.totalHours}h
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+        
+        {/* Yearly View */}
+        <TabsContent value="yearly" className="space-y-6 mt-6">
+          {/* Year Selection */}
+          <Card>
+            <CardContent className="py-4">
+              <div className="flex items-center justify-center gap-4">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => setSelectedYear(selectedYear - 1)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <Select
+                  value={selectedYear.toString()}
+                  onValueChange={(v) => setSelectedYear(parseInt(v))}
+                >
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[2024, 2025, 2026, 2027].map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => setSelectedYear(selectedYear + 1)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Yearly Summary Cards */}
+          {isLoadingYearly ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Skeleton className="h-24" />
+              <Skeleton className="h-24" />
+              <Skeleton className="h-24" />
+            </div>
+          ) : yearlySummary && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/30">
+                      <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Krankmeldungen {selectedYear}</p>
+                      <p className="text-2xl font-bold">{yearlySummary.yearlyTotal.totalEntries}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-full bg-orange-100 dark:bg-orange-900/30">
+                      <Clock className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Ausgefallene Stunden</p>
+                      <p className="text-2xl font-bold">{yearlySummary.yearlyTotal.totalHours}h</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                      <BarChart3 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Durchschnitt pro Monat</p>
+                      <p className="text-2xl font-bold">{yearlySummary.yearlyTotal.averagePerMonth}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
-        </CardContent>
-      </Card>
-      
-      {/* Per Employee Summary */}
-      {employeeList.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Zusammenfassung pro Mitarbeiter
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Mitarbeiter</TableHead>
-                  <TableHead className="text-center">Anzahl Krankmeldungen</TableHead>
-                  <TableHead className="text-center">Ausgefallene Stunden</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {employeeList
-                  .sort((a, b) => b.totalHours - a.totalHours)
-                  .map((employee) => (
-                    <TableRow key={employee.userId}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{employee.userName}</p>
-                          {employee.userEmail && (
-                            <p className="text-xs text-muted-foreground">{employee.userEmail}</p>
+          
+          {/* Monthly Breakdown Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Monatlicher Verlauf {selectedYear}
+              </CardTitle>
+              <CardDescription>
+                Anzahl der Krankmeldungen pro Monat mit Trend-Anzeige
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingYearly ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ) : yearlySummary && (
+                <div className="space-y-3">
+                  {yearlySummary.monthlyData.map((month, index) => {
+                    const trend = getTrend(index);
+                    const barWidth = maxEntries > 0 ? (month.totalEntries / maxEntries) * 100 : 0;
+                    
+                    return (
+                      <div key={month.month} className="flex items-center gap-4">
+                        <div className="w-20 text-sm font-medium text-muted-foreground">
+                          {month.monthName.substring(0, 3)}
+                        </div>
+                        <div className="flex-1 h-8 bg-muted rounded-md overflow-hidden relative">
+                          <div 
+                            className={cn(
+                              "h-full rounded-md transition-all duration-500",
+                              month.totalEntries > 0 
+                                ? "bg-red-500 dark:bg-red-600" 
+                                : "bg-transparent"
+                            )}
+                            style={{ width: `${barWidth}%` }}
+                          />
+                          {month.totalEntries > 0 && (
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-medium text-white">
+                              {month.totalEntries}
+                            </span>
                           )}
                         </div>
-                      </TableCell>
+                        <div className="w-16 text-right text-sm text-muted-foreground">
+                          {month.totalHours}h
+                        </div>
+                        <div className="w-20 flex items-center justify-end gap-1">
+                          {trend !== null && (
+                            <>
+                              {trend > 0 ? (
+                                <TrendingUp className="h-4 w-4 text-red-500" />
+                              ) : trend < 0 ? (
+                                <TrendingDown className="h-4 w-4 text-green-500" />
+                              ) : null}
+                              {trend !== 0 && (
+                                <span className={cn(
+                                  "text-xs font-medium",
+                                  trend > 0 ? "text-red-500" : "text-green-500"
+                                )}>
+                                  {trend > 0 ? "+" : ""}{Math.round(trend)}%
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Monthly Details Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Monatliche Detailübersicht
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoadingYearly ? (
+                <Skeleton className="h-48 w-full" />
+              ) : yearlySummary && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Monat</TableHead>
+                      <TableHead className="text-center">Krankmeldungen</TableHead>
+                      <TableHead className="text-center">Ausgefallene Stunden</TableHead>
+                      <TableHead className="text-center">Betroffene Mitarbeiter</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {yearlySummary.monthlyData.map((month) => (
+                      <TableRow 
+                        key={month.month}
+                        className={cn(
+                          "cursor-pointer hover:bg-muted/50",
+                          month.month === selectedMonth && "bg-muted/30"
+                        )}
+                        onClick={() => {
+                          setSelectedMonth(month.month);
+                          setActiveTab("monthly");
+                        }}
+                      >
+                        <TableCell className="font-medium">{month.monthName}</TableCell>
+                        <TableCell className="text-center">
+                          {month.totalEntries > 0 ? (
+                            <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                              {month.totalEntries}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">0</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {month.totalHours > 0 ? `${month.totalHours}h` : "-"}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {month.uniqueEmployees > 0 ? month.uniqueEmployees : "-"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {/* Total Row */}
+                    <TableRow className="font-bold border-t-2">
+                      <TableCell>Gesamt {selectedYear}</TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="outline">{employee.entries.length}</Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                          {employee.totalHours}h
+                        <Badge className="bg-red-600 text-white">
+                          {yearlySummary.yearlyTotal.totalEntries}
                         </Badge>
                       </TableCell>
+                      <TableCell className="text-center">
+                        {yearlySummary.yearlyTotal.totalHours}h
+                      </TableCell>
+                      <TableCell className="text-center">-</TableCell>
                     </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

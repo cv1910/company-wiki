@@ -1,0 +1,16 @@
+{
+  "query": "SHOW TABLES LIKE '%pending%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute SHOW TABLES LIKE '%pending%';",
+  "rows": [
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff (%pending%)": "pendingInvitations"
+    },
+    {
+      "Tables_in_TkhZDUK5jrbqMP42NAV4Ff (%pending%)": "pending_invitations"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_TkhZDUK5jrbqMP42NAV4Ff (%pending%)\npendingInvitations\npending_invitations\n",
+  "stderr": "",
+  "execution_time_ms": 60
+}

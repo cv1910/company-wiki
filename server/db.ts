@@ -125,6 +125,8 @@ import {
   InsertOvertimeBalance,
   locations,
   InsertLocation,
+  pendingInvitations,
+  InsertPendingInvitation,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -7144,4 +7146,105 @@ export async function getActiveLocations() {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(locations).where(eq(locations.isActive, true)).orderBy(locations.sortOrder);
+}
+
+
+// ==================== PENDING INVITATIONS ====================
+
+export async function createPendingInvitation(invitation: InsertPendingInvitation) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(pendingInvitations).values(invitation);
+  return { id: Number(result[0].insertId), ...invitation };
+}
+
+export async function getPendingInvitations() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: pendingInvitations.id,
+      email: pendingInvitations.email,
+      role: pendingInvitations.role,
+      invitedById: pendingInvitations.invitedById,
+      inviteToken: pendingInvitations.inviteToken,
+      status: pendingInvitations.status,
+      expiresAt: pendingInvitations.expiresAt,
+      acceptedAt: pendingInvitations.acceptedAt,
+      acceptedByUserId: pendingInvitations.acceptedByUserId,
+      createdAt: pendingInvitations.createdAt,
+      inviterName: users.name,
+      inviterEmail: users.email,
+    })
+    .from(pendingInvitations)
+    .leftJoin(users, eq(pendingInvitations.invitedById, users.id))
+    .orderBy(desc(pendingInvitations.createdAt));
+}
+
+export async function getPendingInvitationByToken(token: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(pendingInvitations)
+    .where(eq(pendingInvitations.inviteToken, token));
+  return result[0] || null;
+}
+
+export async function getPendingInvitationByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(pendingInvitations)
+    .where(
+      and(
+        eq(pendingInvitations.email, email),
+        eq(pendingInvitations.status, "pending")
+      )
+    );
+  return result[0] || null;
+}
+
+export async function updatePendingInvitationStatus(
+  id: number,
+  status: "pending" | "accepted" | "expired",
+  acceptedByUserId?: number
+) {
+  const db = await getDb();
+  if (!db) return false;
+  const updateData: Record<string, unknown> = { status };
+  if (status === "accepted") {
+    updateData.acceptedAt = new Date();
+    if (acceptedByUserId) {
+      updateData.acceptedByUserId = acceptedByUserId;
+    }
+  }
+  await db
+    .update(pendingInvitations)
+    .set(updateData)
+    .where(eq(pendingInvitations.id, id));
+  return true;
+}
+
+export async function deletePendingInvitation(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.delete(pendingInvitations).where(eq(pendingInvitations.id, id));
+  return true;
+}
+
+export async function expireOldInvitations() {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db
+    .update(pendingInvitations)
+    .set({ status: "expired" })
+    .where(
+      and(
+        eq(pendingInvitations.status, "pending"),
+        lt(pendingInvitations.expiresAt, new Date())
+      )
+    );
+  return result[0].affectedRows || 0;
 }

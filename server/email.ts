@@ -1187,3 +1187,48 @@ Das Company Wiki Team
     return false;
   }
 }
+
+
+/**
+ * Send sick leave notification to supervisors/admins
+ */
+export async function sendSickLeaveNotificationEmail(params: {
+  employeeName: string;
+  employeeEmail: string;
+  shiftTitle: string;
+  shiftDate: string;
+  shiftTime: string;
+  location?: string;
+  sickLeaveNote?: string;
+  teamName?: string;
+}) {
+  const subject = `Krankmeldung: ${params.employeeName} - ${params.shiftDate}`;
+  const content = `
+Krankmeldung eingegangen
+
+**Mitarbeiter:** ${params.employeeName} (${params.employeeEmail})
+**Schicht:** ${params.shiftTitle}
+**Datum:** ${params.shiftDate}
+**Zeit:** ${params.shiftTime}
+${params.location ? `**Standort:** ${params.location}` : ""}
+${params.teamName ? `**Team:** ${params.teamName}` : ""}
+${params.sickLeaveNote ? `\n**Notiz:** ${params.sickLeaveNote}` : ""}
+
+Bitte organisieren Sie ggf. eine Vertretung.
+
+---
+Diese Benachrichtigung wurde automatisch vom Company Wiki System gesendet.
+  `.trim();
+
+  try {
+    await notifyOwner({
+      title: subject,
+      content: content,
+    });
+    console.log(`[Email] Sick leave notification sent for ${params.employeeName}`);
+    return true;
+  } catch (error) {
+    console.error("[Email] Failed to send sick leave notification:", error);
+    return false;
+  }
+}

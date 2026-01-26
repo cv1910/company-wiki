@@ -1467,3 +1467,24 @@ export const locations = mysqlTable("locations", {
 
 export type Location = typeof locations.$inferSelect;
 export type InsertLocation = typeof locations.$inferInsert;
+
+
+/**
+ * Pending user invitations.
+ * Tracks invitations sent to users who haven't yet signed up.
+ */
+export const pendingInvitations = mysqlTable("pendingInvitations", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull(),
+  role: mysqlEnum("role", ["user", "editor", "admin"]).default("user").notNull(),
+  invitedById: int("invitedById").notNull(),
+  inviteToken: varchar("inviteToken", { length: 64 }).notNull().unique(),
+  status: mysqlEnum("status", ["pending", "accepted", "expired"]).default("pending").notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  acceptedAt: timestamp("acceptedAt"),
+  acceptedByUserId: int("acceptedByUserId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PendingInvitation = typeof pendingInvitations.$inferSelect;
+export type InsertPendingInvitation = typeof pendingInvitations.$inferInsert;

@@ -344,6 +344,13 @@
       "when": 1769439870647,
       "tag": "0048_lethal_johnny_blaze",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "5",
+      "when": 1769443554494,
+      "tag": "0049_plain_butterfly",
+      "breakpoints": true
     }
   ]
 }
