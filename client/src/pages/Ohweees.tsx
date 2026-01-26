@@ -1417,7 +1417,7 @@ export default function OhweeesPage() {
   // Mobile View
   if (isMobile) {
     return (
-      <div className="flex flex-col h-[100dvh] overflow-hidden" style={{ backgroundColor: 'var(--background)' }}>
+      <div className="flex flex-col h-[100dvh] pb-20 overflow-hidden" style={{ backgroundColor: 'var(--background)' }}>
         {mobileView === "list" ? (
           // Mobile Room List View
           <>

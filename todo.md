@@ -1471,3 +1471,6 @@
 - [x] Avatar neben Nachrichten anzeigen
 - [x] Layout wie Basecamp: Fremde Nachrichten links mit grauem Hintergrund, eigene rechts mit blauem Hintergrund
 - [x] Zitat-Nachrichten mit eingerücktem Block darstellen
+
+## Bug-Fix Chat-Eingabefeld 26.01.2026
+- [x] Chat-Eingabefeld wird auf Mobile von der Navigation überdeckt - Layout korrigieren
