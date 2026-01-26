@@ -1417,7 +1417,7 @@ export default function OhweeesPage() {
   // Mobile View
   if (isMobile) {
     return (
-      <div className="flex flex-col min-h-[100dvh]" style={{ backgroundColor: 'var(--background)' }}>
+      <div className="flex flex-col h-[100dvh] overflow-hidden" style={{ backgroundColor: 'var(--background)' }}>
         {mobileView === "list" ? (
           // Mobile Room List View
           <>
@@ -1670,7 +1670,7 @@ export default function OhweeesPage() {
             )}
 
             {/* Messages */}
-            <ScrollArea className="flex-1">
+            <div className="flex-1 overflow-y-auto">
               <div className="py-2">
                 {currentRoom?.messages?.map((message, index) => {
                   const prevMessage = currentRoom.messages?.[index - 1];
@@ -1723,11 +1723,11 @@ export default function OhweeesPage() {
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
 
             {/* Typing Indicator */}
             {typingUsers && typingUsers.length > 0 && (
-              <div className="px-4 py-2 text-sm text-muted-foreground flex items-center gap-2">
+              <div className="px-4 py-2 text-sm text-muted-foreground flex items-center gap-2 shrink-0">
                 <div className="flex gap-1">
                   <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
                   <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />

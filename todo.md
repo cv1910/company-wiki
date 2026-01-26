@@ -1456,3 +1456,11 @@
 
 ## Bug-Fix Einladungs-Anmeldung 26.01.2026
 - [x] Einladungs-Link funktioniert nicht - App muss veröffentlicht werden damit neue Benutzer sich anmelden können
+
+## Bug-Fix Einladungs-Anmeldung (fortgesetzt) 26.01.2026
+- [x] Permission denied Fehler auch nach Veröffentlichung - App-Sichtbarkeit auf Public setzen
+
+## Chat-Design Verbesserung (Slack-Niveau) 26.01.2026
+- [x] Eingabefeld wird auf Mobile abgeschnitten - Layout korrigieren
+- [x] Chat-Design auf Slack-Niveau verbessern (professionell, modern)
+- [x] Mobile-optimiertes Layout mit fixiertem Eingabefeld

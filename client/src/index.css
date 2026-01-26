@@ -1095,6 +1095,9 @@
 .safe-area-bottom {
   padding-bottom: var(--safe-area-inset-bottom);
 }
+.pb-safe {
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+}
 .safe-area-top {
   padding-top: var(--safe-area-inset-top);
 }
