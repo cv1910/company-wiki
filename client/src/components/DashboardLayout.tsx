@@ -100,6 +100,7 @@ const moreMenuItems: typeof menuItems = [];
 const adminMenuItems = [
   { icon: CalendarClock, label: "Terminplanung", path: "/scheduling" },
   { icon: Users, label: "Teams", path: "/admin/teams" },
+  { icon: CalendarDays, label: "Schichtplan", path: "/schichtplan" },
   { icon: BarChart3, label: "Schicht-Auswertungen", path: "/schicht-auswertungen" },
   { icon: Clock, label: "Soll-Stunden", path: "/admin/soll-stunden" },
   { icon: TrendingUp, label: "Überstunden", path: "/admin/ueberstunden" },
@@ -560,7 +561,7 @@ function DashboardLayoutContent({
       <SidebarInset className="bg-background">
         {/* Desktop Header with Breadcrumbs */}
         {!isMobile && (
-          <div className="flex border-b h-14 items-center justify-between bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
+          <div className="flex border-b min-h-14 h-14 shrink-0 items-center justify-between bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
             <nav className="flex items-center gap-2" aria-label="Breadcrumb">
               {/* Toggle Button für Sidebar */}
               <Button

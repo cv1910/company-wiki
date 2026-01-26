@@ -73,6 +73,9 @@ import Aufgaben from "./pages/Aufgaben";
 // Shift Reports
 import ShiftReports from "./pages/ShiftReports";
 
+// Schichtplan
+import Schichtplan from "./pages/Schichtplan";
+
 // Target Hours & Overtime
 import AdminTargetHours from "./pages/AdminTargetHours";
 import OvertimeTracking from "./pages/OvertimeTracking";
@@ -140,6 +143,9 @@ function Router() {
         
         {/* Shift Reports */}
         <Route path="/schicht-auswertungen" component={ShiftReports} />
+        
+        {/* Schichtplan */}
+        <Route path="/schichtplan" component={Schichtplan} />
         
         {/* Admin Routes */}
         <Route path="/admin/teams" component={Teams} />

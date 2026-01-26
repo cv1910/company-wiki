@@ -1405,3 +1405,8 @@
 - [x] Seite oben noch abgeschnitten
 - [x] Scribe-Embed nicht scrollbar (Overlay blockiert Scrolling)
 - [x] Neue Benutzer sehen "You don't have permission" - Berechtigung prüfen (ist Manus OAuth Verhalten - neue User müssen zuerst eingeladen werden)
+
+## Bug-Fixes und Features 26.01.2026 (Runde 7)
+- [x] Seite oben abgeschnitten endgültig beheben
+- [x] Scribe-Embed Navigation blockieren aber Scrolling erlauben
+- [x] Schichtplan-Modul implementieren (erstellen und teilen)

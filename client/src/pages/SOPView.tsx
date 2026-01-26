@@ -209,6 +209,7 @@ export default function SOPView() {
           <CardContent className="p-0">
             <div ref={scribeContainerRef} className="w-full">
               {/* sandbox attribute blocks top-level navigation but allows scrolling and scripts */}
+              {/* Note: Without allow-top-navigation, clicks on internal links won't navigate the parent page */}
               <iframe
                 src={scribeEmbedUrl}
                 width="100%"
@@ -217,7 +218,7 @@ export default function SOPView() {
                 className="w-full min-h-[600px] lg:min-h-[800px]"
                 title={sop.title}
                 loading="lazy"
-                sandbox="allow-scripts allow-same-origin allow-popups"
+                sandbox="allow-scripts allow-same-origin"
               />
             </div>
           </CardContent>
