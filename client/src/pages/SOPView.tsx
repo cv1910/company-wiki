@@ -207,9 +207,8 @@ export default function SOPView() {
       {scribeEmbedUrl ? (
         <Card className="card-shadow overflow-hidden">
           <CardContent className="p-0">
-            <div ref={scribeContainerRef} className="w-full relative">
-              {/* Overlay to prevent iframe navigation - users can use "In Scribe öffnen" button */}
-              <div className="absolute inset-0 z-10" />
+            <div ref={scribeContainerRef} className="w-full">
+              {/* sandbox attribute blocks navigation but allows scrolling and scripts */}
               <iframe
                 src={scribeEmbedUrl}
                 width="100%"
@@ -228,12 +227,9 @@ export default function SOPView() {
           <CardContent className="p-0">
             <div
               ref={scribeContainerRef}
-              className="w-full relative"
-            >
-              {/* Overlay to prevent iframe navigation */}
-              <div className="absolute inset-0 z-10" />
-              <div dangerouslySetInnerHTML={{ __html: sop.scribeEmbedCode }} />
-            </div>
+              className="w-full"
+              dangerouslySetInnerHTML={{ __html: sop.scribeEmbedCode }}
+            />
           </CardContent>
         </Card>
       ) : (

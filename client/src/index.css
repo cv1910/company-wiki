@@ -1360,8 +1360,11 @@ body {
 [data-slot="sidebar-inset"] {
   background-color: var(--background) !important;
   overflow-x: hidden !important;
+  overflow-y: auto !important;
   width: 100% !important;
   max-width: 100% !important;
+  height: 100vh !important;
+  height: 100dvh !important;
 }
 
 /* Fix main content area */

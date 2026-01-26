@@ -1388,3 +1388,10 @@
 - [x] Scribe-Embed auf SOP-Seite ist navigierbar (sollte nur anzeigen)
 - [x] Navigation Hover-Effekt: Alle Punkte werden rosa unterlegt statt nur der aktuelle
 - [x] Sidebar-Streifen links noch sichtbar beim Ausblenden
+
+## Bug-Fixes 26.01.2026 (Runde 4)
+- [x] Sidebar-Streifen links immer noch sichtbar beim Ausblenden
+- [x] Scribe-Embed scrollbar machen (ohne Navigation zu erlauben)
+- [x] Trackpad-Scrolling funktioniert nicht
+- [x] Navigation Hover-Effekt: Rosa Markierung nur beim jeweiligen Punkt beim Hovern
+- [x] Google-Anmeldung: Möglichkeit mit anderem Konto anzumelden prüfen (bereits vorhanden: "Ein anderes Konto verwenden" Button)

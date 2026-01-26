@@ -301,7 +301,7 @@ function DashboardLayoutContent({
 
   return (
     <>
-      <div className="relative" ref={sidebarRef}>
+      <div className="relative overflow-hidden" ref={sidebarRef}>
         <Sidebar
           collapsible="offcanvas"
           className="border-r-0 bg-sidebar"
