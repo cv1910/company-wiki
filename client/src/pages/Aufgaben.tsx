@@ -29,7 +29,7 @@ import { useLocation, Link } from "wouter";
 import { formatDistanceToNow, format } from "date-fns";
 import { de } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SwipeableTaskCard } from "@/components/SwipeableTaskCard";
+import { SwipeableTaskCard, PostponeOption } from "@/components/SwipeableTaskCard";
 import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
 import { useTaskReminders } from "@/hooks/useTaskReminders";
 import { useState, useMemo, useEffect } from "react";
@@ -79,6 +79,7 @@ function TaskCard({
   onDelete,
   onComment,
   onEdit,
+  onArchive,
   onPostpone,
   showAssignee = true 
 }: { 
@@ -87,7 +88,8 @@ function TaskCard({
   onDelete: (id: number) => void;
   onComment: (id: number) => void;
   onEdit: (task: any) => void;
-  onPostpone: (id: number) => void;
+  onArchive: (id: number) => void;
+  onPostpone: (id: number, option: PostponeOption) => void;
   showAssignee?: boolean;
 }) {
   const status = task.task.status as keyof typeof STATUS_CONFIG;
@@ -99,9 +101,9 @@ function TaskCard({
 
   return (
     <SwipeableTaskCard
-      onComplete={() => onStatusChange(task.task.id, "completed")}
-      onPostpone={() => onPostpone(task.task.id)}
-      disabled={task.task.status === "completed"}
+      onArchive={() => onArchive(task.task.id)}
+      onPostpone={(option) => onPostpone(task.task.id, option)}
+      disabled={task.task.status === "completed" || task.task.status === "cancelled"}
     >
     <div className="group relative p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-200">
       <div className="flex items-start gap-3">
@@ -535,22 +537,55 @@ export default function Aufgaben() {
     return (myTasks || []).filter(t => t.task.status !== "completed" && t.task.status !== "cancelled").length;
   }, [myTasks]);
 
-  // Postpone task by 1 day
-  const handlePostpone = (id: number) => {
-    const task = currentTasks?.find((t: any) => t.task.id === id);
-    if (task?.task.dueDate) {
-      const newDate = new Date(task.task.dueDate);
-      newDate.setDate(newDate.getDate() + 1);
-      updateTask.mutate({ id, dueDate: newDate });
-      toast.success("Aufgabe um 1 Tag verschoben");
-    } else {
-      // If no due date, set it to tomorrow
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(9, 0, 0, 0);
-      updateTask.mutate({ id, dueDate: tomorrow });
-      toast.success("Fälligkeit auf morgen gesetzt");
+  // Archive task (set status to cancelled and hide)
+  const handleArchive = (id: number) => {
+    updateTask.mutate({ id, status: "cancelled" });
+    toast.success("Aufgabe archiviert");
+  };
+
+  // Postpone task with options
+  const handlePostpone = (id: number, option: PostponeOption) => {
+    const now = new Date();
+    let newDate: Date;
+    
+    switch (option) {
+      case "1hour":
+        newDate = new Date(now.getTime() + 60 * 60 * 1000);
+        break;
+      case "afternoon":
+        newDate = new Date(now);
+        newDate.setHours(14, 0, 0, 0);
+        // If it's already past 14:00, set to tomorrow afternoon
+        if (newDate <= now) {
+          newDate.setDate(newDate.getDate() + 1);
+        }
+        break;
+      case "evening":
+        newDate = new Date(now);
+        newDate.setHours(18, 0, 0, 0);
+        // If it's already past 18:00, set to tomorrow evening
+        if (newDate <= now) {
+          newDate.setDate(newDate.getDate() + 1);
+        }
+        break;
+      case "tomorrow":
+        newDate = new Date(now);
+        newDate.setDate(newDate.getDate() + 1);
+        newDate.setHours(9, 0, 0, 0);
+        break;
+      default:
+        newDate = new Date(now.getTime() + 60 * 60 * 1000);
     }
+    
+    updateTask.mutate({ id, dueDate: newDate });
+    
+    const optionLabels: Record<PostponeOption, string> = {
+      "1hour": "in einer Stunde",
+      "afternoon": "heute Nachmittag",
+      "evening": "heute Abend",
+      "tomorrow": "morgen früh",
+    };
+    toast.success(`Erinnerung ${optionLabels[option]}`);
   };
 
   // Handle /aufgaben/new route
@@ -681,6 +716,7 @@ export default function Aufgaben() {
                     setCommentDialogOpen(true);
                   }}
                   onEdit={handleEdit}
+                  onArchive={handleArchive}
                   onPostpone={handlePostpone}
                   showAssignee={activeTab !== "assigned"}
                 />

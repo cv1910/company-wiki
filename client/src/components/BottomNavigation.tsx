@@ -27,11 +27,12 @@ interface NavItem {
   badgeType?: "taps" | "tasks";
 }
 
-// Geändert zu: Home, AI Suche, Taps, Aufgaben
+// Home, AI Suche, Taps, Kalender, Aufgaben
 const navItems: NavItem[] = [
   { icon: Home, label: "Home", path: "/" },
   { icon: Search, label: "AI Suche", path: "/search" },
   { icon: MessageCircle, label: "Taps", path: "/taps", badgeType: "taps" },
+  { icon: Calendar, label: "Kalender", path: "/calendar" },
   { icon: CheckSquare, label: "Aufgaben", path: "/aufgaben", badgeType: "tasks" },
 ];
 

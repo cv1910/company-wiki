@@ -1278,7 +1278,7 @@ export default function Home() {
     {/* Mobile: PullToRefresh */}
     <div className="md:hidden overflow-hidden w-full max-w-full">
       <PullToRefresh onRefresh={handleRefresh} className="min-h-[100dvh] bg-background">
-        <div className="space-y-8 animate-fade-in pb-[calc(var(--bottom-nav-height,64px)+2rem)] min-h-[100dvh] bg-background w-full max-w-full">
+        <div className="space-y-6 animate-fade-in pb-24 min-h-[100dvh] bg-background w-full max-w-full px-4">
           {/* Settings Button */}
           <div className="flex justify-end">
             <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>

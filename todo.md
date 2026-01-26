@@ -1340,3 +1340,9 @@
 - [x] Rotes/rosa Element links unten hinter der Bottom Navigation sichtbar (Screenshot zeigt Home-Icon mit rotem Hintergrund)
 - [x] Bottom Navigation Design wie Asana Mobile App - kein weißer Block, sauberes Design
 - [x] Übermäßiges Padding entfernen das den weißen Block verursacht
+
+## UI-Verbesserungen und Features (Januar 2026)
+- [x] Home-Seite: Schrift-Ausrichtung korrigieren (linksbündig mit Kasten)
+- [x] Bottom Navigation: Kalender-Tab hinzufügen
+- [x] Aufgaben-Seite: Swipe nach links zum Archivieren/Ausblenden
+- [x] Aufgaben-Seite: Swipe nach rechts zum Verschieben mit Erinnerungs-Popup
