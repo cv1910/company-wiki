@@ -5,7 +5,7 @@
 
 import * as db from "./db";
 import { notifyOwner } from "./_core/notification";
-import { sendBookingReminderToGuest, sendBookingReminderToHost } from "./email";
+import { sendBookingReminderToGuest, sendBookingReminderToHost, sendInvitationReminderEmail } from "./email";
 
 // Track if scheduler is initialized
 let isInitialized = false;
@@ -95,6 +95,16 @@ export function initializeScheduler() {
   
   // Run reminder check immediately on startup
   checkAndSendBookingReminders().catch(console.error);
+  
+  // Check for expiring invitations every 6 hours
+  const invitationReminderCheck = setInterval(async () => {
+    await checkAndSendInvitationReminders();
+  }, 6 * 60 * 60 * 1000); // Every 6 hours
+  
+  scheduledJobs.push({ name: "invitation-reminder-check", interval: invitationReminderCheck });
+  
+  // Run invitation reminder check immediately on startup
+  checkAndSendInvitationReminders().catch(console.error);
   
   isInitialized = true;
   console.log("[Scheduler] Scheduler initialized with", scheduledJobs.length, "jobs");
@@ -209,4 +219,67 @@ async function checkAndSendBookingReminders() {
  */
 export async function triggerBookingReminderCheck() {
   await checkAndSendBookingReminders();
+}
+
+
+/**
+ * Check for expiring invitations and send reminders
+ */
+async function checkAndSendInvitationReminders() {
+  console.log("[Scheduler] Checking for expiring invitations...");
+  
+  try {
+    // Get invitations expiring in the next 3 days
+    const expiringInvitations = await db.getExpiringSoonInvitations(3);
+    const now = new Date();
+    
+    for (const invitation of expiringInvitations) {
+      // Calculate days until expiry
+      const daysUntilExpiry = Math.ceil(
+        (new Date(invitation.expiresAt).getTime() - now.getTime()) / (24 * 60 * 60 * 1000)
+      );
+      
+      // Only send reminder once per invitation (check if reminder was already sent)
+      // We'll use the createdAt date to determine if we should send a reminder
+      const daysSinceInvited = Math.floor(
+        (now.getTime() - new Date(invitation.createdAt).getTime()) / (24 * 60 * 60 * 1000)
+      );
+      
+      // Send reminder if invitation is at least 4 days old (giving them time to respond first)
+      // and expiring within 3 days
+      if (daysSinceInvited >= 4 && daysUntilExpiry <= 3 && daysUntilExpiry > 0) {
+        // Get inviter info
+        const inviter = await db.getUserById(invitation.invitedById);
+        
+        // Generate invite link from token
+        const inviteLink = `https://manus.im/app-auth?appId=${process.env.VITE_APP_ID}&type=signUp`;
+        
+        await sendInvitationReminderEmail({
+          recipientEmail: invitation.email,
+          inviterName: inviter?.name || "Ein Administrator",
+          daysUntilExpiry,
+          inviteLink,
+        });
+        
+        console.log(`[Scheduler] Sent invitation reminder to ${invitation.email} (${daysUntilExpiry} days until expiry)`);
+      }
+    }
+    
+    // Also expire old invitations
+    const expiredCount = await db.expireOldInvitations();
+    if (expiredCount > 0) {
+      console.log(`[Scheduler] Marked ${expiredCount} invitations as expired`);
+    }
+    
+    console.log(`[Scheduler] Invitation reminder check completed, processed ${expiringInvitations.length} invitations`);
+  } catch (error) {
+    console.error("[Scheduler] Error checking invitation reminders:", error);
+  }
+}
+
+/**
+ * Manually trigger the invitation reminder check (for testing)
+ */
+export async function triggerInvitationReminderCheck() {
+  await checkAndSendInvitationReminders();
 }

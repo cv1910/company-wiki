@@ -7248,3 +7248,36 @@ export async function expireOldInvitations() {
     );
   return result[0].affectedRows || 0;
 }
+
+
+export async function acceptPendingInvitation(invitationId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  await db
+    .update(pendingInvitations)
+    .set({
+      status: "accepted",
+      acceptedAt: new Date(),
+      acceptedByUserId: userId,
+    })
+    .where(eq(pendingInvitations.id, invitationId));
+  return true;
+}
+
+export async function getExpiringSoonInvitations(daysUntilExpiry: number = 3) {
+  const db = await getDb();
+  if (!db) return [];
+  const now = new Date();
+  const expiryThreshold = new Date(now.getTime() + daysUntilExpiry * 24 * 60 * 60 * 1000);
+  
+  return await db
+    .select()
+    .from(pendingInvitations)
+    .where(
+      and(
+        eq(pendingInvitations.status, "pending"),
+        gt(pendingInvitations.expiresAt, now),
+        lt(pendingInvitations.expiresAt, expiryThreshold)
+      )
+    );
+}

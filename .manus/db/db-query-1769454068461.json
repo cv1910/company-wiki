@@ -1,0 +1,34 @@
+{
+  "query": "SELECT * FROM pendingInvitations;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute SELECT * FROM pendingInvitations;",
+  "rows": [
+    {
+      "id": "1",
+      "email": "test-einladung@example.com",
+      "role": "user",
+      "invitedById": "1",
+      "inviteToken": "SgfMIA1GUVZ1_xQiyxayP-x5Xcf2SCn1",
+      "status": "pending",
+      "expiresAt": "2026-02-02 16:11:44",
+      "acceptedAt": "NULL",
+      "acceptedByUserId": "NULL",
+      "createdAt": "2026-01-26 16:11:43"
+    },
+    {
+      "id": "30001",
+      "email": "christian@ladneri.com",
+      "role": "user",
+      "invitedById": "1",
+      "inviteToken": "xcGAMpU4COp8-EtHIjsmQI6N-bfaZ4Km",
+      "status": "pending",
+      "expiresAt": "2026-02-02 18:41:30",
+      "acceptedAt": "NULL",
+      "acceptedByUserId": "NULL",
+      "createdAt": "2026-01-26 18:41:29"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\trole\tinvitedById\tinviteToken\tstatus\texpiresAt\tacceptedAt\tacceptedByUserId\tcreatedAt\n1\ttest-einladung@example.com\tuser\t1\tSgfMIA1GUVZ1_xQiyxayP-x5Xcf2SCn1\tpending\t2026-02-02 16:11:44\tNULL\tNULL\t2026-01-26 16:11:43\n30001\tchristian@ladneri.com\tuser\t1\txcGAMpU4COp8-EtHIjsmQI6N-bfaZ4Km\tpending\t2026-02-02 18:41:30\tNULL\tNULL\t2026-01-26 18:41:29\n",
+  "stderr": "",
+  "execution_time_ms": 64
+}

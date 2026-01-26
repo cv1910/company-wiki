@@ -1447,3 +1447,9 @@
 
 ## Bug-Fix Einladungs-Flow 26.01.2026
 - [x] Einladungs-Link korrigieren - neue Benutzer können sich nicht anmelden (Permission-Fehler)
+
+## Neue Features und Bug-Fix 26.01.2026
+- [x] Autorisierungsproblem bei Einladungs-Anmeldung lösen (Benutzer muss Inkognito-Fenster verwenden oder sich abmelden)
+- [x] Einladungs-Status automatisch aktualisieren wenn Benutzer sich anmeldet
+- [x] Willkommens-E-Mail nach erfolgreicher Registrierung senden
+- [x] Einladungs-Ablauf-Erinnerung nach 3 Tagen senden

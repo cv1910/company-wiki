@@ -1232,3 +1232,88 @@ Diese Benachrichtigung wurde automatisch vom Company Wiki System gesendet.
     return false;
   }
 }
+
+
+/**
+ * Send welcome email to new users after registration
+ */
+export async function sendWelcomeEmail(params: {
+  recipientEmail: string;
+  userName: string;
+}): Promise<boolean> {
+  const subject = `Willkommen im Company Wiki, ${params.userName}!`;
+  const content = `
+Hallo ${params.userName},
+
+herzlich willkommen im Company Wiki! Dein Konto wurde erfolgreich erstellt.
+
+Hier findest du alle wichtigen Informationen, Prozesse und Anleitungen für deinen Arbeitsalltag:
+
+- Wiki-Artikel: Durchsuche unsere Wissensdatenbank
+- SOPs: Standardprozesse und Arbeitsanweisungen
+- AI-Assistent: Stelle Fragen und erhalte schnelle Antworten
+- Schichtplan: Sieh deine Arbeitszeiten ein
+- Urlaub: Beantrage Urlaub und sieh dein Kontingent
+
+Bei Fragen wende dich an das Admin-Team.
+
+Viele Grüße,
+Das Company Wiki Team
+  `.trim();
+
+  try {
+    await notifyOwner({
+      title: subject,
+      content: `An: ${params.recipientEmail}\n\n${content}`,
+    });
+    console.log(`[Email] Welcome email sent to ${params.recipientEmail}`);
+    return true;
+  } catch (error) {
+    console.error("[Email] Failed to send welcome email:", error);
+    return false;
+  }
+}
+
+
+/**
+ * Send reminder email for expiring invitations
+ */
+export async function sendInvitationReminderEmail(params: {
+  recipientEmail: string;
+  inviterName: string;
+  daysUntilExpiry: number;
+  inviteLink: string;
+}): Promise<boolean> {
+  const subject = `Erinnerung: Deine Einladung zum Company Wiki läuft bald ab`;
+  const content = `
+Hallo,
+
+${params.inviterName} hat dich zum Company Wiki eingeladen, aber du hast die Einladung noch nicht angenommen.
+
+Die Einladung läuft in ${params.daysUntilExpiry} Tag${params.daysUntilExpiry > 1 ? "en" : ""} ab!
+
+Klicke auf den folgenden Link, um dich anzumelden:
+${params.inviteLink}
+
+Nach der Anmeldung mit deinem Google-Konto erhältst du automatisch Zugang.
+
+Wichtig: Öffne den Link in einem privaten/Inkognito-Browserfenster, falls du bereits mit einem anderen Google-Konto angemeldet bist.
+
+Bei Fragen wende dich an das Admin-Team.
+
+Viele Grüße,
+Das Company Wiki Team
+  `.trim();
+
+  try {
+    await notifyOwner({
+      title: subject,
+      content: `An: ${params.recipientEmail}\n\n${content}`,
+    });
+    console.log(`[Email] Invitation reminder sent to ${params.recipientEmail}`);
+    return true;
+  } catch (error) {
+    console.error("[Email] Failed to send invitation reminder email:", error);
+    return false;
+  }
+}
