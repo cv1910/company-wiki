@@ -71,35 +71,10 @@ export function MobileNavigation() {
   return (
     <>
       {/* Bottom Tab Bar - Premium Design with Gradient Active States */}
-      {/* WICHTIG: z-[9999] um sicherzustellen dass nichts darüber liegt */}
       <nav 
-        className="fixed bottom-0 left-0 right-0 z-[9999] border-t border-border/30 pb-safe md:hidden shadow-[0_-8px_32px_rgba(0,0,0,0.12)] overflow-visible" 
-        style={{ 
-          backgroundColor: 'var(--background)',
-        }}
+        className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/30 pb-safe md:hidden shadow-[0_-4px_16px_rgba(0,0,0,0.08)] bg-background" 
       >
-        {/* Solider Hintergrund-Blocker - deckt ALLES ab was dahinter liegt */}
-        <div 
-          className="absolute pointer-events-none"
-          style={{ 
-            backgroundColor: 'var(--background)', 
-            zIndex: 1,
-            top: '-100px',
-            bottom: '-100px',
-            left: '-100vw',
-            right: '-100vw',
-            width: '300vw',
-          }} 
-        />
-        {/* Zweite Schicht für zusätzliche Sicherheit */}
-        <div 
-          className="absolute inset-0 pointer-events-none"
-          style={{ 
-            backgroundColor: 'var(--background)', 
-            zIndex: 2,
-          }} 
-        />
-        <div className="relative flex items-center justify-around h-[76px] px-2" style={{ zIndex: 3 }}>
+        <div className="flex items-center justify-around h-16 px-2">
           {mainNavItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
@@ -108,31 +83,23 @@ export function MobileNavigation() {
                 key={item.path}
                 onClick={() => handleNavClick(item.path)}
                 className={cn(
-                  "flex flex-col items-center justify-center min-w-[68px] min-h-[52px] py-2 gap-1 transition-all duration-300 rounded-2xl",
+                  "flex flex-col items-center justify-center flex-1 py-1.5 transition-colors",
                   active 
-                    ? "" 
-                    : "text-muted-foreground active:scale-90 active:bg-accent/40"
+                    ? "text-primary" 
+                    : "text-muted-foreground"
                 )}
               >
-                <div className={cn(
-                  "relative flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-300",
-                  active 
-                    ? "bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/30" 
-                    : "bg-transparent"
-                )}>
-                  <Icon className={cn(
-                    "h-6 w-6 transition-all duration-300", 
-                    active ? "text-white stroke-[2px]" : "stroke-[1.5px]"
-                  )} />
+                <div className="relative h-5 flex items-center justify-center">
+                  <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
                   {item.badge && item.badge > 0 && (
-                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground flex items-center justify-center shadow-md ring-2 ring-background">
+                    <span className="absolute -top-1 -right-2 flex items-center justify-center min-w-[14px] h-3.5 px-1 text-[9px] font-bold text-white rounded-full bg-primary">
                       {item.badge > 9 ? "9+" : item.badge}
                     </span>
                   )}
                 </div>
                 <span className={cn(
-                  "text-[10px] transition-all duration-300", 
-                  active ? "font-bold text-primary" : "font-medium"
+                  "text-[10px] mt-0.5 whitespace-nowrap",
+                  active ? "font-semibold" : "font-medium"
                 )}>
                   {item.label}
                 </span>
@@ -143,13 +110,13 @@ export function MobileNavigation() {
           {/* Menu Button */}
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild>
-              <button className="flex flex-col items-center justify-center min-w-[68px] min-h-[52px] py-2 gap-1 text-muted-foreground transition-all duration-300 rounded-2xl active:scale-90 active:bg-accent/40 relative">
-                <div className="flex items-center justify-center w-11 h-11 rounded-xl">
-                  <Menu className="h-6 w-6 stroke-[1.5px]" />
+              <button className="flex flex-col items-center justify-center flex-1 py-1.5 text-muted-foreground transition-colors relative">
+                <div className="h-5 flex items-center justify-center">
+                  <Menu className="h-5 w-5" strokeWidth={2} />
                 </div>
-                <span className="text-[10px] font-medium">Mehr</span>
+                <span className="text-[10px] mt-0.5 font-medium">Mehr</span>
                 {unreadCount && unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-3 h-3 w-3 rounded-full bg-destructive animate-pulse ring-2 ring-background" />
+                  <span className="absolute top-0 right-3 h-2 w-2 rounded-full bg-destructive" />
                 )}
               </button>
             </SheetTrigger>
@@ -236,7 +203,7 @@ export function MobileNavigation() {
       <Spotlight open={spotlightOpen} onOpenChange={setSpotlightOpen} />
 
       {/* Bottom Padding for content - matches nav height */}
-      <div className="h-[76px] md:hidden" />
+      <div className="h-16 md:hidden" />
     </>
   );
 }

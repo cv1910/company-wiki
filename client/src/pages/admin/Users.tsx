@@ -20,11 +20,12 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
-import { Shield, ShieldCheck, User, Users as UsersIcon } from "lucide-react";
+import { Shield, ShieldCheck, User, Users as UsersIcon, UserPlus } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "@/lib/hapticToast";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { InviteUserDialog } from "@/components/InviteUserDialog";
 
 export default function AdminUsers() {
   const { user: currentUser } = useAuth();
@@ -94,11 +95,21 @@ export default function AdminUsers() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Benutzerverwaltung</h1>
-        <p className="text-muted-foreground mt-1">
-          Verwalten Sie Benutzer und deren Berechtigungen
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Benutzerverwaltung</h1>
+          <p className="text-muted-foreground mt-1">
+            Verwalten Sie Benutzer und deren Berechtigungen
+          </p>
+        </div>
+        <InviteUserDialog
+          trigger={
+            <Button>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Benutzer einladen
+            </Button>
+          }
+        />
       </div>
 
       {/* Stats */}

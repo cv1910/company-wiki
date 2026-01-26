@@ -1361,3 +1361,20 @@
 ## Aufgaben-Seite Fixes (Januar 2026)
 - [x] Tabs: Schwarzer Rahmen um "Offen" entfernen - nur Unterstreichung wie Inbox
 - [x] Dark Mode: Schwarzer Block unten beheben (min-h-screen bg-background)
+
+## UI-Fixes (Januar 2026 - Teil 3)
+- [ ] Trackpad-Scrollen funktioniert nicht
+- [ ] Desktop Navigation: Ausblenden funktioniert nicht vollständig
+- [ ] Desktop Navigation: Button zum Einblenden fehlt
+- [ ] Mobile: Block unten im Vordergrund entfernen (Urlaub-Seite)
+- [ ] Benutzer einladen: Feature im Benutzer-Reiter hinzufügen
+
+
+## Bug-Fixes 26.01.2026
+- [x] CSS-Fixes: Übermäßige Hintergrund-Overlays in index.css entfernt
+- [x] MobileNavigation: Hintergrund-Blocker entfernt der Inhalt verdeckte
+- [x] BottomNavigation: Vereinfacht und konsistent gestaltet
+- [x] DashboardLayout: Doppelte Navigation entfernt (MobileNavigation)
+- [x] Scrolling: Main-Container CSS verbessert für besseres Trackpad-Scrolling
+- [x] Benutzereinladung: InviteUserDialog Komponente erstellt
+- [x] Admin Users: Einladungs-Button hinzugefügt

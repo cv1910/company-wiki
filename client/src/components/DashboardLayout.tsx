@@ -3,7 +3,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { UserProfile } from "@/components/UserProfile";
 import { Spotlight, useSpotlight } from "@/components/Spotlight";
-import { MobileNavigation } from "@/components/MobileNavigation";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { SwipeNavigationWrapper } from "@/components/SwipeNavigationWrapper";
 import {
@@ -563,6 +562,16 @@ function DashboardLayoutContent({
         {!isMobile && (
           <div className="flex border-b h-14 items-center justify-between bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
             <nav className="flex items-center gap-2" aria-label="Breadcrumb">
+              {/* Toggle Button für Sidebar */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleSidebar}
+                className="h-8 w-8 mr-2"
+                title={isCollapsed ? "Navigation einblenden" : "Navigation ausblenden"}
+              >
+                <PanelLeft className="h-4 w-4" />
+              </Button>
               {/* Breadcrumb navigation */}
               <span className="font-semibold text-foreground tracking-tight">
                 {activeMenuItem?.label ?? "ohwee"}
@@ -632,7 +641,7 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-6 pb-[120px] md:pb-6 page-transition bg-background min-h-[100dvh] overflow-x-hidden overflow-y-auto w-full max-w-full">
+        <main className="flex-1 p-6 pb-24 md:pb-6 page-transition bg-background min-h-screen overflow-x-hidden overflow-y-auto w-full max-w-full">
           <SwipeNavigationWrapper enabled={isMobile}>
             {children}
           </SwipeNavigationWrapper>
@@ -653,7 +662,6 @@ function DashboardLayoutContent({
       </SidebarInset>
       
       {/* Mobile Bottom Navigation */}
-      <MobileNavigation />
       <BottomNavigation />
     </>
   );
