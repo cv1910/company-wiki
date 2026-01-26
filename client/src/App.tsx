@@ -135,6 +135,9 @@ function Router() {
         <Route path="/aufgaben" component={Aufgaben} />
         <Route path="/aufgaben/new" component={Aufgaben} />
         
+        {/* How to Work - redirects to SOPs */}
+        <Route path="/how-to-work" component={SOPs} />
+        
         {/* Shift Reports */}
         <Route path="/schicht-auswertungen" component={ShiftReports} />
         

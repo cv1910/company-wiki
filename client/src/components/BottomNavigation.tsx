@@ -8,18 +8,11 @@ import {
   MessageCircle, 
   CheckSquare, 
   Menu,
-  Plus,
   Calendar,
   BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface NavItem {
   icon: typeof Home;
@@ -28,7 +21,7 @@ interface NavItem {
   badgeType?: "taps" | "tasks";
 }
 
-// Geändert zu: Home, AI Suche, Taps, Kalender, Aufgaben, How to Work
+// Navigation Items: Home, AI Suche, Taps, Kalender, Aufgaben, How to Work, Mehr
 const navItems: NavItem[] = [
   { icon: Home, label: "Home", path: "/" },
   { icon: Search, label: "AI Suche", path: "/search" },
@@ -36,12 +29,6 @@ const navItems: NavItem[] = [
   { icon: Calendar, label: "Kalender", path: "/calendar" },
   { icon: CheckSquare, label: "Aufgaben", path: "/aufgaben", badgeType: "tasks" },
   { icon: BookOpen, label: "How to Work", path: "/how-to-work" },
-];
-
-const quickActions = [
-  { label: "Neue Aufgabe", path: "/aufgaben?action=new", icon: CheckSquare },
-  { label: "Neuer Termin", path: "/calendar?action=new", icon: Calendar },
-  { label: "Urlaub beantragen", path: "/urlaub?action=new", icon: Calendar },
 ];
 
 export function BottomNavigation() {
@@ -58,7 +45,7 @@ export function BottomNavigation() {
 
   // Fetch open tasks count
   const { data: openTasksCount } = trpc.tasks.openCount.useQuery(undefined, {
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 60000,
     staleTime: 30000,
   });
 
@@ -67,7 +54,6 @@ export function BottomNavigation() {
   }
 
   const handleNavigation = (path: string, isActive: boolean) => {
-    // Nur Haptic wenn nicht bereits auf der Seite
     if (!isActive) {
       impact();
     } else {
@@ -89,33 +75,12 @@ export function BottomNavigation() {
 
   return (
     <nav 
-      className="fixed bottom-0 left-0 right-0 z-[9999] border-t border-border safe-area-bottom overflow-visible"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border"
       style={{ 
-        backgroundColor: 'var(--background)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
     >
-      {/* Solider Hintergrund-Blocker - deckt ALLES ab was dahinter liegt */}
-      <div 
-        className="absolute pointer-events-none"
-        style={{ 
-          backgroundColor: 'var(--background)', 
-          zIndex: 1,
-          top: '-100px',
-          bottom: '-100px',
-          left: '-100vw',
-          right: '-100vw',
-          width: '300vw',
-        }} 
-      />
-      {/* Zweite Schicht für zusätzliche Sicherheit */}
-      <div 
-        className="absolute inset-0 pointer-events-none"
-        style={{ 
-          backgroundColor: 'var(--background)', 
-          zIndex: 2,
-        }} 
-      />
-      <div className="relative flex items-center justify-around h-16 px-2" style={{ zIndex: 3 }}>
+      <div className="flex items-stretch h-14">
         {navItems.map((item) => {
           const isActive = location === item.path || 
             (item.path !== "/" && location.startsWith(item.path));
@@ -126,20 +91,17 @@ export function BottomNavigation() {
               key={item.path}
               onClick={() => handleNavigation(item.path, isActive)}
               className={cn(
-                "flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors relative",
+                "flex flex-col items-center justify-center flex-1 py-1.5 transition-colors",
                 isActive 
                   ? "text-primary" 
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground"
               )}
             >
-              <div className="relative">
-                <item.icon className={cn(
-                  "h-5 w-5 mb-0.5 transition-transform",
-                  isActive && "scale-110"
-                )} />
+              <div className="relative h-5 flex items-center justify-center">
+                <item.icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
                 {badgeCount > 0 && (
                   <span className={cn(
-                    "absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-bold text-white rounded-full",
+                    "absolute -top-1 -right-2 flex items-center justify-center min-w-[14px] h-3.5 px-1 text-[9px] font-bold text-white rounded-full",
                     item.badgeType === "tasks" ? "bg-amber-500" : "bg-primary"
                   )}>
                     {badgeCount > 99 ? "99+" : badgeCount}
@@ -147,8 +109,8 @@ export function BottomNavigation() {
                 )}
               </div>
               <span className={cn(
-                "text-[10px] font-medium",
-                isActive && "font-semibold"
+                "text-[10px] mt-0.5 whitespace-nowrap",
+                isActive ? "font-semibold" : "font-medium"
               )}>
                 {item.label}
               </span>
@@ -159,10 +121,12 @@ export function BottomNavigation() {
         {/* Menu Button */}
         <button
           onClick={handleMenuToggle}
-          className="flex flex-col items-center justify-center flex-1 h-full py-1 text-muted-foreground hover:text-foreground transition-colors"
+          className="flex flex-col items-center justify-center flex-1 py-1.5 text-muted-foreground transition-colors"
         >
-          <Menu className="h-5 w-5 mb-0.5" />
-          <span className="text-[10px] font-medium">Mehr</span>
+          <div className="h-5 flex items-center justify-center">
+            <Menu className="h-5 w-5" strokeWidth={2} />
+          </div>
+          <span className="text-[10px] mt-0.5 font-medium">Mehr</span>
         </button>
       </div>
     </nav>

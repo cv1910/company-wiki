@@ -465,7 +465,7 @@ export default function Home() {
   };
 
   const renderWelcomeHero = () => (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/8 to-secondary/5 border border-primary/15 p-5 sm:p-8 md:p-10 shadow-lg">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/8 to-secondary/5 border border-primary/15 p-6 sm:p-8 md:p-10 shadow-lg">
       {/* Decorative elements removed to prevent visual artifacts on mobile */}
       
       <div className="relative">
@@ -1278,7 +1278,7 @@ export default function Home() {
     {/* Mobile: PullToRefresh */}
     <div className="md:hidden overflow-hidden w-full max-w-full">
       <PullToRefresh onRefresh={handleRefresh} className="min-h-[100dvh] bg-background">
-        <div className="space-y-8 animate-fade-in pb-[calc(var(--bottom-nav-height,64px)+2rem)] min-h-[100dvh] bg-background w-full max-w-full">
+        <div className="space-y-6 animate-fade-in pb-20 min-h-[100dvh] bg-background w-full max-w-full px-4">
           {/* Settings Button */}
           <div className="flex justify-end">
             <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>

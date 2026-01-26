@@ -1348,3 +1348,12 @@
 - [x] Task-Seite: Inbox-Style mit Tabs (Open/Archived/Snoozed), Swipe mit orangem Snooze-Button
 - [x] Kalender-Monatsansicht: Hey-Style mit MON-SUN Header, Wochen-basiert, mehrtägige Termine als Balken
 - [x] Bottom Navigation: Aufgaben Icon korrigieren, How to Work Icon hinzufügen
+
+## UI-Fixes (Januar 2026 - Teil 2)
+- [x] How to Work: 404 beheben - Route hinzufügen (leitet auf SOPs weiter)
+- [x] How to Work: Text nebeneinander schreiben in Bottom Navigation
+- [x] Bottom Navigation: Alle Icons gleiche Höhe und Größe (w-5 h-5)
+- [x] Weißer Block unter Karten entfernen (Padding reduziert)
+- [x] Home-Seite: Mehr Abstand zwischen Schrift und Box-Rand (p-6)
+- [x] Aufgaben-Seite: Design wie Inbox-Screenshot (Offen, Snoozed, Erledigt - Archiviert entfernt)
+- [x] Aufgaben-Seite: Tab-Logik für Offen/Snoozed/Erledigt implementiert

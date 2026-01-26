@@ -508,22 +508,30 @@ export default function Aufgaben() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const currentTasks = useMemo((): any[] => {
-    let tasks: any[] = [];
+    let tasks: any[] = (myTasks || []) as any[];
+    
+    // Tab-basierte Filterung
     switch (activeTab) {
-      case "assigned":
-        tasks = (assignedTasks || []) as any[];
+      case "all": // Offen
+        tasks = tasks.filter(t => t.task.status !== "completed" && t.task.status !== "cancelled");
         break;
-      case "created":
-        tasks = (createdTasks || []) as any[];
+      case "created": // Snoozed - Aufgaben mit zukünftigem Fälligkeitsdatum die verschoben wurden
+        tasks = tasks.filter(t => {
+          const dueDate = t.task.dueDate ? new Date(t.task.dueDate) : null;
+          return dueDate && dueDate > new Date() && t.task.status !== "completed";
+        });
+        break;
+      case "trash": // Erledigt
+        tasks = tasks.filter(t => t.task.status === "completed");
         break;
       default:
-        tasks = (myTasks || []) as any[];
+        tasks = tasks.filter(t => t.task.status !== "completed" && t.task.status !== "cancelled");
     }
 
-    // Status-Filter
-    if (filterStatus === "open") {
+    // Zusätzlicher Status-Filter
+    if (filterStatus === "open" && activeTab === "all") {
       tasks = tasks.filter(t => t.task.status !== "completed" && t.task.status !== "cancelled");
-    } else if (filterStatus === "completed") {
+    } else if (filterStatus === "completed" && activeTab === "all") {
       tasks = tasks.filter(t => t.task.status === "completed");
     }
 
@@ -533,7 +541,7 @@ export default function Aufgaben() {
     }
 
     return tasks;
-  }, [activeTab, myTasks, assignedTasks, createdTasks, filterStatus, filterPriority]);
+  }, [activeTab, myTasks, filterStatus, filterPriority]);
 
   const openCount = useMemo(() => {
     return (myTasks || []).filter(t => t.task.status !== "completed" && t.task.status !== "cancelled").length;
@@ -648,30 +656,24 @@ export default function Aufgaben() {
         <div className="flex flex-col gap-3">
           {/* Tab-Leiste - Inbox Style */}
           <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
-            <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 bg-transparent gap-0 p-0 h-auto">
+            <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 bg-transparent gap-1 p-0 h-auto">
               <TabsTrigger 
                 value="all" 
-                className="text-sm font-medium px-3 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent"
+                className="text-sm font-medium px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent"
               >
                 Offen
               </TabsTrigger>
               <TabsTrigger 
-                value="assigned" 
-                className="text-sm font-medium px-3 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent"
-              >
-                Archiviert
-              </TabsTrigger>
-              <TabsTrigger 
                 value="created" 
-                className="text-sm font-medium px-3 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent"
+                className="text-sm font-medium px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent"
               >
                 Snoozed
               </TabsTrigger>
               <TabsTrigger 
                 value="trash" 
-                className="text-sm font-medium px-3 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent"
+                className="text-sm font-medium px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent"
               >
-                Papierkorb
+                Erledigt
               </TabsTrigger>
             </TabsList>
           </div>
