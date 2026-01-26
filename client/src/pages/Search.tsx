@@ -69,20 +69,17 @@ export default function Search() {
         </div>
 
         {/* Semantic Search Toggle */}
-        <div 
-          className="flex items-center justify-between p-4 rounded-xl bg-muted/50 border cursor-pointer hover:bg-muted/70 transition-colors"
-          onClick={() => setUseSemanticSearch(!useSemanticSearch)}
-        >
+        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-gradient-to-br from-purple-500/20 to-blue-500/20">
-              <Sparkles className="h-5 w-5 text-purple-600" />
+            <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-blue-500/20">
+              <Sparkles className="h-4 w-4 text-purple-600" />
             </div>
             <div>
-              <Label htmlFor="semantic-search" className="font-medium cursor-pointer text-base">
+              <Label htmlFor="semantic-search" className="font-medium cursor-pointer">
                 AI-gestützte Suche
               </Label>
-              <p className="text-sm text-muted-foreground">
-                Versteht den Kontext und findet relevante Ergebnisse
+              <p className="text-xs text-muted-foreground">
+                Versteht den Kontext und findet relevante Ergebnisse auch ohne exakte Begriffe
               </p>
             </div>
           </div>
@@ -90,7 +87,6 @@ export default function Search() {
             id="semantic-search"
             checked={useSemanticSearch}
             onCheckedChange={setUseSemanticSearch}
-            className="scale-125"
           />
         </div>
       </div>

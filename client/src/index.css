@@ -1514,13 +1514,73 @@ body {
 }
 
 
-/* ===== BOTTOM NAVIGATION - ASANA STYLE ===== */
-/* Sauberes, minimales Design ohne übermäßige Overlays */
+/* ===== BOTTOM NAVIGATION COMPLETE COVERAGE FIX ===== */
 
+/* Ensure bottom navigation covers the entire bottom area including corners */
 @media (max-width: 768px) {
-  /* Bottom Navigation - solider Hintergrund, minimale Höhe */
+  /* Fixed bottom navigation bar - ensure full coverage with highest z-index */
   nav[class*="fixed bottom-0"] {
-    z-index: 50;
+    z-index: 9999 !important;
+    isolation: isolate;
+  }
+  
+  /* Bottom navigation background overlay - covers everything behind it */
+  nav[class*="fixed bottom-0"]::before {
+    content: "";
+    position: absolute;
+    top: -200px;
+    left: -200vw;
+    right: -200vw;
+    bottom: -200px;
+    width: 500vw;
     background-color: var(--background);
+    z-index: -1;
+    pointer-events: none;
+  }
+  
+  /* Zweite Schicht für zusätzliche Sicherheit */
+  nav[class*="fixed bottom-0"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: var(--background);
+    z-index: 0;
+    pointer-events: none;
+  }
+  
+  /* Ensure content doesn't show through the bottom nav area */
+  main {
+    /* Add extra padding at the bottom to prevent content from appearing behind nav */
+    padding-bottom: 160px !important;
+  }
+  
+  /* Clip content that would otherwise show behind bottom nav */
+  [data-slot="sidebar-inset"] {
+    overflow: hidden;
+  }
+  
+  /* Ensure the scroll container clips content properly */
+  .overflow-y-auto {
+    /* Clip content at the bottom */
+    clip-path: inset(0 0 0 0);
+  }
+  
+  /* Stelle sicher dass der Inhalt nicht über die Navigation hinausragt */
+  .page-transition {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+/* Safe area handling for notched devices */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  @media (max-width: 768px) {
+    nav[class*="fixed bottom-0"] {
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem) !important;
+    }
+    
+    nav[class*="fixed bottom-0"]::before {
+      bottom: calc(-50px - env(safe-area-inset-bottom, 0px));
+    }
   }
 }

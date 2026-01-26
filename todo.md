@@ -1338,16 +1338,13 @@
 ## Layout-Fix - Elemente unter Bottom Navigation (Januar 2026)
 - [x] Elemente links und rechts unter dem unteren Menü sichtbar auf allen Seiten
 - [x] Rotes/rosa Element links unten hinter der Bottom Navigation sichtbar (Screenshot zeigt Home-Icon mit rotem Hintergrund)
-- [x] Bottom Navigation Design wie Asana Mobile App - kein weißer Block, sauberes Design
-- [x] Übermäßiges Padding entfernen das den weißen Block verursacht
 
-## UI-Verbesserungen und Features (Januar 2026)
-- [x] Home-Seite: Schrift-Ausrichtung korrigieren (linksbündig mit Kasten)
-- [x] Bottom Navigation: Kalender-Tab hinzufügen
-- [x] Aufgaben-Seite: Swipe nach links zum Archivieren/Ausblenden
-- [x] Aufgaben-Seite: Swipe nach rechts zum Verschieben mit Erinnerungs-Popup
+## Bottom Navigation Fixes (Januar 2026)
+- [x] Aufgaben Icon in Bottom Navigation korrigieren (wird nicht korrekt angezeigt)
+- [x] How to Work Icon rechts neben Aufgaben in Bottom Navigation hinzufügen
 
-## UI-Fixes (Januar 2026 - Teil 2)
-- [x] Home-Seite: Schrift noch weiter nach rechts (mehr Padding im Welcome-Kasten)
-- [x] AI Suche: Toggle breiter für bessere Bedienbarkeit
-- [x] Kalender: Mehrtägige Termine zusammenhängend darstellen (bereits implementiert - funktioniert korrekt)
+## Design-Überarbeitung (Januar 2026)
+- [x] Snooze-Dialog: Neues Design wie Screenshot (Later today, This evening, Tomorrow, This week, Next week, Custom)
+- [x] Task-Seite: Inbox-Style mit Tabs (Open/Archived/Snoozed), Swipe mit orangem Snooze-Button
+- [x] Kalender-Monatsansicht: Hey-Style mit MON-SUN Header, Wochen-basiert, mehrtägige Termine als Balken
+- [x] Bottom Navigation: Aufgaben Icon korrigieren, How to Work Icon hinzufügen

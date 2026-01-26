@@ -719,7 +719,8 @@ export default function Calendar() {
     const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
     const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
     const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
-    const weekDays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+    // Hey-Style: MON, TUE, WED, THU, FRI, SAT, SUN
+    const weekDays = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
     
     // Group days into weeks
     const weeks: Date[][] = [];
@@ -825,50 +826,94 @@ export default function Calendar() {
     };
 
     return (
-      <div className="flex flex-col h-full">
-        {/* Week day headers */}
-        <div className="grid grid-cols-7 border-b">
-          {weekDays.map((day) => (
-            <div
-              key={day}
-              className="p-2 text-center text-sm font-medium text-muted-foreground"
-            >
-              {day}
-            </div>
-          ))}
-        </div>
-
-        {/* Calendar grid - by weeks */}
-        <div className="flex-1 flex flex-col">
+      <div className="flex flex-col h-full bg-background dark:bg-zinc-950">
+        {/* Calendar grid - Hey Style: weeks with headers integrated */}
+        <div className="flex-1 flex flex-col divide-y divide-border">
           {weeks.map((week, weekIndex) => {
             const multiDayEvents = getMultiDayEventsForWeek(week);
             const eventBars = getEventBarsForWeek(week, multiDayEvents);
             const maxRows = Math.max(0, ...eventBars.map(b => b.row)) + 1;
             
+            // Get month label for first day of week if it's the first of the month or first week
+            const firstDayOfWeek = week[0];
+            const showMonthLabel = weekIndex === 0 || firstDayOfWeek.getDate() <= 7;
+            const monthLabel = format(week[6], "MMMM", { locale: de }).toUpperCase();
+            
             return (
-              <div key={weekIndex} className="flex-1 min-h-[100px] relative">
-                {/* Multi-day event bars */}
-                <div className="absolute top-6 left-0 right-0 z-10 pointer-events-none" style={{ height: maxRows * 20 }}>
+              <div key={weekIndex} className="flex-1 min-h-[120px] relative">
+                {/* Month label on the right side - Hey Style */}
+                {showMonthLabel && (
+                  <div className="absolute right-0 top-0 text-[10px] font-medium text-muted-foreground uppercase tracking-wider pr-2 pt-1">
+                    {monthLabel}
+                  </div>
+                )}
+                
+                {/* Week header row with day names and dates - Hey Style */}
+                <div className="grid grid-cols-7 border-b border-border/50">
+                  {week.map((day, dayIndex) => {
+                    const isCurrentDay = isToday(day);
+                    const isWeekend = dayIndex >= 5; // Saturday and Sunday
+                    return (
+                      <div
+                        key={dayIndex}
+                        className={cn(
+                          "p-1.5 text-center border-r border-border/30 last:border-r-0",
+                          isWeekend && "bg-muted/30 dark:bg-zinc-900/50"
+                        )}
+                      >
+                        <div className="text-[10px] font-medium text-muted-foreground uppercase">
+                          {weekDays[dayIndex]}
+                        </div>
+                        <div
+                          className={cn(
+                            "text-sm font-bold mt-0.5",
+                            isCurrentDay && "text-amber-500 dark:text-amber-400"
+                          )}
+                        >
+                          {format(day, "d")}
+                        </div>
+                        {isCurrentDay && (
+                          <div className="w-full h-0.5 bg-amber-500 dark:bg-amber-400 mt-0.5 rounded-full" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Multi-day event bars - Hey Style */}
+                <div className="relative z-10" style={{ minHeight: Math.max(maxRows * 22, 44) }}>
                   {eventBars.map((bar, barIdx) => {
                     const leftPercent = (bar.startCol / 7) * 100;
                     const widthPercent = ((bar.endCol - bar.startCol + 1) / 7) * 100;
+                    
+                    // Hey-Style: Use muted colors for event bars
+                    const getHeyStyleColor = (color: string) => {
+                      const colorMap: Record<string, string> = {
+                        blue: "bg-blue-200/80 dark:bg-blue-900/60 text-blue-900 dark:text-blue-100",
+                        green: "bg-green-200/80 dark:bg-green-900/60 text-green-900 dark:text-green-100",
+                        red: "bg-red-200/80 dark:bg-red-900/60 text-red-900 dark:text-red-100",
+                        yellow: "bg-amber-200/80 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100",
+                        purple: "bg-purple-200/80 dark:bg-purple-900/60 text-purple-900 dark:text-purple-100",
+                        pink: "bg-pink-200/80 dark:bg-pink-900/60 text-pink-900 dark:text-pink-100",
+                        orange: "bg-orange-200/80 dark:bg-orange-900/60 text-orange-900 dark:text-orange-100",
+                        cyan: "bg-cyan-200/80 dark:bg-cyan-900/60 text-cyan-900 dark:text-cyan-100",
+                        gray: "bg-stone-300/80 dark:bg-stone-700/60 text-stone-900 dark:text-stone-100",
+                      };
+                      return colorMap[color] || "bg-stone-300/80 dark:bg-stone-700/60 text-stone-900 dark:text-stone-100";
+                    };
                     
                     return (
                       <div
                         key={`${bar.event.id}-${weekIndex}-${barIdx}`}
                         className={cn(
-                          "absolute h-[18px] text-xs px-1.5 truncate cursor-pointer pointer-events-auto flex items-center",
-                          getDotColorClass(bar.event.color),
-                          "text-white",
-                          bar.isStart ? "rounded-l" : "",
-                          bar.isEnd ? "rounded-r" : "",
-                          !bar.isStart && "pl-0",
-                          !bar.isEnd && "pr-0"
+                          "absolute h-[20px] text-[11px] font-medium px-2 truncate cursor-pointer pointer-events-auto flex items-center",
+                          getHeyStyleColor(bar.event.color),
+                          "rounded-sm"
                         )}
                         style={{
-                          top: bar.row * 20,
-                          left: `calc(${leftPercent}% + ${bar.isStart ? 4 : 0}px)`,
-                          width: `calc(${widthPercent}% - ${(bar.isStart ? 4 : 0) + (bar.isEnd ? 4 : 0)}px)`,
+                          top: bar.row * 22 + 2,
+                          left: `calc(${leftPercent}% + 2px)`,
+                          width: `calc(${widthPercent}% - 4px)`,
                         }}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -876,81 +921,7 @@ export default function Calendar() {
                         }}
                         title={bar.event.title}
                       >
-                        {bar.isStart && <span className="truncate">{bar.event.title}</span>}
-                      </div>
-                    );
-                  })}
-                </div>
-                
-                {/* Day cells */}
-                <div className="grid grid-cols-7 h-full">
-                  {week.map((day, dayIndex) => {
-                    const dayEvents = getEventsForDay(day);
-                    // Filter out multi-day events (they're shown as bars)
-                    const singleDayEvents = dayEvents.filter(event => {
-                      const eventStart = new Date(event.startDate);
-                      const eventEnd = new Date(event.endDate);
-                      return differenceInDays(eventEnd, eventStart) < 1 && !event.isAllDay;
-                    });
-                    const isCurrentMonth = isSameMonth(day, currentDate);
-                    const isCurrentDay = isToday(day);
-                    const isDropTarget = dragOverDate && isSameDay(day, dragOverDate);
-
-                    return (
-                      <div
-                        key={dayIndex}
-                        className={cn(
-                          "border-b border-r p-1 cursor-pointer transition-colors",
-                          !isCurrentMonth && "bg-muted/20 text-muted-foreground",
-                          isDropTarget && isDragging && "bg-primary/20 ring-2 ring-primary ring-inset",
-                          !isDropTarget && "hover:bg-muted/50"
-                        )}
-                        onClick={() => openNewEventDialog(day)}
-                        onDragOver={(e) => handleDragOver(day, e)}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(day, e)}
-                      >
-                        <div
-                          className={cn(
-                            "text-sm font-medium mb-1 w-7 h-7 flex items-center justify-center rounded-full",
-                            isCurrentDay && "bg-primary text-primary-foreground"
-                          )}
-                        >
-                          {format(day, "d")}
-                        </div>
-                        {/* Space for multi-day event bars */}
-                        <div style={{ height: maxRows * 20 + 4 }} />
-                        {/* Single-day events */}
-                        <div className="space-y-0.5">
-                          {singleDayEvents.slice(0, 2).map((event) => (
-                            <div
-                              key={event.id}
-                              draggable={event.id > 0 || event.id <= -1001}
-                              onDragStart={(e) => handleDragStart(event, e)}
-                              onDragEnd={handleDragEnd}
-                              className={cn(
-                                "text-xs px-1.5 py-0.5 rounded truncate cursor-pointer border group flex items-center gap-1",
-                                getColorClass(event.color),
-                                (event.id > 0 || event.id <= -1001) && "cursor-grab active:cursor-grabbing",
-                                draggedEvent?.id === event.id && "opacity-50"
-                              )}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openEditEventDialog(event);
-                              }}
-                            >
-                              {(event.id > 0 || event.id <= -1001) && (
-                                <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-50 flex-shrink-0" />
-                              )}
-                              <span className="truncate">{event.title}</span>
-                            </div>
-                          ))}
-                          {singleDayEvents.length > 2 && (
-                            <div className="text-xs text-muted-foreground px-1">
-                              +{singleDayEvents.length - 2} weitere
-                            </div>
-                          )}
-                        </div>
+                        <span className="truncate">{bar.event.title}</span>
                       </div>
                     );
                   })}

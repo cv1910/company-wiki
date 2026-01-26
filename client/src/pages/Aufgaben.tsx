@@ -29,7 +29,7 @@ import { useLocation, Link } from "wouter";
 import { formatDistanceToNow, format } from "date-fns";
 import { de } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SwipeableTaskCard, PostponeOption } from "@/components/SwipeableTaskCard";
+import { SwipeableTaskCard } from "@/components/SwipeableTaskCard";
 import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
 import { useTaskReminders } from "@/hooks/useTaskReminders";
 import { useState, useMemo, useEffect } from "react";
@@ -79,7 +79,6 @@ function TaskCard({
   onDelete,
   onComment,
   onEdit,
-  onArchive,
   onPostpone,
   showAssignee = true 
 }: { 
@@ -88,8 +87,7 @@ function TaskCard({
   onDelete: (id: number) => void;
   onComment: (id: number) => void;
   onEdit: (task: any) => void;
-  onArchive: (id: number) => void;
-  onPostpone: (id: number, option: PostponeOption) => void;
+  onPostpone: (id: number) => void;
   showAssignee?: boolean;
 }) {
   const status = task.task.status as keyof typeof STATUS_CONFIG;
@@ -101,9 +99,9 @@ function TaskCard({
 
   return (
     <SwipeableTaskCard
-      onArchive={() => onArchive(task.task.id)}
-      onPostpone={(option) => onPostpone(task.task.id, option)}
-      disabled={task.task.status === "completed" || task.task.status === "cancelled"}
+      onComplete={() => onStatusChange(task.task.id, "completed")}
+      onPostpone={() => onPostpone(task.task.id)}
+      disabled={task.task.status === "completed"}
     >
     <div className="group relative p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-200">
       <div className="flex items-start gap-3">
@@ -259,6 +257,10 @@ export default function Aufgaben() {
   // Edit mode
   const [editingTask, setEditingTask] = useState<any>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  
+  // Snooze dialog state
+  const [snoozeDialogOpen, setSnoozeDialogOpen] = useState(false);
+  const [snoozeTaskId, setSnoozeTaskId] = useState<number | null>(null);
 
   // Queries
   const { data: myTasks, isLoading: myTasksLoading, refetch: refetchMyTasks } = trpc.tasks.getMyTasks.useQuery();
@@ -537,55 +539,58 @@ export default function Aufgaben() {
     return (myTasks || []).filter(t => t.task.status !== "completed" && t.task.status !== "cancelled").length;
   }, [myTasks]);
 
-  // Archive task (set status to cancelled and hide)
-  const handleArchive = (id: number) => {
-    updateTask.mutate({ id, status: "cancelled" });
-    toast.success("Aufgabe archiviert");
+  // Open snooze dialog
+  const handlePostpone = (id: number) => {
+    setSnoozeTaskId(id);
+    setSnoozeDialogOpen(true);
   };
 
-  // Postpone task with options
-  const handlePostpone = (id: number, option: PostponeOption) => {
+  // Snooze task to specific time
+  const handleSnooze = (option: string) => {
+    if (!snoozeTaskId) return;
+    
     const now = new Date();
     let newDate: Date;
     
     switch (option) {
-      case "1hour":
-        newDate = new Date(now.getTime() + 60 * 60 * 1000);
-        break;
-      case "afternoon":
+      case "later_today":
         newDate = new Date(now);
-        newDate.setHours(14, 0, 0, 0);
-        // If it's already past 14:00, set to tomorrow afternoon
+        newDate.setHours(12, 0, 0, 0);
         if (newDate <= now) {
-          newDate.setDate(newDate.getDate() + 1);
+          newDate.setHours(now.getHours() + 2);
         }
         break;
-      case "evening":
+      case "this_evening":
         newDate = new Date(now);
         newDate.setHours(18, 0, 0, 0);
-        // If it's already past 18:00, set to tomorrow evening
-        if (newDate <= now) {
-          newDate.setDate(newDate.getDate() + 1);
-        }
         break;
       case "tomorrow":
         newDate = new Date(now);
         newDate.setDate(newDate.getDate() + 1);
         newDate.setHours(9, 0, 0, 0);
         break;
+      case "this_week":
+        // Next Wednesday at 9:00
+        newDate = new Date(now);
+        const daysUntilWed = (3 - now.getDay() + 7) % 7 || 7;
+        newDate.setDate(newDate.getDate() + daysUntilWed);
+        newDate.setHours(9, 0, 0, 0);
+        break;
+      case "next_week":
+        // Next Monday at 9:00
+        newDate = new Date(now);
+        const daysUntilMon = (1 - now.getDay() + 7) % 7 || 7;
+        newDate.setDate(newDate.getDate() + daysUntilMon);
+        newDate.setHours(9, 0, 0, 0);
+        break;
       default:
-        newDate = new Date(now.getTime() + 60 * 60 * 1000);
+        return;
     }
     
-    updateTask.mutate({ id, dueDate: newDate });
-    
-    const optionLabels: Record<PostponeOption, string> = {
-      "1hour": "in einer Stunde",
-      "afternoon": "heute Nachmittag",
-      "evening": "heute Abend",
-      "tomorrow": "morgen früh",
-    };
-    toast.success(`Erinnerung ${optionLabels[option]}`);
+    updateTask.mutate({ id: snoozeTaskId, dueDate: newDate });
+    toast.success(`Aufgabe verschoben auf ${format(newDate, "EEE, d. MMM yyyy, HH:mm", { locale: de })}`);
+    setSnoozeDialogOpen(false);
+    setSnoozeTaskId(null);
   };
 
   // Handle /aufgaben/new route
@@ -638,15 +643,36 @@ export default function Aufgaben() {
       {/* Browser-Benachrichtigungen Banner */}
       <NotificationPermissionBanner />
 
-      {/* Tabs */}
+      {/* Tabs - Inbox Style */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex flex-col gap-3">
-          {/* Tab-Leiste - scrollbar auf mobil */}
+          {/* Tab-Leiste - Inbox Style */}
           <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
-            <TabsList className="inline-flex w-auto min-w-full sm:min-w-0">
-              <TabsTrigger value="all" className="text-xs sm:text-sm px-3 sm:px-4">Alle</TabsTrigger>
-              <TabsTrigger value="assigned" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Mir zugewiesen</TabsTrigger>
-              <TabsTrigger value="created" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Von mir erstellt</TabsTrigger>
+            <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 bg-transparent gap-0 p-0 h-auto">
+              <TabsTrigger 
+                value="all" 
+                className="text-sm font-medium px-3 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent"
+              >
+                Offen
+              </TabsTrigger>
+              <TabsTrigger 
+                value="assigned" 
+                className="text-sm font-medium px-3 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent"
+              >
+                Archiviert
+              </TabsTrigger>
+              <TabsTrigger 
+                value="created" 
+                className="text-sm font-medium px-3 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent"
+              >
+                Snoozed
+              </TabsTrigger>
+              <TabsTrigger 
+                value="trash" 
+                className="text-sm font-medium px-3 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent"
+              >
+                Papierkorb
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -716,7 +742,6 @@ export default function Aufgaben() {
                     setCommentDialogOpen(true);
                   }}
                   onEdit={handleEdit}
-                  onArchive={handleArchive}
                   onPostpone={handlePostpone}
                   showAssignee={activeTab !== "assigned"}
                 />
@@ -1244,6 +1269,91 @@ export default function Aufgaben() {
             >
               <Send className="h-4 w-4" />
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Snooze Dialog - Hey Style */}
+      <Dialog open={snoozeDialogOpen} onOpenChange={(open) => {
+        setSnoozeDialogOpen(open);
+        if (!open) setSnoozeTaskId(null);
+      }}>
+        <DialogContent className="sm:max-w-[400px] p-0 gap-0 rounded-t-2xl sm:rounded-2xl">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setSnoozeDialogOpen(false)}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+            <span className="font-semibold text-lg">Snooze</span>
+            <div className="w-8" /> {/* Spacer for centering */}
+          </div>
+          
+          {/* Options */}
+          <div className="divide-y">
+            {(() => {
+              const now = new Date();
+              const laterToday = new Date(now);
+              laterToday.setHours(12, 0, 0, 0);
+              if (laterToday <= now) laterToday.setHours(now.getHours() + 2);
+              
+              const thisEvening = new Date(now);
+              thisEvening.setHours(18, 0, 0, 0);
+              
+              const tomorrow = new Date(now);
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              tomorrow.setHours(9, 0, 0, 0);
+              
+              const thisWeek = new Date(now);
+              const daysUntilWed = (3 - now.getDay() + 7) % 7 || 7;
+              thisWeek.setDate(thisWeek.getDate() + daysUntilWed);
+              thisWeek.setHours(9, 0, 0, 0);
+              
+              const nextWeek = new Date(now);
+              const daysUntilMon = (1 - now.getDay() + 7) % 7 || 7;
+              nextWeek.setDate(nextWeek.getDate() + daysUntilMon);
+              nextWeek.setHours(9, 0, 0, 0);
+              
+              const options = [
+                { key: "later_today", label: "Später heute", date: laterToday },
+                { key: "this_evening", label: "Heute Abend", date: thisEvening },
+                { key: "tomorrow", label: "Morgen", date: tomorrow },
+                { key: "this_week", label: "Diese Woche", date: thisWeek },
+                { key: "next_week", label: "Nächste Woche", date: nextWeek },
+              ];
+              
+              return options.map((opt) => (
+                <button
+                  key={opt.key}
+                  onClick={() => handleSnooze(opt.key)}
+                  className="w-full flex items-center justify-between px-4 py-4 hover:bg-muted/50 transition-colors text-left"
+                >
+                  <span className="font-medium text-foreground">{opt.label}</span>
+                  <span className="text-muted-foreground text-sm">
+                    {format(opt.date, "EEE, d. MMM yyyy, HH:mm", { locale: de })}
+                  </span>
+                </button>
+              ));
+            })()}
+            
+            {/* Custom option */}
+            <button
+              onClick={() => {
+                // TODO: Implement custom date picker
+                toast.info("Benutzerdefiniertes Datum - Bald verfügbar");
+              }}
+              className="w-full flex items-center justify-between px-4 py-4 hover:bg-muted/50 transition-colors text-left"
+            >
+              <span className="font-medium text-foreground">Benutzerdefiniert</span>
+              <span className="text-muted-foreground text-sm flex items-center gap-1">
+                Datum wählen
+                <ChevronDown className="h-4 w-4 -rotate-90" />
+              </span>
+            </button>
           </div>
         </DialogContent>
       </Dialog>

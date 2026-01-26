@@ -1,0 +1,44 @@
+Design-Anforderungen aus Screenshots (26. Januar 2026):
+
+1. SNOOZE-DIALOG (IMG_3037.PNG):
+   - Weißer Hintergrund mit abgerundeten Ecken oben
+   - Header: X-Button links, "Snooze" zentriert
+   - Liste mit Optionen:
+     * "Later today" → "Today, 12:00"
+     * "This evening" → "Today, 18:00"
+     * "Tomorrow" → "Tue, Jan 27, 2026, 09:00"
+     * "This week" → "Wed, Jan 28, 2026, 09:00"
+     * "Next week" → "Mon, Feb 2, 2026, 09:00"
+     * "Custom" → "Pick a date >"
+   - Jede Zeile hat Trennlinie
+   - Text links dunkelblau, Datum rechts grau
+
+2. TASK-SEITE (IMG_3036.PNG - Inbox-Style):
+   - Header: Hamburger-Menü links, Kalender-Icon rechts
+   - Titel: "Inbox" groß
+   - Suchfeld mit Lupe
+   - Tabs: Open | Archived | Snoozed | Trash | Spam
+   - Sortier-Icon rechts
+   - Liste mit Tasks:
+     * Blauer Punkt = ungelesen, Orange = wichtig
+     * Name fett, dann Pfeil, dann zweiter Name
+     * Zeitangabe rechts (8M, 9M, 20M = Minuten)
+     * Betreff darunter
+     * "No content" oder Vorschau
+   - Swipe-Aktion: Oranger "Snooze" Button mit Uhr-Icon
+
+3. KALENDER-MONATSANSICHT (IMG_3034.PNG - Hey-Style):
+   - Dunkler Hintergrund
+   - Header: "FEBRUARY" mit Dropdown-Pfeil, Suche, Grid-Icon, "26" (aktueller Tag)
+   - Wochen-basierte Ansicht:
+     * MON 26, TUE 27, WED 28, THU 29, FRI 30, SAT 31, SUN 1
+     * Jede Woche ist eine Zeile
+     * Aktueller Tag hat goldenen Rahmen
+   - Mehrtägige Termine als horizontale Balken:
+     * "Showroom Düsseldorf" über mehrere Tage
+     * "Polen" als beiger Balken
+     * "Premiere Vision" als grauer Balken
+   - Unten: Detail-Panel für ausgewählten Tag
+     * "Monday 26" mit Pfeilen links/rechts
+     * Liste der Termine für diesen Tag
+   - FAB unten: Plus-Button in der Mitte
