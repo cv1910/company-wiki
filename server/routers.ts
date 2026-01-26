@@ -5963,6 +5963,66 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
   }),
 
   // ============================================================
+  // Locations Router
+  // ============================================================
+  locations: router({
+    list: protectedProcedure.query(async () => {
+      return db.getAllLocations();
+    }),
+
+    listActive: protectedProcedure.query(async () => {
+      return db.getActiveLocations();
+    }),
+
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getLocationById(input.id);
+      }),
+
+    create: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        shortName: z.string().min(1).max(20),
+        address: z.string().optional(),
+        description: z.string().optional(),
+        color: z.string().optional(),
+        sortOrder: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const id = await db.createLocation({
+          ...input,
+          createdById: ctx.user.id,
+        });
+        return { id };
+      }),
+
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        shortName: z.string().min(1).max(20).optional(),
+        address: z.string().optional(),
+        description: z.string().optional(),
+        color: z.string().optional(),
+        isActive: z.boolean().optional(),
+        sortOrder: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateLocation(id, data);
+        return { success: true };
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteLocation(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ============================================================
   // Shift Templates Router
   // ============================================================
   shiftTemplates: router({

@@ -101,6 +101,7 @@ const adminMenuItems = [
   { icon: CalendarClock, label: "Terminplanung", path: "/scheduling" },
   { icon: Users, label: "Teams", path: "/admin/teams" },
   { icon: CalendarDays, label: "Schichtplan", path: "/schichtplan" },
+  { icon: Building2, label: "Standorte", path: "/admin/locations" },
   { icon: BarChart3, label: "Schicht-Auswertungen", path: "/schicht-auswertungen" },
   { icon: Clock, label: "Soll-Stunden", path: "/admin/soll-stunden" },
   { icon: TrendingUp, label: "Überstunden", path: "/admin/ueberstunden" },

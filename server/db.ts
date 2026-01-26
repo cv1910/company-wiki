@@ -123,6 +123,8 @@ import {
   InsertTargetWorkHours,
   overtimeBalance,
   InsertOvertimeBalance,
+  locations,
+  InsertLocation,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -7043,4 +7045,45 @@ export async function getOvertimeSummary(year: number, month: number) {
     usersUndertime,
     balances,
   };
+}
+
+
+// ==================== LOCATION FUNCTIONS ====================
+
+export async function createLocation(data: InsertLocation) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(locations).values(data);
+  return result;
+}
+
+export async function updateLocation(id: number, data: Partial<InsertLocation>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(locations).set(data).where(eq(locations.id, id));
+}
+
+export async function deleteLocation(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(locations).where(eq(locations.id, id));
+}
+
+export async function getLocationById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(locations).where(eq(locations.id, id));
+  return result[0] || null;
+}
+
+export async function getAllLocations() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(locations).orderBy(locations.sortOrder);
+}
+
+export async function getActiveLocations() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(locations).where(eq(locations.isActive, true)).orderBy(locations.sortOrder);
 }

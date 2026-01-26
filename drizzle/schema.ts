@@ -1439,3 +1439,25 @@ export const overtimeBalance = mysqlTable("overtimeBalance", {
 
 export type OvertimeBalance = typeof overtimeBalance.$inferSelect;
 export type InsertOvertimeBalance = typeof overtimeBalance.$inferInsert;
+
+
+/**
+ * Locations for shift scheduling.
+ * Allows managing different work locations/branches.
+ */
+export const locations = mysqlTable("locations", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  shortName: varchar("shortName", { length: 20 }).notNull(),
+  address: text("address"),
+  description: text("description"),
+  color: varchar("color", { length: 20 }).default("blue"),
+  isActive: boolean("isActive").default(true).notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdById: int("createdById").notNull(),
+});
+
+export type Location = typeof locations.$inferSelect;
+export type InsertLocation = typeof locations.$inferInsert;

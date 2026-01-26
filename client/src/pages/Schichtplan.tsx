@@ -71,20 +71,7 @@ const getColorClass = (color: string) => {
   return SHIFT_COLORS.find(c => c.value === color)?.class || SHIFT_COLORS[0].class;
 };
 
-// Standorte
-const LOCATIONS = [
-  { value: "eppendorfer-landstrasse", label: "Eppendorfer Landstrasse 60 (POS)", short: "EL60" },
-  { value: "eppendorfer-baum", label: "Eppendorfer Baum 20 (POS)", short: "EB20" },
-  { value: "versand", label: "Versand", short: "Versand" },
-];
-
-const getLocationLabel = (value: string) => {
-  return LOCATIONS.find(l => l.value === value)?.label || value;
-};
-
-const getLocationShort = (value: string) => {
-  return LOCATIONS.find(l => l.value === value)?.short || value;
-};
+// Standorte werden dynamisch geladen
 
 export default function Schichtplan() {
   const { user } = useAuth();
@@ -107,7 +94,7 @@ export default function Schichtplan() {
   const [shiftIsAllDay, setShiftIsAllDay] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
-  const [shiftLocation, setShiftLocation] = useState<string>("eppendorfer-landstrasse");
+  const [shiftLocation, setShiftLocation] = useState<string>("");
   
   // Template form state
   const [newTemplateName, setNewTemplateName] = useState("");
@@ -125,6 +112,18 @@ export default function Schichtplan() {
   const { data: teams } = trpc.teams.list.useQuery();
   const { data: allUsers } = trpc.users.list.useQuery();
   const { data: shiftTemplates, refetch: refetchTemplates } = trpc.shiftTemplates.list.useQuery({ teamId: selectedTeamId || undefined });
+  const { data: locations } = trpc.locations.listActive.useQuery();
+  
+  // Location helper functions
+  const getLocationLabel = (value: string) => {
+    const loc = locations?.find(l => l.id.toString() === value || l.shortName === value);
+    return loc?.name || value;
+  };
+  
+  const getLocationShort = (value: string) => {
+    const loc = locations?.find(l => l.id.toString() === value || l.shortName === value);
+    return loc?.shortName || value;
+  };
   
   // Fetch events for the week
   const { data: events, refetch: refetchEvents, isLoading: eventsLoading } = trpc.calendar.getEvents.useQuery({
@@ -432,9 +431,9 @@ export default function Schichtplan() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Alle Standorte</SelectItem>
-              {LOCATIONS.map((loc) => (
-                <SelectItem key={loc.value} value={loc.value}>
-                  {loc.label}
+              {locations?.map((loc) => (
+                <SelectItem key={loc.id} value={loc.id.toString()}>
+                  {loc.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -733,9 +732,9 @@ export default function Schichtplan() {
                   <SelectValue placeholder="Standort auswählen..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {LOCATIONS.map((loc) => (
-                    <SelectItem key={loc.value} value={loc.value}>
-                      {loc.label}
+                  {locations?.map((loc) => (
+                    <SelectItem key={loc.id} value={loc.id.toString()}>
+                      {loc.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -1413,3 +1413,10 @@
 
 ## Schichtplan-Erweiterung 26.01.2026
 - [x] Standorte im Schichtplan implementieren (Eppendorfer Landstrasse 60 POS, Eppendorfer Baum 20 POS, Versand)
+
+## Standort-Verwaltung 26.01.2026
+- [x] Standort-Tabelle in Datenbank erstellen
+- [x] Standort-CRUD-Endpoints im Backend
+- [x] Standort-Verwaltungs-UI (Admin-Bereich)
+- [x] Schichtplan mit dynamischen Standorten verbinden
+- [x] Standard-Standorte als Seed-Daten einfügen

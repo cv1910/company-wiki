@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO locations (name, shortName, address, description, color, isActive, sortOrder, createdById) VALUES\n('Eppendorfer Landstrasse 60 (POS)', 'EL60', 'Eppendorfer Landstrasse 60, Hamburg', 'Point of Sale - Hauptstandort', 'rose', true, 1, 1),\n('Eppendorfer Baum 20 (POS)', 'EB20', 'Eppendorfer Baum 20, Hamburg', 'Point of Sale - Zweiter Standort', 'blue', true, 2, 1),\n('Versand', 'Versand', 'Lagerstandort', 'Versand und Logistik', 'green', true, 3, 1);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PctfYk87MjKUK7.root --database TkhZDUK5jrbqMP42NAV4Ff --execute INSERT INTO locations (name, shortName, address, description, color, isActive, sortOrder, createdById) VALUES\n('Eppendorfer Landstrasse 60 (POS)', 'EL60', 'Eppendorfer Landstrasse 60, Hamburg', 'Point of Sale - Hauptstandort', 'rose', true, 1, 1),\n('Eppendorfer Baum 20 (POS)', 'EB20', 'Eppendorfer Baum 20, Hamburg', 'Point of Sale - Zweiter Standort', 'blue', true, 2, 1),\n('Versand', 'Versand', 'Lagerstandort', 'Versand und Logistik', 'green', true, 3, 1);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 67
+}

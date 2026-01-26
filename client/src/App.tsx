@@ -78,6 +78,7 @@ import Schichtplan from "./pages/Schichtplan";
 
 // Target Hours & Overtime
 import AdminTargetHours from "./pages/AdminTargetHours";
+import AdminLocations from "./pages/admin/Locations";
 import OvertimeTracking from "./pages/OvertimeTracking";
 
 function Router() {
@@ -163,6 +164,7 @@ function Router() {
         <Route path="/admin/announcements" component={AdminAnnouncements} />
         <Route path="/admin/assignments" component={AdminAssignments} />
         <Route path="/admin/analytics" component={AdminAnalytics} />
+        <Route path="/admin/locations" component={AdminLocations} />
         <Route path="/admin/verification" component={AdminVerification} />
         
         {/* Fallback */}
