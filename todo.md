@@ -1536,3 +1536,8 @@
 - [x] Weißen Block um Chat-Header entfernt (kein border-b, kein bg-white)
 - [x] Header wie bei Basecamp: Name zentriert, Zurück-Button links, Suche rechts
 - [x] Eingabefeld bottom-Offset auf 100px erhöht
+
+## Bug-Fix Eingabefeld Position (endgültig) 27.01.2026
+- [x] Nachrichten überlappen das Eingabefeld - padding-bottom mit calc() korrigiert
+- [x] Eingabefeld bündig über Menüleiste fixiert mit calc(4rem + env(safe-area-inset-bottom))
+- [x] MobileNavigation Höhe: h-16 (64px) + pb-safe
