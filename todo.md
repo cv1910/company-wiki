@@ -1492,3 +1492,8 @@
 - [x] Sanfte Animationen beim Senden/Empfangen
 - [ ] Online-Status-Indikator
 - [x] Hover-Effekte für Aktionen
+
+## Bug-Fix Chat-Eingabefeld Position 27.01.2026
+- [x] Eingabefeld wird von unterer Navigation verdeckt - bottom-Offset korrigieren (bottom-16 = 64px)
+- [x] Korrekte Höhe der Mobile-Navigation ermitteln und als bottom-Wert verwenden (h-16 + pb-safe)
+- [x] Nachrichten-Bereich padding-bottom entsprechend anpassen (pb-36)
