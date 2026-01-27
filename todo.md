@@ -1482,3 +1482,13 @@
 - [x] Professionelles, modernes Erscheinungsbild
 - [x] Header mit Kontaktname zentriert
 - [x] Datum-Trenner wie bei Basecamp (HEUTE)
+
+## Chat-Design Professionell (Basecamp-Niveau) 27.01.2026
+- [x] Eingabefeld wirklich fixiert am unteren Bildschirmrand (position: fixed)
+- [x] Nachrichten-Bereich scrollbar mit padding-bottom für fixiertes Input
+- [x] Professionelle Schatten und Tiefe wie bei Basecamp
+- [x] Bessere Typografie und Abstände
+- [x] Nachrichtengruppierung (aufeinanderfolgende Nachrichten vom gleichen Sender)
+- [x] Sanfte Animationen beim Senden/Empfangen
+- [ ] Online-Status-Indikator
+- [x] Hover-Effekte für Aktionen

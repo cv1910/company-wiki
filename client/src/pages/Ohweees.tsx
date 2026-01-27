@@ -1627,8 +1627,8 @@ export default function OhweeesPage() {
             )}
           </>
         ) : (
-          // Mobile Chat View - Basecamp style with fixed input at bottom
-          <div className="flex flex-col h-full">
+          // Mobile Chat View - Basecamp style with truly fixed input at bottom
+          <>
             {/* Mobile Chat Header with Search */}
             {currentRoom && !showChatSearch && (
               <MobileChatHeader
@@ -1669,8 +1669,8 @@ export default function OhweeesPage() {
               />
             )}
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto">
+            {/* Messages - scrollable area with padding for fixed input */}
+            <div className="flex-1 overflow-y-auto pb-28">
               <div className="py-2">
                 {currentRoom?.messages?.map((message, index) => {
                   const prevMessage = currentRoom.messages?.[index - 1];
@@ -1741,8 +1741,8 @@ export default function OhweeesPage() {
               </div>
             )}
 
-            {/* Mobile Input - Fixed at bottom */}
-            <div className="shrink-0 pb-20">
+            {/* Mobile Input - TRULY Fixed at bottom above navigation */}
+            <div className="fixed bottom-20 left-0 right-0 z-40 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-lg">
               <MobileChatInput
                 value={messageInput}
                 onChange={(value) => {
@@ -1763,7 +1763,7 @@ export default function OhweeesPage() {
                 isLoading={sendMessage.isPending}
               />
             </div>
-          </div>
+          </>
         )}
 
         {/* Hidden file input */}
