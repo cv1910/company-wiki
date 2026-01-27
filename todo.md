@@ -1513,3 +1513,13 @@
 - [x] Keine Sprechblasen-Form, schlichte Linie mit border und rounded-lg
 - [x] Bottom-Offset auf 120px erhöht
 - [x] Minimalistisches Design: Icons rechts (Anhang, Emoji, Senden)
+
+## Mobile Chat Komplett-Redesign (Professionell) 27.01.2026
+- [x] Weißen Kasten/Container entfernen - Vollbild-Layout
+- [x] Vollbild-Layout wie bei Basecamp/Teams
+- [x] Randloses, modernes Design
+- [x] Bessere visuelle Hierarchie - alle Nachrichten links mit Avatar
+- [x] Professionelle Farbgebung (keine harten Kontraste)
+- [x] Subtile Schatten statt harter Rahmen
+- [x] Header minimalistisch gestalten
+- [x] Eingabefeld als Teil des Flex-Containers mit pb-[100px]

@@ -1627,9 +1627,9 @@ export default function OhweeesPage() {
             )}
           </>
         ) : (
-          // Mobile Chat View - Basecamp style with truly fixed input at bottom
-          <>
-            {/* Mobile Chat Header with Search */}
+          // Mobile Chat View - Clean fullscreen Basecamp style
+          <div className="flex flex-col h-full bg-white dark:bg-gray-900">
+            {/* Mobile Chat Header */}
             {currentRoom && !showChatSearch && (
               <MobileChatHeader
                 room={{
@@ -1669,8 +1669,8 @@ export default function OhweeesPage() {
               />
             )}
 
-            {/* Messages - scrollable area with padding for fixed input + navigation */}
-            <div className="flex-1 overflow-y-auto pb-[200px]">
+            {/* Messages - scrollable area */}
+            <div className="flex-1 overflow-y-auto">
               <div className="py-2">
                 {currentRoom?.messages?.map((message, index) => {
                   const prevMessage = currentRoom.messages?.[index - 1];
@@ -1741,8 +1741,8 @@ export default function OhweeesPage() {
               </div>
             )}
 
-            {/* Mobile Input - Fixed at bottom above navigation (nav ~120px on iPhone with safe-area) */}
-            <div className="fixed left-0 right-0 z-40 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 bottom-[120px]">
+            {/* Mobile Input - Sticky at bottom within flex container */}
+            <div className="shrink-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 pb-[100px]">
               <MobileChatInput
                 value={messageInput}
                 onChange={(value) => {
@@ -1759,11 +1759,11 @@ export default function OhweeesPage() {
                 onSend={handleSendMessage}
                 onAttach={() => fileInputRef.current?.click()}
                 onVoice={() => setIsRecordingVoice(true)}
-                placeholder="Schreibe ein Tap... (@ für Erwähnung)"
+                placeholder="Nachricht schreiben..."
                 isLoading={sendMessage.isPending}
               />
             </div>
-          </>
+          </div>
         )}
 
         {/* Hidden file input */}
