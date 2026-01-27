@@ -1497,3 +1497,8 @@
 - [x] Eingabefeld wird von unterer Navigation verdeckt - bottom-Offset korrigieren (bottom-16 = 64px)
 - [x] Korrekte Höhe der Mobile-Navigation ermitteln und als bottom-Wert verwenden (h-16 + pb-safe)
 - [x] Nachrichten-Bereich padding-bottom entsprechend anpassen (pb-36)
+
+## Bug-Fix Chat-Eingabefeld Position (erneut) 27.01.2026
+- [x] bottom-16 ist nicht ausreichend für iPhone mit Safe-Area
+- [x] calc(4rem + env(safe-area-inset-bottom)) für dynamische Positionierung
+- [x] env(safe-area-inset-bottom) berücksichtigen
