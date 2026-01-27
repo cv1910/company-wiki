@@ -1417,7 +1417,7 @@ export default function OhweeesPage() {
   // Mobile View
   if (isMobile) {
     return (
-      <div className="flex flex-col h-[100dvh] overflow-hidden bg-white dark:bg-gray-900">
+      <div className="flex flex-col h-[100dvh] overflow-hidden bg-[#FAFAF8] dark:bg-gray-900">
         {mobileView === "list" ? (
           // Mobile Room List View
           <>
@@ -1628,7 +1628,7 @@ export default function OhweeesPage() {
           </>
         ) : (
           // Mobile Chat View - Clean fullscreen Basecamp style
-          <div className="flex flex-col h-full bg-white dark:bg-gray-900">
+          <div className="flex flex-col h-full bg-[#FAFAF8] dark:bg-gray-900">
             {/* Mobile Chat Header */}
             {currentRoom && !showChatSearch && (
               <MobileChatHeader
@@ -1669,8 +1669,8 @@ export default function OhweeesPage() {
               />
             )}
 
-            {/* Messages - scrollable area */}
-            <div className="flex-1 overflow-y-auto">
+            {/* Messages - scrollable area with padding for fixed input + navigation */}
+            <div className="flex-1 overflow-y-auto pb-[140px]">
               <div className="py-2">
                 {currentRoom?.messages?.map((message, index) => {
                   const prevMessage = currentRoom.messages?.[index - 1];
@@ -1741,8 +1741,8 @@ export default function OhweeesPage() {
               </div>
             )}
 
-            {/* Mobile Input - Sticky at bottom within flex container */}
-            <div className="shrink-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 pb-[100px]">
+            {/* Mobile Input - Fixed above navigation bar */}
+            <div className="fixed left-0 right-0 bottom-[68px] z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 safe-area-bottom">
               <MobileChatInput
                 value={messageInput}
                 onChange={(value) => {

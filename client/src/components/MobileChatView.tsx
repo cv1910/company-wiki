@@ -183,26 +183,26 @@ export function MobileMessage({
     return parts.length > 0 ? parts : content;
   };
 
-  // Basecamp-style: All messages left-aligned with avatar
+  // Basecamp-style: Own messages with light blue background, others without
   return (
-    <div className={`group px-4 ${isFirstInGroup ? 'pt-4' : 'pt-1'} hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors`}>
-      <div className="flex items-start gap-3">
+    <div className={`group px-4 ${isFirstInGroup ? 'pt-4' : 'pt-1'}`}>
+      <div className={`flex items-start gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}>
         {/* Avatar - only show for first message in group */}
         {isFirstInGroup ? (
-          <Avatar className="h-9 w-9 shrink-0 ring-2 ring-white dark:ring-gray-900 shadow-sm">
+          <Avatar className="h-10 w-10 shrink-0 shadow-sm">
             <AvatarImage src={message.sender.avatarUrl || undefined} />
-            <AvatarFallback className={`text-xs font-semibold ${isOwn ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
+            <AvatarFallback className={`text-sm font-semibold ${isOwn ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-700'}`}>
               {getInitials(message.sender.name || "?")}
             </AvatarFallback>
           </Avatar>
         ) : (
-          <div className="w-9 shrink-0" />
+          <div className="w-10 shrink-0" />
         )}
 
-        <div className="flex-1 min-w-0">
+        <div className={`flex-1 min-w-0 ${isOwn ? 'flex flex-col items-end' : ''}`}>
           {/* Header: Name and Time - only for first in group */}
           {isFirstInGroup && (
-            <div className="flex items-baseline gap-2 mb-1">
+            <div className={`flex items-baseline gap-2 mb-1 ${isOwn ? 'flex-row-reverse' : ''}`}>
               <span className="font-semibold text-[14px] text-gray-900 dark:text-gray-100">
                 {isOwn ? "Du" : message.sender.name || "Unbekannt"}
               </span>
@@ -212,15 +212,15 @@ export function MobileMessage({
 
           {/* Quoted message */}
           {quotedMessage && (
-            <div className="mb-2 pl-3 border-l-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 rounded-r py-1.5 pr-3">
+            <div className="mb-2 pl-3 border-l-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 rounded-r py-1.5 pr-3 max-w-[85%]">
               <p className="text-[12px] font-medium text-gray-500 dark:text-gray-400">{quotedMessage.senderName}</p>
               <p className="text-[13px] text-gray-500 dark:text-gray-400 line-clamp-2">{quotedMessage.content}</p>
             </div>
           )}
 
-          {/* Message content */}
-          <div className="relative">
-            <p className="text-[15px] text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap break-words">
+          {/* Message content - Basecamp style with colored background for own messages */}
+          <div className={`relative max-w-[85%] ${isOwn ? 'bg-blue-50 dark:bg-blue-900/30 rounded-2xl rounded-tr-md px-4 py-2.5' : ''}`}>
+            <p className={`text-[15px] leading-relaxed whitespace-pre-wrap break-words ${isOwn ? 'text-gray-800 dark:text-gray-100' : 'text-gray-800 dark:text-gray-200'}`}>
               {renderContent(message.ohweee.content)}
               {message.ohweee.isEdited && (
                 <span className="text-[11px] text-gray-400 ml-1">(bearbeitet)</span>
@@ -388,8 +388,8 @@ export function MobileChatInput({
   };
 
   return (
-    <div className="px-3 py-2 bg-white dark:bg-gray-900">
-      <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full h-10 px-4">
+    <div className="px-4 py-3 bg-white dark:bg-gray-900">
+      <div className="flex items-center gap-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg h-12 px-4">
         <input
           ref={inputRef}
           type="text"
@@ -397,34 +397,33 @@ export function MobileChatInput({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="flex-1 bg-transparent border-none outline-none text-[14px] text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
+          className="flex-1 bg-transparent border-none outline-none text-[15px] text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
         />
         
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-2">
           {onAttach && (
             <button
               type="button"
               onClick={onAttach}
-              className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
             >
-              <Paperclip className="h-4 w-4" />
+              <Paperclip className="h-6 w-6" />
             </button>
           )}
-          {value.trim() ? (
+          <button
+            type="button"
+            className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          >
+            <Smile className="h-6 w-6" />
+          </button>
+          {value.trim() && (
             <button
               type="button"
               onClick={onSend}
               disabled={isLoading}
-              className="p-1.5 text-blue-500 hover:text-blue-600 transition-colors disabled:opacity-50 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/30"
+              className="p-2 text-blue-500 hover:text-blue-600 transition-colors disabled:opacity-50"
             >
-              <Send className="h-4 w-4" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              <Smile className="h-4 w-4" />
+              <Send className="h-6 w-6" />
             </button>
           )}
         </div>

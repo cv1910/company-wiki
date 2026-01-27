@@ -1523,3 +1523,11 @@
 - [x] Subtile Schatten statt harter Rahmen
 - [x] Header minimalistisch gestalten
 - [x] Eingabefeld als Teil des Flex-Containers mit pb-[100px]
+
+## Chat-Design Basecamp-Exakt 27.01.2026
+- [x] Hintergrund auf cremig/beige (#FAFAF8) wie Basecamp geändert
+- [x] Nachrichten farblich unterlegen (hellblau eigene mit bg-blue-50, andere ohne Hintergrund) wie Basecamp
+- [x] Eingabefeld fixiert über der Menüleiste (bottom-[68px])
+- [x] Senden-Icon größer (h-6 w-6 = 24px) wie bei Basecamp
+- [x] Anhang-Icon größer (h-6 w-6 = 24px) wie bei Basecamp
+- [x] Emoji-Icon größer (h-6 w-6 = 24px)
