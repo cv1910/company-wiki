@@ -1531,3 +1531,8 @@
 - [x] Senden-Icon größer (h-6 w-6 = 24px) wie bei Basecamp
 - [x] Anhang-Icon größer (h-6 w-6 = 24px) wie bei Basecamp
 - [x] Emoji-Icon größer (h-6 w-6 = 24px)
+
+## Chat-Design Feinschliff 27.01.2026
+- [x] Weißen Block um Chat-Header entfernt (kein border-b, kein bg-white)
+- [x] Header wie bei Basecamp: Name zentriert, Zurück-Button links, Suche rechts
+- [x] Eingabefeld bottom-Offset auf 100px erhöht
