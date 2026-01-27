@@ -1507,3 +1507,9 @@
 - [x] calc() mit env() funktioniert nicht korrekt auf iPhone
 - [x] Alternative Lösung: Feste Pixelwerte bottom-[100px] und pb-[180px]
 - [x] Navigation-Höhe auf iPhone: ca. 100px (64px + 34px Safe-Area)
+
+## Chat-Eingabefeld Basecamp-Stil 27.01.2026
+- [x] Eingabefeld einzeilig gestalten wie bei Basecamp (einfaches input statt textarea)
+- [x] Keine Sprechblasen-Form, schlichte Linie mit border und rounded-lg
+- [x] Bottom-Offset auf 120px erhöht
+- [x] Minimalistisches Design: Icons rechts (Anhang, Emoji, Senden)

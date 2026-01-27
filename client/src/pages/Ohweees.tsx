@@ -1670,7 +1670,7 @@ export default function OhweeesPage() {
             )}
 
             {/* Messages - scrollable area with padding for fixed input + navigation */}
-            <div className="flex-1 overflow-y-auto pb-[180px]">
+            <div className="flex-1 overflow-y-auto pb-[200px]">
               <div className="py-2">
                 {currentRoom?.messages?.map((message, index) => {
                   const prevMessage = currentRoom.messages?.[index - 1];
@@ -1741,10 +1741,8 @@ export default function OhweeesPage() {
               </div>
             )}
 
-            {/* Mobile Input - Fixed at bottom above navigation (nav ~100px on iPhone) */}
-            <div 
-              className="fixed left-0 right-0 z-40 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-[0_-4px_16px_rgba(0,0,0,0.1)] bottom-[100px]"
-            >
+            {/* Mobile Input - Fixed at bottom above navigation (nav ~120px on iPhone with safe-area) */}
+            <div className="fixed left-0 right-0 z-40 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 bottom-[120px]">
               <MobileChatInput
                 value={messageInput}
                 onChange={(value) => {

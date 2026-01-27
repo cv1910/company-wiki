@@ -423,7 +423,7 @@ export function MobileChatHeader({
   );
 }
 
-// Mobile Chat Input - Basecamp style with clean rounded input
+// Mobile Chat Input - Basecamp style: simple single-line input
 export function MobileChatInput({
   value,
   onChange,
@@ -443,10 +443,10 @@ export function MobileChatInput({
   isLoading?: boolean;
   placeholder?: string;
 }) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter") {
       e.preventDefault();
       if (value.trim() && !isLoading) {
         onSend();
@@ -454,66 +454,49 @@ export function MobileChatInput({
     }
   };
 
-  // Auto-resize textarea
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + "px";
-    }
-  }, [value]);
-
   return (
-    <div className="px-3 py-3">
-      <div className="flex items-end gap-2">
-        {/* Attachment button */}
-        {onAttach && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onAttach}
-            className="h-10 w-10 shrink-0 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
+    <div className="px-4 py-2">
+      {/* Basecamp-style: Simple single-line input with icons on right */}
+      <div className="flex items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg h-11 px-3 shadow-sm">
+        {/* Input field - simple, no decoration */}
+        <input
+          ref={inputRef}
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          className="flex-1 bg-transparent border-none outline-none text-[15px] text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
+        />
+        
+        {/* Right side icons - Basecamp style */}
+        <div className="flex items-center gap-1">
+          {onAttach && (
+            <button
+              type="button"
+              onClick={onAttach}
+              className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              <Paperclip className="h-5 w-5" />
+            </button>
+          )}
+          <button
+            type="button"
+            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
-            <Paperclip className="h-5 w-5" />
-          </Button>
-        )}
-
-        {/* Input field - Basecamp style with border */}
-        <div className="flex-1 relative">
-          <Textarea
-            ref={textareaRef}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            className="min-h-[44px] max-h-[120px] resize-none rounded-2xl px-4 py-2.5 text-[15px] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent shadow-sm"
-            rows={1}
-          />
+            <Smile className="h-5 w-5" />
+          </button>
+          {value.trim() && (
+            <button
+              type="button"
+              onClick={onSend}
+              disabled={isLoading}
+              className="p-1.5 text-blue-500 hover:text-blue-600 transition-colors disabled:opacity-50"
+            >
+              <Send className="h-5 w-5" />
+            </button>
+          )}
         </div>
-
-        {/* Send or action buttons */}
-        {value.trim() ? (
-          <Button
-            onClick={onSend}
-            disabled={isLoading}
-            size="icon"
-            className="h-10 w-10 shrink-0 rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-md transition-all hover:scale-105"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        ) : (
-          <div className="flex items-center">
-            {onVoice && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onVoice}
-                className="h-10 w-10 shrink-0 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
-              >
-                <Mic className="h-5 w-5" />
-              </Button>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
