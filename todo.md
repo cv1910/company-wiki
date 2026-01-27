@@ -1502,3 +1502,8 @@
 - [x] bottom-16 ist nicht ausreichend für iPhone mit Safe-Area
 - [x] calc(4rem + env(safe-area-inset-bottom)) für dynamische Positionierung
 - [x] env(safe-area-inset-bottom) berücksichtigen
+
+## Bug-Fix Chat-Eingabefeld Position (3. Versuch) 27.01.2026
+- [x] calc() mit env() funktioniert nicht korrekt auf iPhone
+- [x] Alternative Lösung: Feste Pixelwerte bottom-[100px] und pb-[180px]
+- [x] Navigation-Höhe auf iPhone: ca. 100px (64px + 34px Safe-Area)
