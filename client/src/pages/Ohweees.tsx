@@ -1629,7 +1629,7 @@ export default function OhweeesPage() {
         ) : (
           // Mobile Chat View - Clean fullscreen Basecamp style
          <div className="fixed inset-0 flex flex-col bg-[#FAFAF8] dark:bg-gray-900" style={{ bottom: '64px' }}>
-```
+
             {/* Mobile Chat Header */}
             {currentRoom && !showChatSearch && (
               <MobileChatHeader
@@ -1747,10 +1747,7 @@ export default function OhweeesPage() {
 
             {/* Mobile Input - Fixed directly above navigation bar (h-16 + pb-safe) */}
             {/* Mobile Input - Fixed above bottom navigation */}
-<div 
-  className="flex-shrink-0 bg-[#FAFAF8] dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
-  
->
+<div className="flex-shrink-0 bg-[#FAFAF8] dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 pb-3">
               <MobileChatInput
                 value={messageInput}
                 onChange={(value) => {
