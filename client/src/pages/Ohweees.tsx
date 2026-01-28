@@ -1745,10 +1745,11 @@ export default function OhweeesPage() {
             )}
 
             {/* Mobile Input - Fixed directly above navigation bar (h-16 + pb-safe) */}
-            <div 
-              className="fixed left-0 right-0 z-50 bg-[#FAFAF8] dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
-              style={{ bottom: '80px' }}
-            >
+            {/* Mobile Input - Fixed above bottom navigation */}
+<div 
+  className="fixed left-0 right-0 z-[999] bg-[#FAFAF8] dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
+  style={{ bottom: '80px' }}
+>
               <MobileChatInput
                 value={messageInput}
                 onChange={(value) => {
