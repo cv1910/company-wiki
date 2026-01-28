@@ -1748,25 +1748,49 @@ export default function OhweeesPage() {
             {/* Mobile Input - Fixed directly above navigation bar (h-16 + pb-safe) */}
             {/* Mobile Input - Fixed above bottom navigation */}
 <div className="flex-shrink-0 bg-[#FAFAF8] dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 pb-3">
-              <MobileChatInput
-                value={messageInput}
-                onChange={(value) => {
-                  setMessageInput(value);
-                  // Trigger typing indicator
-                  if (selectedRoomId) {
-                    const now = Date.now();
-                    if (now - lastTypingTime > 2000) {
-                      setLastTypingTime(now);
-                      setTyping.mutate({ roomId: selectedRoomId });
-                    }
-                  }
-                }}
-                onSend={handleSendMessage}
-                onAttach={() => fileInputRef.current?.click()}
-                
-                placeholder="Nachricht schreiben..."
-                isLoading={sendMessage.isPending}
-              />
+             <MobileChatInput
+  value={messageInput}
+  onChange={(value) => {
+    setMessageInput(value);
+    if (selectedRoomId) {
+      const now = Date.now();
+      if (now - lastTypingTime > 2000) {
+        setLastTypingTime(now);
+        setTyping.mutate({ roomId: selectedRoomId });
+      }
+    }
+  }}
+  onSend={handleSendMessage}
+  onAttach={() => fileInputRef.current?.click()}
+  onSendVoice={async (blob, duration) => {
+    if (!selectedRoomId) return;
+    const formData = new FormData();
+    formData.append("file", blob, `voice-${Date.now()}.webm`);
+    try {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      if (response.ok) {
+        const { url } = await response.json();
+        sendMessage.mutate({
+          roomId: selectedRoomId,
+          content: "🎙️ Sprachnachricht",
+          attachments: [{
+            url,
+            filename: `voice-${Date.now()}.webm`,
+            mimeType: "audio/webm",
+            size: blob.size,
+          }],
+        });
+      }
+    } catch (error) {
+      toast.error("Fehler beim Senden");
+    }
+  }}
+  placeholder="Nachricht schreiben..."
+  isLoading={sendMessage.isPending}
+/>
             </div>
           </div>
         )}
