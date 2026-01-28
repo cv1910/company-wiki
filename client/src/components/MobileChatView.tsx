@@ -529,8 +529,7 @@ export function MobileChatInput({
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
-  onSendVoice?: (duration: number) => void;
-onVoice?: () => void;
+  onSendVoice?: (blob: Blob, duration: number) => void;
   onVoice?: () => void;
   onAttach?: () => void;
   isLoading?: boolean;
@@ -540,34 +539,59 @@ onVoice?: () => void;
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
+const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+const chunksRef = useRef<Blob[]>([]);
   const hasText = value.trim().length > 0;
 
   // Start/Stop recording toggle
-  const toggleRecording = () => {
-    if (isRecording) {
-      // Stop and send
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (recordingTime > 0 && onSendVoice) {
-        onSendVoice(recordingTime);
-      }
-      setIsRecording(false);
-      setRecordingTime(0);
-    } else {
-      // Start recording
+const toggleRecording = async () => {
+  if (isRecording) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setIsRecording(false);
+  } else {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        stream.getTracks().forEach((track) => track.stop());
+        if (onSendVoice && recordingTime > 0) {
+          onSendVoice(blob, recordingTime);
+        }
+        setRecordingTime(0);
+      };
+
+      mediaRecorder.start();
       setIsRecording(true);
       setRecordingTime(0);
       intervalRef.current = setInterval(() => {
         setRecordingTime((t) => t + 1);
       }, 1000);
+    } catch (err) {
+      console.error("Mikrofon-Zugriff verweigert:", err);
     }
-  };
+  }
+};
 
-  const cancelRecording = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    setIsRecording(false);
-    setRecordingTime(0);
-  };
+const cancelRecording = () => {
+  if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+    mediaRecorderRef.current.stop();
+  }
+  if (intervalRef.current) clearInterval(intervalRef.current);
+  chunksRef.current = [];
+  setIsRecording(false);
+  setRecordingTime(0);
+};
 
   useEffect(() => {
     return () => {
