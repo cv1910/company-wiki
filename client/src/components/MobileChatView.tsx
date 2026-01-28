@@ -521,6 +521,7 @@ export function MobileChatInput({
   onChange,
   onSend,
   onSendVoice,
+  onVoice,
   onAttach,
   isLoading,
   placeholder = "Nachricht schreiben...",
@@ -529,6 +530,7 @@ export function MobileChatInput({
   onChange: (value: string) => void;
   onSend: () => void;
   onSendVoice?: (duration: number) => void;
+onVoice?: () => void;
   onVoice?: () => void;
   onAttach?: () => void;
   isLoading?: boolean;
@@ -652,7 +654,7 @@ export function MobileChatInput({
           </button>
         ) : (
           <button
-            onClick={toggleRecording}
+            onClick={onVoice || toggleRecording}
             className="w-10 h-10 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md flex items-center justify-center transition-colors"
           >
             <Mic className="w-5 h-5" />
