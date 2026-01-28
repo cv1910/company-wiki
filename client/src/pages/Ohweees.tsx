@@ -1628,7 +1628,7 @@ export default function OhweeesPage() {
           </>
         ) : (
           // Mobile Chat View - Clean fullscreen Basecamp style
-          <div className="flex flex-col h-full bg-[#FAFAF8] dark:bg-gray-900">
+         <div className="flex flex-col h-[100dvh] overflow-hidden bg-[#FAFAF8] dark:bg-gray-900">
             {/* Mobile Chat Header */}
             {currentRoom && !showChatSearch && (
               <MobileChatHeader
