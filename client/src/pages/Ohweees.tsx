@@ -1763,7 +1763,7 @@ export default function OhweeesPage() {
                 }}
                 onSend={handleSendMessage}
                 onAttach={() => fileInputRef.current?.click()}
-                onVoice={() => setIsRecordingVoice(true)}
+                
                 placeholder="Nachricht schreiben..."
                 isLoading={sendMessage.isPending}
               />
