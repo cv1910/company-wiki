@@ -1763,37 +1763,37 @@ export default function OhweeesPage() {
   onSend={handleSendMessage}
   onAttach={() => fileInputRef.current?.click()}
   onSendVoice={async (blob, duration) => {
-  console.log("1. Voice started", blob.size, duration);
-  if (!selectedRoomId) {
-    console.log("No room selected!");
-    return;
-  }
+  if (!selectedRoomId) return;
   
-  const formData = new FormData();
-  formData.append("file", blob, `voice-${Date.now()}.webm`);
-  console.log("2. FormData created");
-  
-  try {
-    console.log("3. Starting upload...");
-    const response = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
-    console.log("4. Upload response:", response.status);
+  // Convert blob to base64
+  const reader = new FileReader();
+  reader.onload = () => {
+    const base64 = (reader.result as string).split(",")[1];
     
-    if (response.ok) {
-      const data = await response.json();
-      console.log("5. Upload success:", data);
-      
-      sendMessage.mutate({
-        roomId: selectedRoomId,
-        content: "🎙️ Sprachnachricht",
-        attachments: [{
-          url: data.url,
-          filename: `voice-${Date.now()}.webm`,
-          mimeType: "audio/webm",
-          size: blob.size,
-        }],
+    uploadFile.mutate({
+      filename: `voice-${Date.now()}.webm`,
+      mimeType: "audio/webm",
+      base64Data: base64,
+    }, {
+      onSuccess: (file) => {
+        sendMessage.mutate({
+          roomId: selectedRoomId,
+          content: "🎙️ Sprachnachricht",
+          attachments: [{
+            url: file.url,
+            filename: file.filename,
+            mimeType: file.mimeType,
+            size: file.size,
+          }],
+        });
+      },
+      onError: (error) => {
+        toast.error("Upload fehlgeschlagen: " + error.message);
+      }
+    });
+  };
+  reader.readAsDataURL(blob);
+}}
       });
       console.log("6. Message sent!");
     } else {
