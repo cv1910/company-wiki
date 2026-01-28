@@ -552,7 +552,9 @@ export function MobileChatInput({
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       
-      const mediaRecorder = new MediaRecorder(stream);
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+const mediaRecorder = new MediaRecorder(stream, { mimeType });
+
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
       recordingTimeRef.current = 0;
@@ -571,7 +573,9 @@ export function MobileChatInput({
         
         // Create blob and send
         if (chunksRef.current.length > 0 && recordingTimeRef.current > 0) {
-          const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+          const mimeType = chunksRef.current[0]?.type || 'audio/mp4';
+const blob = new Blob(chunksRef.current, { type: mimeType });
+
           if (onSendVoice) {
             onSendVoice(blob, recordingTimeRef.current);
           }
