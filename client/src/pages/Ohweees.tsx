@@ -1671,7 +1671,7 @@ export default function OhweeesPage() {
 
             {/* Messages - scrollable area with padding for fixed input (~60px) + navigation (64px) + safe-area */}
             <div 
-              className="flex-1 overflow-y-auto"
+              className="flex-1 overflow-y-auto overscroll-contain"
               style={{ paddingBottom: 'calc(60px + 4rem + env(safe-area-inset-bottom, 0px) + 16px)' }}
             >
               <div className="py-2">
