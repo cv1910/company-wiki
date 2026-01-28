@@ -564,11 +564,16 @@ const toggleRecording = async () => {
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        stream.getTracks().forEach((track) => track.stop());
-        if (onSendVoice && recordingTimeRef.current > 0) {
-  onSendVoice(blob, recordingTimeRef.current);
-}
+  console.log("STOP - chunks:", chunksRef.current.length);
+  const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+  console.log("BLOB size:", blob.size);
+  stream.getTracks().forEach((track) => track.stop());
+  console.log("onSendVoice exists:", !!onSendVoice);
+  console.log("recordingTimeRef:", recordingTimeRef.current);
+  if (onSendVoice && recordingTimeRef.current > 0) {
+    console.log("SENDING voice!");
+    onSendVoice(blob, recordingTimeRef.current);
+  }
        recordingTimeRef.current = 0;
         setRecordingTime(0);
       };
