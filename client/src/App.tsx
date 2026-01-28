@@ -21,7 +21,7 @@ import Search from "./pages/Search";
 import Chat from "./pages/Chat";
 import SearchAssistant from "./pages/SearchAssistant";
 import Notifications from "./pages/Notifications";
-
+import Login from "./pages/Login";
 // Admin Pages
 import AdminCategories from "./pages/admin/Categories";
 import AdminUsers from "./pages/admin/Users";
@@ -189,6 +189,20 @@ function AppContent() {
 }
 
 function App() {
+  // Check if we're on login page
+  if (typeof window !== "undefined" && window.location.pathname === "/login") {
+    return (
+      <ErrorBoundary>
+        <ThemeProvider defaultTheme="system" switchable>
+          <TooltipProvider>
+            <Toaster />
+            <Login />
+          </TooltipProvider>
+        </ThemeProvider>
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="system" switchable>
@@ -200,5 +214,3 @@ function App() {
     </ErrorBoundary>
   );
 }
-
-export default App;
