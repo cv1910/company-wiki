@@ -312,70 +312,95 @@ export function VoiceRecorder({ onRecordingComplete, onCancel }: VoiceRecorderPr
   );
 }
 
-// Audio player component for voice messages
+// WhatsApp-style Voice Message Player with iOS compatibility
 interface VoiceMessagePlayerProps {
   url: string;
   duration?: number;
+  isOwn?: boolean;
+  senderAvatar?: string;
+  senderName?: string;
   className?: string;
 }
 
-export function VoiceMessagePlayer({ url, duration: initialDuration, className }: VoiceMessagePlayerProps) {
+export function VoiceMessagePlayer({ 
+  url, 
+  duration: initialDuration, 
+  isOwn = false,
+  senderAvatar,
+  senderName,
+  className 
+}: VoiceMessagePlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(initialDuration || 0);
   const [playbackRate, setPlaybackRate] = useState(1);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const progressRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const formatTime = (seconds: number) => {
+    if (!seconds || !isFinite(seconds)) return "0:00";
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   useEffect(() => {
-    const audio = new Audio(url);
-    audioRef.current = audio;
+    const audio = audioRef.current;
+    if (!audio) return;
 
-    audio.onloadedmetadata = () => {
-      setDuration(audio.duration);
+    const handleLoadedMetadata = () => {
+      if (audio.duration && isFinite(audio.duration)) {
+        setDuration(audio.duration);
+      }
     };
 
-    audio.ontimeupdate = () => {
+    const handleTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
     };
 
-    audio.onended = () => {
+    const handleEnded = () => {
       setIsPlaying(false);
       setCurrentTime(0);
     };
 
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("ended", handleEnded);
+
     return () => {
-      audio.pause();
-      audio.src = "";
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("ended", handleEnded);
     };
-  }, [url]);
+  }, []);
 
   const togglePlayback = () => {
-    if (!audioRef.current) return;
+    const audio = audioRef.current;
+    if (!audio) return;
 
     if (isPlaying) {
-      audioRef.current.pause();
+      audio.pause();
+      setIsPlaying(false);
     } else {
-      audioRef.current.play();
+      audio.play().then(() => {
+        setIsPlaying(true);
+      }).catch((error) => {
+        console.error("Audio playback failed:", error);
+      });
     }
-    setIsPlaying(!isPlaying);
   };
 
-  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!audioRef.current || !progressRef.current) return;
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    const audio = audioRef.current;
+    if (!audio || !duration) return;
 
-    const rect = progressRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percentage = x / rect.width;
+    const target = e.currentTarget;
+    const rect = target.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const x = clientX - rect.left;
+    const percentage = Math.max(0, Math.min(1, x / rect.width));
     const newTime = percentage * duration;
 
-    audioRef.current.currentTime = newTime;
+    audio.currentTime = newTime;
     setCurrentTime(newTime);
   };
 
@@ -391,50 +416,115 @@ export function VoiceMessagePlayer({ url, duration: initialDuration, className }
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  const waveformBars = Array.from({ length: 40 }, (_, i) => {
+    const height = Math.abs(Math.sin(i * 0.8) * Math.cos(i * 0.3)) * 100;
+    return Math.max(15, Math.min(100, height + 20));
+  });
+
   return (
-    <div className={`flex items-center gap-2 p-2 rounded-lg bg-muted/30 ${className}`}>
-      {/* Play/Pause button */}
-      <Button
-        variant="ghost"
-        size="icon"
+    <div className={`flex items-center gap-2 p-2 min-w-[280px] ${className || ""}`}>
+      <audio 
+        ref={audioRef} 
+        src={url} 
+        preload="metadata"
+        playsInline
+      />
+
+      {!isOwn && senderAvatar && (
+        <div className="relative shrink-0">
+          <img 
+            src={senderAvatar} 
+            alt={senderName || "Sender"}
+            className="w-12 h-12 rounded-full object-cover"
+          />
+          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+            <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+              <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+            </svg>
+          </div>
+        </div>
+      )}
+
+      <button
         onClick={togglePlayback}
-        className="h-8 w-8 shrink-0"
+        className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+          isOwn 
+            ? "bg-white/20 hover:bg-white/30 text-white" 
+            : "bg-primary/10 hover:bg-primary/20 text-primary"
+        }`}
       >
         {isPlaying ? (
-          <Pause className="h-4 w-4" />
+          <Pause className="w-5 h-5 fill-current" />
         ) : (
-          <Play className="h-4 w-4" />
+          <Play className="w-5 h-5 fill-current ml-0.5" />
         )}
-      </Button>
+      </button>
 
-      {/* Progress bar */}
-      <div
-        ref={progressRef}
-        className="flex-1 h-8 flex items-center cursor-pointer group"
-        onClick={handleProgressClick}
-      >
-        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary transition-all duration-100"
-            style={{ width: `${progress}%` }}
+      <div className="flex-1 flex flex-col gap-1">
+        <div
+          className="relative h-8 flex items-center gap-[2px] cursor-pointer"
+          onClick={handleProgressClick}
+          onTouchStart={handleProgressClick}
+        >
+          {waveformBars.map((height, i) => {
+            const barProgress = (i / waveformBars.length) * 100;
+            const isPlayed = barProgress <= progress;
+            
+            return (
+              <div
+                key={i}
+                className={`flex-1 rounded-full transition-colors ${
+                  isPlayed
+                    ? isOwn ? "bg-white" : "bg-blue-500"
+                    : isOwn ? "bg-white/40" : "bg-gray-300 dark:bg-gray-600"
+                }`}
+                style={{ height: `${height}%` }}
+              />
+            );
+          })}
+          
+          <div 
+            className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full shadow-md ${
+              isOwn ? "bg-white" : "bg-blue-500"
+            }`}
+            style={{ left: `calc(${progress}% - 6px)` }}
           />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className={`text-xs ${isOwn ? "text-white/70" : "text-muted-foreground"}`}>
+            {formatTime(isPlaying || currentTime > 0 ? currentTime : duration)}
+          </span>
+          
+          <button
+            onClick={cyclePlaybackRate}
+            className={`text-xs px-1.5 py-0.5 rounded ${
+              isOwn 
+                ? "bg-white/20 hover:bg-white/30 text-white" 
+                : "bg-muted hover:bg-muted/80 text-muted-foreground"
+            }`}
+          >
+            {playbackRate}×
+          </button>
         </div>
       </div>
 
-      {/* Time display */}
-      <span className="text-xs font-mono text-muted-foreground min-w-[5rem] text-right">
-        {formatTime(currentTime)} / {formatTime(duration)}
-      </span>
-
-      {/* Playback rate */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={cyclePlaybackRate}
-        className="h-6 px-1.5 text-xs font-mono"
-      >
-        {playbackRate}x
-      </Button>
+      {isOwn && senderAvatar && (
+        <div className="relative shrink-0">
+          <img 
+            src={senderAvatar} 
+            alt={senderName || "You"}
+            className="w-12 h-12 rounded-full object-cover"
+          />
+          <div className="absolute -bottom-1 -left-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+            <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+              <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+            </svg>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
