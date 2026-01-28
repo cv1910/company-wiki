@@ -1417,7 +1417,7 @@ export default function OhweeesPage() {
   // Mobile View
   if (isMobile) {
     return (
-      <div className="flex flex-col h-[100dvh] overflow-hidden bg-[#FAFAF8] dark:bg-gray-900">
+      <div className="flex flex-col h-[calc(100dvh-64px)] overflow-hidden bg-[#FAFAF8] dark:bg-gray-900">
         {mobileView === "list" ? (
           // Mobile Room List View
           <>
@@ -1748,8 +1748,8 @@ export default function OhweeesPage() {
             {/* Mobile Input - Fixed directly above navigation bar (h-16 + pb-safe) */}
             {/* Mobile Input - Fixed above bottom navigation */}
 <div 
-  className="fixed left-0 right-0 z-[999] bg-[#FAFAF8] dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
-  style={{ bottom: '0' }}
+  className="flex-shrink-0 bg-[#FAFAF8] dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
+  
 >
               <MobileChatInput
                 value={messageInput}
