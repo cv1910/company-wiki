@@ -311,12 +311,12 @@ function OhweeeMessage({
                         <p className="text-xs text-muted-foreground mt-1">{attachment.filename}</p>
                       </button>
                     ) : attachment.mimeType.startsWith("audio/") ? (
-                      <div className={`rounded-lg overflow-hidden ${isOwn ? "bg-amber-200/50 dark:bg-amber-800/30" : "bg-muted/50"}`}>
-                        <VoiceMessagePlayer
-                          url={attachment.url}
-                          className="min-w-[250px]"
-                        />
-                      </div>
+  <VoiceMessagePlayer
+    url={attachment.url}
+    isOwn={isOwn}
+    senderAvatar={message.ohweee.sender?.avatarUrl || undefined}
+    senderName={message.ohweee.sender?.displayName || message.ohweee.sender?.email}
+  />
                     ) : attachment.mimeType === "application/pdf" ? (
                       <div className={`rounded-lg overflow-hidden border ${isOwn ? "border-amber-300/50" : "border-border"}`}>
                         <div className="bg-gradient-to-r from-red-500 to-red-600 p-3 flex items-center gap-3">
