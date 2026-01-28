@@ -1763,7 +1763,7 @@ export default function OhweeesPage() {
   onSend={handleSendMessage}
   onAttach={() => fileInputRef.current?.click()}
   onSendVoice={async (blob, duration) => {
-    onSendVoice={async (blob, duration) => {
+    
   console.log("onSendVoice called!", blob.size, duration);
     if (!selectedRoomId) return;
     const formData = new FormData();
