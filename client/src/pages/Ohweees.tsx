@@ -1628,7 +1628,8 @@ export default function OhweeesPage() {
           </>
         ) : (
           // Mobile Chat View - Clean fullscreen Basecamp style
-         <div className="flex flex-col h-[100dvh] overflow-hidden bg-[#FAFAF8] dark:bg-gray-900">
+         <div className="fixed inset-0 flex flex-col bg-[#FAFAF8] dark:bg-gray-900" style={{ bottom: '64px' }}>
+```
             {/* Mobile Chat Header */}
             {currentRoom && !showChatSearch && (
               <MobileChatHeader
@@ -1671,7 +1672,7 @@ export default function OhweeesPage() {
 
             {/* Messages - scrollable area with padding for fixed input (~60px) + navigation (64px) + safe-area */}
             <div 
-              className="flex-1 overflow-y-auto overscroll-contain"
+              className="flex-1 overflow-y-auto overscroll-none"
               style={{ paddingBottom: 'calc(60px + 4rem + env(safe-area-inset-bottom, 0px) + 16px)' }}
             >
               <div className="py-2">
@@ -1748,7 +1749,7 @@ export default function OhweeesPage() {
             {/* Mobile Input - Fixed above bottom navigation */}
 <div 
   className="fixed left-0 right-0 z-[999] bg-[#FAFAF8] dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
-  style={{ bottom: '140px' }}
+  style={{ bottom: '0' }}
 >
               <MobileChatInput
                 value={messageInput}
