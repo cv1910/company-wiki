@@ -1748,7 +1748,7 @@ export default function OhweeesPage() {
             {/* Mobile Input - Fixed above bottom navigation */}
 <div 
   className="fixed left-0 right-0 z-[999] bg-[#FAFAF8] dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
-  style={{ bottom: '80px' }}
+  style={{ bottom: '140px' }}
 >
               <MobileChatInput
                 value={messageInput}
