@@ -1794,20 +1794,7 @@ export default function OhweeesPage() {
   };
   reader.readAsDataURL(blob);
 }}
-      });
-      console.log("6. Message sent!");
-    } else {
-      const errorText = await response.text();
-      console.log("Upload failed:", response.status, errorText);
-      toast.error("Upload fehlgeschlagen: " + response.status);
-    }
-  } catch (error) {
-    console.log("Upload error:", error);
-    toast.error("Fehler: " + error);
-  }
-}}
-  placeholder="Nachricht schreiben..."
-  isLoading={sendMessage.isPending}
+      
 />
             </div>
           </div>
