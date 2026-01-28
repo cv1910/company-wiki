@@ -541,6 +541,7 @@ export function MobileChatInput({
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 const chunksRef = useRef<Blob[]>([]);
+  const recordingTimeRef = useRef(0);
   const hasText = value.trim().length > 0;
 
   // Start/Stop recording toggle
@@ -565,9 +566,10 @@ const toggleRecording = async () => {
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
         stream.getTracks().forEach((track) => track.stop());
-        if (onSendVoice && recordingTime > 0) {
-          onSendVoice(blob, recordingTime);
-        }
+        if (onSendVoice && recordingTimeRef.current > 0) {
+  onSendVoice(blob, recordingTimeRef.current);
+}
+       recordingTimeRef.current = 0;
         setRecordingTime(0);
       };
 
@@ -575,8 +577,9 @@ const toggleRecording = async () => {
       setIsRecording(true);
       setRecordingTime(0);
       intervalRef.current = setInterval(() => {
-        setRecordingTime((t) => t + 1);
-      }, 1000);
+  recordingTimeRef.current += 1;
+  setRecordingTime(recordingTimeRef.current);
+}, 1000);
     } catch (err) {
       console.error("Mikrofon-Zugriff verweigert:", err);
     }
