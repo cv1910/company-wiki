@@ -460,11 +460,13 @@ export function MobileChatHeader({
   currentUserId,
   onBack,
   onInfo,
+  onMenuClick,
 }: {
   room: Room;
   currentUserId: number;
   onBack: () => void;
   onInfo?: () => void;
+  onMenuClick?: () => void;
   onSearch?: () => void;
 }) {
   const otherParticipant =
@@ -503,7 +505,7 @@ export function MobileChatHeader({
       <Button
         variant="ghost"
         size="sm"
-        onClick={onInfo}
+        onClick={onMenuClick || onInfo}
         className="h-9 w-9 p-0 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
       >
         <MoreVertical className="h-5 w-5" />
@@ -513,7 +515,7 @@ export function MobileChatHeader({
 }
 
 // ============================================================================
-// CHAT INPUT - Fixed above bottom nav, simple voice toggle
+// CHAT INPUT - WhatsApp Style with Real Voice Recording
 // ============================================================================
 
 export function MobileChatInput({
@@ -521,7 +523,6 @@ export function MobileChatInput({
   onChange,
   onSend,
   onSendVoice,
-  onVoice,
   onAttach,
   isLoading,
   placeholder = "Nachricht schreiben...",
@@ -530,7 +531,6 @@ export function MobileChatInput({
   onChange: (value: string) => void;
   onSend: () => void;
   onSendVoice?: (blob: Blob, duration: number) => void;
-  onVoice?: () => void;
   onAttach?: () => void;
   isLoading?: boolean;
   placeholder?: string;
@@ -539,71 +539,112 @@ export function MobileChatInput({
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-const chunksRef = useRef<Blob[]>([]);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
   const recordingTimeRef = useRef(0);
+  const streamRef = useRef<MediaStream | null>(null);
+
   const hasText = value.trim().length > 0;
 
-  // Start/Stop recording toggle
-const toggleRecording = async () => {
-  if (isRecording) {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      mediaRecorderRef.current.stop();
-    }
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    setIsRecording(false);
-  } else {
+  // Start recording
+  const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
+      recordingTimeRef.current = 0;
 
       mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
+        if (e.data.size > 0) {
+          chunksRef.current.push(e.data);
+        }
       };
 
       mediaRecorder.onstop = () => {
-  console.log("STOP - chunks:", chunksRef.current.length);
-  const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-  console.log("BLOB size:", blob.size);
-  stream.getTracks().forEach((track) => track.stop());
-  console.log("onSendVoice exists:", !!onSendVoice);
-  console.log("recordingTimeRef:", recordingTimeRef.current);
-  if (onSendVoice && recordingTimeRef.current > 0) {
-    console.log("SENDING voice!");
-    onSendVoice(blob, recordingTimeRef.current);
-  }
-       recordingTimeRef.current = 0;
+        // Stop all tracks
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+        }
+        
+        // Create blob and send
+        if (chunksRef.current.length > 0 && recordingTimeRef.current > 0) {
+          const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+          if (onSendVoice) {
+            onSendVoice(blob, recordingTimeRef.current);
+          }
+        }
+        
+        // Reset
+        chunksRef.current = [];
+        recordingTimeRef.current = 0;
         setRecordingTime(0);
       };
 
       mediaRecorder.start();
       setIsRecording(true);
       setRecordingTime(0);
+      
       intervalRef.current = setInterval(() => {
-  recordingTimeRef.current += 1;
-  setRecordingTime(recordingTimeRef.current);
-}, 1000);
+        recordingTimeRef.current += 1;
+        setRecordingTime(recordingTimeRef.current);
+      }, 1000);
+      
     } catch (err) {
       console.error("Mikrofon-Zugriff verweigert:", err);
+      alert("Mikrofon-Zugriff wurde verweigert. Bitte erlaube den Zugriff in den Browser-Einstellungen.");
     }
-  }
-};
+  };
 
-const cancelRecording = () => {
-  if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-    mediaRecorderRef.current.stop();
-  }
-  if (intervalRef.current) clearInterval(intervalRef.current);
-  chunksRef.current = [];
-  setIsRecording(false);
-  setRecordingTime(0);
-};
+  // Stop recording and send
+  const stopAndSendRecording = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+    
+    setIsRecording(false);
+  };
 
+  // Cancel recording
+  const cancelRecording = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    
+    // Stop without triggering onstop handler
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.ondataavailable = null;
+      mediaRecorderRef.current.onstop = null;
+      mediaRecorderRef.current.stop();
+    }
+    
+    // Stop stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+    }
+    
+    // Reset
+    chunksRef.current = [];
+    recordingTimeRef.current = 0;
+    setRecordingTime(0);
+    setIsRecording(false);
+  };
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
     };
   }, []);
 
@@ -638,7 +679,7 @@ const cancelRecording = () => {
 
           {/* Send button */}
           <button
-           onClick={toggleRecording}
+            onClick={stopAndSendRecording}
             className="w-10 h-10 rounded-full bg-rose-500 hover:bg-rose-600 shadow-md flex items-center justify-center text-white transition-colors"
           >
             <Send className="w-5 h-5" />
@@ -686,7 +727,7 @@ const cancelRecording = () => {
           </button>
         ) : (
           <button
-            onClick={onVoice || toggleRecording}
+            onClick={startRecording}
             className="w-10 h-10 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md flex items-center justify-center transition-colors"
           >
             <Mic className="w-5 h-5" />
