@@ -1099,24 +1099,27 @@ export default function OhweeesPage() {
   
   const createTask = trpc.ohweees.createTask.useMutation({
     onSuccess: (_data, variables) => {
-      // Close dialog and reset state first
+      // Minimal state reset to prevent render loops
       setShowCreateTaskDialog(false);
-      setNewTaskTitle("");
-      setNewTaskDescription("");
-      setNewTaskPriority("medium");
-      setNewTaskDueDate("");
-      setNewTaskAssigneeId(null);
-      setTaskFromMessageId(null);
-      toast.success("Aufgabe erstellt");
 
-      // Delay query invalidations to avoid render loop on mobile
+      // Delay all other state updates
+      requestAnimationFrame(() => {
+        setNewTaskTitle("");
+        setNewTaskDescription("");
+        setNewTaskPriority("medium");
+        setNewTaskDueDate("");
+        setNewTaskAssigneeId(null);
+        setTaskFromMessageId(null);
+      });
+
+      // Delay query invalidations significantly
       setTimeout(() => {
         utils.ohweees.getTasks.invalidate({ roomId: variables.roomId });
         utils.tasks.getMyTasks.invalidate();
         utils.tasks.getAssignedToMe.invalidate();
         utils.tasks.getCreatedByMe.invalidate();
         utils.tasks.openCount.invalidate();
-      }, 100);
+      }, 500);
     },
     onError: (error) => {
       toast.error(error.message);
