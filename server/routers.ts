@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
 import { systemRouter } from "./_core/systemRouter";
-import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { guestProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 import { nanoid } from "nanoid";
 import * as embeddings from "./embeddings";
@@ -171,7 +171,29 @@ export const appRouter = router({
   system: systemRouter,
 
   auth: router({
-    me: publicProcedure.query((opts) => opts.ctx.user),
+    me: publicProcedure.query((opts) => {
+      // Return guest user if not authenticated
+      if (!opts.ctx.user) {
+        return {
+          id: 0,
+          openId: "guest",
+          name: "Gast",
+          email: null,
+          loginMethod: "guest",
+          role: "guest" as const,
+          avatarUrl: null,
+          phone: null,
+          location: null,
+          bio: null,
+          department: null,
+          jobTitle: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          lastSignedIn: new Date(),
+        };
+      }
+      return opts.ctx.user;
+    }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -185,7 +207,7 @@ export const appRouter = router({
       return db.getAllUsers();
     }),
 
-    getById: protectedProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
+    getById: guestProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
       return db.getUserById(input.id);
     }),
 
@@ -334,15 +356,15 @@ export const appRouter = router({
 
   // ==================== CATEGORIES ====================
   categories: router({
-    list: protectedProcedure.query(async () => {
+    list: guestProcedure.query(async () => {
       return db.getAllCategories();
     }),
 
-    getById: protectedProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
+    getById: guestProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
       return db.getCategoryById(input.id);
     }),
 
-    getBySlug: protectedProcedure.input(z.object({ slug: z.string() })).query(async ({ input }) => {
+    getBySlug: guestProcedure.input(z.object({ slug: z.string() })).query(async ({ input }) => {
       return db.getCategoryBySlug(input.slug);
     }),
 
@@ -413,8 +435,8 @@ export const appRouter = router({
 
   // ==================== ARTICLES ====================
   articles: router({
-    list: protectedProcedure
-      .input(z.object({ 
+    list: guestProcedure
+      .input(z.object({
         status: z.enum(["draft", "published", "archived"]).optional(),
         categorySlug: z.string().optional(),
         limit: z.number().optional(),
@@ -434,7 +456,7 @@ export const appRouter = router({
         return db.getAllArticles(input?.status);
       }),
 
-    getById: protectedProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
+    getById: guestProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
       const article = await db.getArticleById(input.id);
       if (article) {
         await db.incrementArticleViewCount(input.id);
@@ -442,7 +464,7 @@ export const appRouter = router({
       return article;
     }),
 
-    getBySlug: protectedProcedure.input(z.object({ slug: z.string() })).query(async ({ input }) => {
+    getBySlug: guestProcedure.input(z.object({ slug: z.string() })).query(async ({ input }) => {
       const article = await db.getArticleBySlug(input.slug);
       if (article) {
         await db.incrementArticleViewCount(article.id);
@@ -450,11 +472,11 @@ export const appRouter = router({
       return article;
     }),
 
-    getByCategory: protectedProcedure.input(z.object({ categoryId: z.number() })).query(async ({ input }) => {
+    getByCategory: guestProcedure.input(z.object({ categoryId: z.number() })).query(async ({ input }) => {
       return db.getArticlesByCategory(input.categoryId);
     }),
 
-    getRecent: protectedProcedure.input(z.object({ limit: z.number().optional() }).optional()).query(async ({ input }) => {
+    getRecent: guestProcedure.input(z.object({ limit: z.number().optional() }).optional()).query(async ({ input }) => {
       return db.getRecentArticles(input?.limit || 10);
     }),
 
@@ -708,21 +730,21 @@ export const appRouter = router({
 
   // ==================== SOPs ====================
   sops: router({
-    list: protectedProcedure
+    list: guestProcedure
       .input(z.object({ status: z.enum(["draft", "published", "archived"]).optional() }).optional())
       .query(async ({ input }) => {
         return db.getAllSOPs(input?.status);
       }),
 
-    getById: protectedProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
+    getById: guestProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
       return db.getSOPById(input.id);
     }),
 
-    getBySlug: protectedProcedure.input(z.object({ slug: z.string() })).query(async ({ input }) => {
+    getBySlug: guestProcedure.input(z.object({ slug: z.string() })).query(async ({ input }) => {
       return db.getSOPBySlug(input.slug);
     }),
 
-    getByCategory: protectedProcedure.input(z.object({ categoryId: z.number() })).query(async ({ input }) => {
+    getByCategory: guestProcedure.input(z.object({ categoryId: z.number() })).query(async ({ input }) => {
       return db.getSOPsByCategory(input.categoryId);
     }),
 
@@ -824,7 +846,7 @@ export const appRouter = router({
       return { success: true };
     }),
 
-    search: protectedProcedure
+    search: guestProcedure
       .input(z.object({ query: z.string(), limit: z.number().optional() }))
       .query(async ({ input }) => {
         return db.searchSOPs(input.query, input.limit);
@@ -833,7 +855,7 @@ export const appRouter = router({
 
   // ==================== SOP CATEGORIES ====================
   sopCategories: router({
-    list: protectedProcedure.query(async () => {
+    list: guestProcedure.query(async () => {
       return db.getAllSOPCategories();
     }),
 
@@ -1173,12 +1195,12 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
   // ==================== GLOBAL SEARCH ====================
   search: router({
     // Autocomplete suggestions
-    suggestions: protectedProcedure
+    suggestions: guestProcedure
       .input(z.object({ query: z.string().min(1), limit: z.number().optional() }))
       .query(async ({ input }) => {
         const limit = input.limit || 5;
         const query = input.query.toLowerCase();
-        
+
         // Get matching articles
         const articlesResult = await db.searchArticles(query, limit);
         const articles = articlesResult.map(a => ({
@@ -1187,7 +1209,7 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           slug: a.slug,
           type: "article" as const,
         }));
-        
+
         // Get matching SOPs
         const sopsResult = await db.searchSOPs(query, limit);
         const sopsList = sopsResult.map(s => ({
@@ -1196,16 +1218,16 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           slug: s.slug,
           type: "sop" as const,
         }));
-        
+
         // Combine and limit
         const combined = [...articles, ...sopsList]
           .slice(0, limit);
-        
+
         return combined;
       }),
 
     // Traditional full-text search
-    global: protectedProcedure
+    global: guestProcedure
       .input(
         z.object({
           query: z.string().min(1),
@@ -1235,7 +1257,7 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
       }),
 
     // Semantic AI-powered search
-    semantic: protectedProcedure
+    semantic: guestProcedure
       .input(
         z.object({
           query: z.string().min(1),
@@ -1372,7 +1394,7 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
 
   // ==================== DASHBOARD STATS ====================
   dashboard: router({
-    stats: protectedProcedure.query(async () => {
+    stats: guestProcedure.query(async () => {
       const [articles, sops, categories, sopCats, users] = await Promise.all([
         db.getAllArticles("published"),
         db.getAllSOPs("published"),
@@ -1390,11 +1412,11 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
       };
     }),
 
-    recentArticles: protectedProcedure.query(async () => {
+    recentArticles: guestProcedure.query(async () => {
       return db.getRecentArticles(5);
     }),
 
-    recentActivity: protectedProcedure.query(async () => {
+    recentActivity: guestProcedure.query(async () => {
       return db.getRecentActivity(10);
     }),
   }),
@@ -5572,7 +5594,7 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
     }),
 
     // Get profile by user ID
-    getProfile: protectedProcedure
+    getProfile: guestProcedure
       .input(z.object({ userId: z.number() }))
       .query(async ({ input }) => {
         return db.getUserProfileWithUser(input.userId);
@@ -5612,12 +5634,12 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
       }),
 
     // Get all profiles (for directory)
-    getAllProfiles: protectedProcedure.query(async () => {
+    getAllProfiles: guestProcedure.query(async () => {
       return db.getAllUserProfiles();
     }),
 
     // Search profiles
-    searchProfiles: protectedProcedure
+    searchProfiles: guestProcedure
       .input(z.object({ query: z.string() }))
       .query(async ({ input }) => {
         return db.searchUserProfiles(input.query);
@@ -5627,12 +5649,12 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
   // ==================== ORGANIZATION CHART ====================
   orgChart: router({
     // Get all positions
-    getPositions: protectedProcedure.query(async () => {
+    getPositions: guestProcedure.query(async () => {
       return db.getOrgPositions();
     }),
 
     // Get position by ID
-    getPosition: protectedProcedure
+    getPosition: guestProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         return db.getOrgPositionById(input.id);

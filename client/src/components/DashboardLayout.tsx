@@ -145,34 +145,7 @@ export default function DashboardLayout({
     return <DashboardLayoutSkeleton />;
   }
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Book className="w-8 h-8 text-primary" />
-          </div>
-          <div className="flex flex-col items-center gap-4">
-            <h1 className="text-2xl font-semibold tracking-tight text-center">
-              ohwee
-            </h1>
-            <p className="text-sm text-muted-foreground text-center max-w-sm">
-              Melde dich mit deinem Google-Konto an, um auf ohwee zuzugreifen.
-            </p>
-          </div>
-          <Button
-            onClick={() => {
-              window.location.href = getLoginUrl();
-            }}
-            size="lg"
-            className="w-full card-shadow hover:elevated-shadow transition-all"
-          >
-            Mit Google anmelden
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  // Guest users are now allowed - no login screen needed
 
   return (
     <SidebarProvider
@@ -218,6 +191,7 @@ function DashboardLayoutContent({
     (item) => location === item.path || location.startsWith(item.path + "/")
   );
   const isMobile = useIsMobile();
+  const isGuest = user?.role === "guest";
   const isAdmin = user?.role === "admin";
   const isEditor = user?.role === "editor" || isAdmin;
 
@@ -244,19 +218,22 @@ function DashboardLayoutContent({
     enabled: isMobile,
   });
 
-  // Fetch unread notification count
+  // Fetch unread notification count (only for authenticated users)
   const { data: unreadCount } = trpc.notifications.unreadCount.useQuery(undefined, {
     refetchInterval: 30000, // Refresh every 30 seconds
+    enabled: !isGuest,
   });
 
-  // Fetch unread Taps count for header badge
+  // Fetch unread Taps count for header badge (only for authenticated users)
   const { data: unreadTapsCount } = trpc.ohweees.unreadCount.useQuery(undefined, {
     refetchInterval: 30000,
+    enabled: !isGuest,
   });
 
-  // Fetch open tasks count for header badge
+  // Fetch open tasks count for header badge (only for authenticated users)
   const { data: openTasksCount } = trpc.tasks.openCount.useQuery(undefined, {
     refetchInterval: 60000,
+    enabled: !isGuest,
   });
 
   // Calculate total badge count for header
@@ -472,81 +449,107 @@ function DashboardLayoutContent({
           </SidebarContent>
 
           <SidebarFooter className="p-3 border-t border-sidebar-border">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-sidebar-accent transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  <Avatar className="h-9 w-9 border shrink-0">
-                    <AvatarImage src={user?.avatarUrl || undefined} />
-                    <AvatarFallback className="text-xs font-medium bg-primary/10 text-primary">
-                      {user?.name?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium truncate leading-none">
-                        {user?.name || "-"}
-                      </p>
-                      {isAdmin && (
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                          Admin
-                        </Badge>
-                      )}
-                      {!isAdmin && isEditor && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                          Editor
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground truncate mt-1">
-                      {user?.email || "-"}
+            {isGuest ? (
+              /* Guest user - show login button */
+              <button
+                onClick={() => setLocation("/login")}
+                className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-sidebar-accent transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <div className="h-9 w-9 border rounded-full shrink-0 flex items-center justify-center bg-muted">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium truncate leading-none">
+                      Gast
                     </p>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                      Read-only
+                    </Badge>
                   </div>
-                  {unreadCount && unreadCount > 0 && (
-                    <div className="group-data-[collapsible=icon]:hidden">
-                      <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                  <p className="text-xs text-primary truncate mt-1">
+                    Als Admin anmelden →
+                  </p>
+                </div>
+              </button>
+            ) : (
+              /* Authenticated user - show full menu */
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-sidebar-accent transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <Avatar className="h-9 w-9 border shrink-0">
+                      <AvatarImage src={user?.avatarUrl || undefined} />
+                      <AvatarFallback className="text-xs font-medium bg-primary/10 text-primary">
+                        {user?.name?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium truncate leading-none">
+                          {user?.name || "-"}
+                        </p>
+                        {isAdmin && (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                            Admin
+                          </Badge>
+                        )}
+                        {!isAdmin && isEditor && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            Editor
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate mt-1">
+                        {user?.email || "-"}
+                      </p>
+                    </div>
+                    {unreadCount && unreadCount > 0 && (
+                      <div className="group-data-[collapsible=icon]:hidden">
+                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                          {unreadCount}
+                        </Badge>
+                      </div>
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem
+                    onClick={() => setLocation("/notifications")}
+                    className="cursor-pointer"
+                  >
+                    <Bell className="mr-2 h-4 w-4" />
+                    <span>Benachrichtigungen</span>
+                    {unreadCount && unreadCount > 0 && (
+                      <Badge variant="destructive" className="ml-auto text-[10px] px-1.5 py-0">
                         {unreadCount}
                       </Badge>
-                    </div>
-                  )}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem
-                  onClick={() => setLocation("/notifications")}
-                  className="cursor-pointer"
-                >
-                  <Bell className="mr-2 h-4 w-4" />
-                  <span>Benachrichtigungen</span>
-                  {unreadCount && unreadCount > 0 && (
-                    <Badge variant="destructive" className="ml-auto text-[10px] px-1.5 py-0">
-                      {unreadCount}
-                    </Badge>
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setShowUserProfile(true)}
-                  className="cursor-pointer"
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Mein Profil</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setShowNotificationSettings(true)}
-                  className="cursor-pointer"
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Einstellungen</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={logout}
-                  className="cursor-pointer text-destructive focus:text-destructive"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Abmelden</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setShowUserProfile(true)}
+                    className="cursor-pointer"
+                  >
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Mein Profil</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setShowNotificationSettings(true)}
+                    className="cursor-pointer"
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Einstellungen</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={logout}
+                    className="cursor-pointer text-destructive focus:text-destructive"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Abmelden</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </SidebarFooter>
         </Sidebar>
         <div

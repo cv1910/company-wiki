@@ -230,6 +230,7 @@ function SortableWidgetItem({
 export default function Home() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
+  const isGuest = user?.role === "guest";
   const isEditor = user?.role === "editor" || user?.role === "admin";
   const isAdmin = user?.role === "admin";
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -238,13 +239,13 @@ export default function Home() {
   const { data: recentArticles, isLoading: articlesLoading } = trpc.dashboard.recentArticles.useQuery();
   const { data: recentActivity, isLoading: activityLoading } = trpc.dashboard.recentActivity.useQuery();
   const { data: announcements, isLoading: announcementsLoading } = trpc.announcements.getActive.useQuery();
-  const { data: favorites, isLoading: favoritesLoading } = trpc.favorites.list.useQuery();
-  const { data: assignments, isLoading: assignmentsLoading } = trpc.assignments.getMyAssignments.useQuery();
-  const { data: myTasks, isLoading: myTasksLoading } = trpc.tasks.getMyTasks.useQuery();
-  const { data: teamStats, isLoading: teamStatsLoading } = trpc.teams.getStats.useQuery();
-  const { data: myOvertimeHistory, isLoading: overtimeLoading } = trpc.overtime.myHistory.useQuery({ year: new Date().getFullYear() });
-  
-  const { data: dashboardSettings, isLoading: settingsLoading } = trpc.dashboardSettings.get.useQuery();
+  const { data: favorites, isLoading: favoritesLoading } = trpc.favorites.list.useQuery(undefined, { enabled: !isGuest });
+  const { data: assignments, isLoading: assignmentsLoading } = trpc.assignments.getMyAssignments.useQuery(undefined, { enabled: !isGuest });
+  const { data: myTasks, isLoading: myTasksLoading } = trpc.tasks.getMyTasks.useQuery(undefined, { enabled: !isGuest });
+  const { data: teamStats, isLoading: teamStatsLoading } = trpc.teams.getStats.useQuery(undefined, { enabled: !isGuest });
+  const { data: myOvertimeHistory, isLoading: overtimeLoading } = trpc.overtime.myHistory.useQuery({ year: new Date().getFullYear() }, { enabled: !isGuest });
+
+  const { data: dashboardSettings, isLoading: settingsLoading } = trpc.dashboardSettings.get.useQuery(undefined, { enabled: !isGuest });
   const utils = trpc.useUtils();
   
   const updateVisibility = trpc.dashboardSettings.updateVisibility.useMutation({
