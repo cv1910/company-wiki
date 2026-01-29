@@ -124,10 +124,18 @@ export default function OhweeesPage() {
     }
   }, [messageIds, user?.id]);
 
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [currentRoom?.messages]);
+
   // Mutations
   const sendMessage = trpc.ohweees.send.useMutation({
     onSuccess: () => {
       utils.ohweees.getRoom.invalidate({ roomId: selectedRoomId! });
+      utils.ohweees.rooms.invalidate();
       setMessageInput("");
       setReplyToMessage(null);
     },
