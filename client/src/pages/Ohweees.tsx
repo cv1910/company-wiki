@@ -93,11 +93,16 @@ export default function OhweeesPage() {
     };
   }, [isMobile]);
 
-  // Queries
-  const { data: rooms } = trpc.ohweees.rooms.useQuery();
+  // Queries with real-time polling
+  const { data: rooms, isLoading: roomsLoading } = trpc.ohweees.rooms.useQuery(undefined, {
+    refetchInterval: 5000, // Refresh room list every 5 seconds
+  });
   const { data: currentRoom } = trpc.ohweees.getRoom.useQuery(
     { roomId: selectedRoomId! },
-    { enabled: !!selectedRoomId }
+    {
+      enabled: !!selectedRoomId,
+      refetchInterval: 2000, // Refresh messages every 2 seconds for near real-time
+    }
   );
 
   const messageIds = useMemo(
@@ -130,6 +135,27 @@ export default function OhweeesPage() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [currentRoom?.messages]);
+
+  // Update URL when room changes
+  useEffect(() => {
+    if (selectedRoomId && !roomId) {
+      setLocation(`/taps/${selectedRoomId}`, { replace: true });
+    }
+  }, [selectedRoomId, roomId, setLocation]);
+
+  // Set initial room from URL
+  useEffect(() => {
+    if (roomId) {
+      setSelectedRoomId(parseInt(roomId));
+    }
+  }, [roomId]);
+
+  // Request notification permission
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
 
   // Mutations
   const sendMessage = trpc.ohweees.send.useMutation({
@@ -167,6 +193,14 @@ export default function OhweeesPage() {
       parentId: replyToMessage?.id,
     });
   };
+
+  if (roomsLoading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-120px)]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   if (isMobile) {
     if (mobileView === "list") {
