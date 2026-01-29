@@ -18,6 +18,7 @@ import {
   MobileChatInput,
   MobileChatHeader,
   MobileRoomListItem,
+  MobileAvatarBar,
   MobileDateSeparator,
   MobileMessage,
 } from "@/components/MobileChatView";
@@ -147,6 +148,31 @@ export default function OhweeesPage() {
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
             <h1 className="text-xl font-bold">Ohweees</h1>
           </div>
+
+          {/* Avatar Bar */}
+          <MobileAvatarBar
+            rooms={rooms?.map(r => ({
+              id: r.id,
+              name: r.name,
+              type: r.type as "direct" | "group" | "team",
+              participants: r.participants?.map(p => ({
+                id: p.id,
+                name: p.name,
+                avatarUrl: p.avatarUrl,
+              })),
+              unreadCount: r.unreadCount,
+              lastMessage: r.lastMessage ? {
+                content: r.lastMessage.content,
+                createdAt: r.lastMessage.createdAt,
+                senderId: r.lastMessage.senderId,
+                senderName: r.lastMessage.senderName,
+              } : undefined,
+            })) || []}
+            currentUserId={user?.id || 0}
+            onRoomSelect={(roomId) => setSelectedRoomId(roomId)}
+            onNewChat={() => {}}
+          />
+
           <div className="flex-1 overflow-y-auto" data-scrollable="true">
             {rooms?.map((room) => (
               <MobileRoomListItem
