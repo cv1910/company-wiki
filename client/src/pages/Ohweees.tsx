@@ -222,7 +222,7 @@ export default function OhweeesPage() {
             onNewChat={() => {}}
           />
 
-          <div className="flex-1 overflow-y-auto overscroll-none" data-scrollable="true">
+          <ScrollArea className="flex-1">
             {rooms?.map((room) => (
               <MobileRoomListItem
                 key={room.id}
@@ -247,7 +247,7 @@ export default function OhweeesPage() {
                 onSelect={() => setSelectedRoomId(room.id)}
               />
             ))}
-          </div>
+          </ScrollArea>
         </div>
       );
     }
@@ -278,7 +278,7 @@ export default function OhweeesPage() {
           onBack={() => setMobileView("list")}
         />
 
-        <div className="flex-1 overflow-y-auto overscroll-none p-2" data-scrollable="true">
+        <ScrollArea className="flex-1 p-2">
           {currentRoom?.messages?.map((message, index) => {
             const prevMessage = currentRoom.messages?.[index - 1];
             const showDateSeparator = !prevMessage ||
@@ -328,7 +328,7 @@ export default function OhweeesPage() {
             );
           })}
           <div ref={messagesEndRef} />
-        </div>
+        </ScrollArea>
 
         <MobileChatInput
           value={messageInput}
