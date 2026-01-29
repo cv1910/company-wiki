@@ -72,17 +72,30 @@ export default function OhweeesPage() {
   useEffect(() => {
     if (!isMobile) return;
 
-    // Lock body scroll on mobile to prevent rubber band effect
-    document.body.style.overflow = "hidden";
-    document.body.style.position = "fixed";
-    document.body.style.width = "100%";
-    document.body.style.height = "100%";
+    // Lock body and html scroll on mobile to prevent rubber band effect
+    const html = document.documentElement;
+    const body = document.body;
+
+    html.style.overflow = "hidden";
+    html.style.height = "100%";
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = "0";
+    body.style.left = "0";
+    body.style.width = "100%";
+    body.style.height = "100%";
+    body.style.overscrollBehavior = "none";
 
     return () => {
-      document.body.style.overflow = "";
-      document.body.style.position = "";
-      document.body.style.width = "";
-      document.body.style.height = "";
+      html.style.overflow = "";
+      html.style.height = "";
+      body.style.overflow = "";
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.width = "";
+      body.style.height = "";
+      body.style.overscrollBehavior = "";
     };
   }, [isMobile]);
 
