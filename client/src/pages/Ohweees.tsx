@@ -1777,12 +1777,7 @@ export default function OhweeesPage() {
                         onAddReaction={(emoji) => {
                           addReaction.mutate({ ohweeeId: message.ohweee.id, emoji });
                         }}
-                        onCreateTask={() => {
-                          setActiveMessageMenu(null);
-                          setTaskFromMessageId(message.ohweee.id);
-                          setNewTaskTitle(message.ohweee.content.substring(0, 100));
-                          setShowCreateTaskDialog(true);
-                        }}
+                        // onCreateTask disabled for debugging
                       />
                     </div>
                   );
@@ -1832,9 +1827,7 @@ export default function OhweeesPage() {
     setEditingMessageId(null);
     setEditContent("");
   }}
-  onCreateTask={() => {
-    setShowCreateTaskDialog(true);
-  }}
+  // onCreateTask disabled for debugging
   onSendVoice={async (blob, duration) => {
   if (!selectedRoomId) return;
 
@@ -2219,47 +2212,7 @@ export default function OhweeesPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Create Task Dialog - Mobile - Using Dialog component */}
-        <Dialog open={showCreateTaskDialog} onOpenChange={(open) => !open && setShowCreateTaskDialog(false)}>
-          <DialogContent className="max-w-[90vw] rounded-xl">
-            <DialogHeader>
-              <DialogTitle>Neue Aufgabe</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <Input
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                placeholder="Was soll erledigt werden?"
-              />
-              <select
-                value={newTaskPriority}
-                onChange={(e) => setNewTaskPriority(e.target.value as "low" | "medium" | "high")}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="low">Niedrig</option>
-                <option value="medium">Mittel</option>
-                <option value="high">Hoch</option>
-              </select>
-            </div>
-            <DialogFooter>
-              <Button
-                onClick={() => {
-                  if (newTaskTitle.trim() && selectedRoomId) {
-                    createTask.mutate({
-                      roomId: selectedRoomId,
-                      title: newTaskTitle.trim(),
-                      priority: newTaskPriority,
-                    });
-                  }
-                }}
-                disabled={!newTaskTitle.trim() || createTask.isPending}
-                className="w-full"
-              >
-                {createTask.isPending ? "Erstelle..." : "Erstellen"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Task creation disabled for debugging */}
       </div>
     );
   }
