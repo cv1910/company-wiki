@@ -133,8 +133,8 @@ export default function OhweeesPage() {
 
   // Mutations
   const sendMessage = trpc.ohweees.send.useMutation({
-    onSuccess: () => {
-      utils.ohweees.getRoom.invalidate({ roomId: selectedRoomId! });
+    onSuccess: (_data, variables) => {
+      utils.ohweees.getRoom.invalidate({ roomId: variables.roomId });
       utils.ohweees.rooms.invalidate();
       setMessageInput("");
       setReplyToMessage(null);
