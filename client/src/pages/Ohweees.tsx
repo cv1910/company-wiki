@@ -1632,8 +1632,8 @@ export default function OhweeesPage() {
             )}
           </>
         ) : (
-          // Mobile Chat View - fixed, uses dvh to handle iOS Safari bar
-         <div className="fixed inset-x-0 top-[44px] bottom-[70px] flex flex-col bg-[#FAFAF8] dark:bg-gray-900 z-40">
+          // Mobile Chat View - fills parent container
+         <div className="flex flex-col flex-1 min-h-0 bg-[#FAFAF8] dark:bg-gray-900">
 
             {/* Mobile Chat Header */}
             {currentRoom && !showChatSearch && (
@@ -1675,8 +1675,8 @@ export default function OhweeesPage() {
               />
             )}
 
-            {/* Messages - scrollable, contained to prevent iOS Safari shifting */}
-            <div className="flex-1 overflow-y-auto overscroll-contain min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+            {/* Messages - scrollable */}
+            <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
               <div className="py-2">
                 {currentRoom?.messages?.map((message, index) => {
                   const prevMessage = currentRoom.messages?.[index - 1];
