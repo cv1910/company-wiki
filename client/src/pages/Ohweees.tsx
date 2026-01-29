@@ -1632,8 +1632,8 @@ export default function OhweeesPage() {
             )}
           </>
         ) : (
-          // Mobile Chat View - fits within app layout
-         <div className="flex flex-col h-full bg-[#FAFAF8] dark:bg-gray-900 -mx-4 -mt-4">
+          // Mobile Chat View - fixed with proper spacing for app header (48px) and bottom nav (64px)
+         <div className="fixed inset-x-0 top-12 bottom-16 flex flex-col bg-[#FAFAF8] dark:bg-gray-900 z-40">
 
             {/* Mobile Chat Header */}
             {currentRoom && !showChatSearch && (
@@ -1675,9 +1675,9 @@ export default function OhweeesPage() {
               />
             )}
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto overscroll-none">
-              <div className="py-2 pb-4">
+            {/* Messages - scrollable */}
+            <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
+              <div className="py-2">
                 {currentRoom?.messages?.map((message, index) => {
                   const prevMessage = currentRoom.messages?.[index - 1];
                   const showDateSeparator = !prevMessage ||
@@ -1759,9 +1759,8 @@ export default function OhweeesPage() {
               </div>
             )}
 
-            {/* Mobile Input - Fixed directly above navigation bar (h-16 + pb-safe) */}
-            {/* Mobile Input - Fixed above bottom navigation */}
-<div className="flex-shrink-0">
+            {/* Input - fixed at bottom */}
+<div className="shrink-0 mt-auto">
              <MobileChatInput
   value={messageInput}
   onChange={(value) => {
@@ -1785,7 +1784,6 @@ export default function OhweeesPage() {
   const extension = mimeType.includes("webm") ? "webm" : "m4a";
   const filename = `voice-${Date.now()}.${extension}`;
 
-  // Use FormData for reliable upload
   const formData = new FormData();
   formData.append("file", blob, filename);
 
@@ -1796,23 +1794,22 @@ export default function OhweeesPage() {
       credentials: "include",
     });
 
-    if (!response.ok) {
-      throw new Error("Upload fehlgeschlagen");
-    }
+    if (!response.ok) throw new Error("Upload failed");
 
-    const file = await response.json();
+    const { url } = await response.json();
 
     sendMessage.mutate({
       roomId: selectedRoomId,
       content: "🎙️ Sprachnachricht",
       attachments: [{
-        url: file.url,
-        filename: file.filename || filename,
-        mimeType: file.mimeType || mimeType,
-        size: file.size || blob.size,
+        url,
+        filename,
+        mimeType,
+        size: blob.size,
       }],
     });
   } catch (error) {
+    console.error("Voice upload error:", error);
     toast.error("Upload fehlgeschlagen");
   }
 }}
