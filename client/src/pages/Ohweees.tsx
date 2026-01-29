@@ -1419,10 +1419,10 @@ export default function OhweeesPage() {
     );
   }
 
-  // Mobile View - fixed positioning between header and bottom nav
+  // Mobile View - fills available space (DashboardLayout removes padding for /taps)
   if (isMobile) {
     return (
-      <div className="fixed inset-x-0 top-14 bottom-14 flex flex-col overflow-hidden bg-[#FAFAF8] dark:bg-gray-900 z-30">
+      <div className="flex flex-col h-[calc(100dvh-56px-56px)] overflow-hidden bg-[#FAFAF8] dark:bg-gray-900">
         {mobileView === "list" ? (
           // Mobile Room List View
           <>
