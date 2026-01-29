@@ -10,7 +10,7 @@ export const users = mysqlTable("users", {
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["guest", "user", "editor", "admin"]).default("user").notNull(),
+  role: mysqlEnum("role", ["user", "editor", "admin"]).default("user").notNull(),
   avatarUrl: text("avatarUrl"),
   phone: varchar("phone", { length: 50 }),
   location: varchar("location", { length: 255 }),
