@@ -72,48 +72,11 @@ export default function OhweeesPage() {
   useEffect(() => {
     if (!isMobile) return;
 
-    // Find scrollable element (custom data attribute or Radix ScrollArea viewport)
-    const findScrollable = (target: HTMLElement): HTMLElement | null => {
-      return target.closest('[data-scrollable="true"], [data-radix-scroll-area-viewport]') as HTMLElement | null;
-    };
-
-    // Prevent touchmove on document to stop iOS overscroll
-    const preventOverscroll = (e: TouchEvent) => {
-      const target = e.target as HTMLElement;
-      const scrollable = findScrollable(target);
-
-      if (!scrollable) {
-        e.preventDefault();
-        return;
-      }
-
-      const { scrollTop, scrollHeight, clientHeight } = scrollable;
-      const atTop = scrollTop <= 0;
-      const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
-
-      const touch = e.touches[0];
-      const startY = (scrollable as any)._touchStartY || touch.clientY;
-      const deltaY = touch.clientY - startY;
-
-      if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
-        e.preventDefault();
-      }
-    };
-
-    const handleTouchStart = (e: TouchEvent) => {
-      const target = e.target as HTMLElement;
-      const scrollable = findScrollable(target);
-      if (scrollable && e.touches.length === 1) {
-        (scrollable as any)._touchStartY = e.touches[0].clientY;
-      }
-    };
-
-    document.addEventListener("touchstart", handleTouchStart, { passive: true });
-    document.addEventListener("touchmove", preventOverscroll, { passive: false });
+    // Add no-overscroll class to html element
+    document.documentElement.classList.add("no-overscroll");
 
     return () => {
-      document.removeEventListener("touchstart", handleTouchStart);
-      document.removeEventListener("touchmove", preventOverscroll);
+      document.documentElement.classList.remove("no-overscroll");
     };
   }, [isMobile]);
 
