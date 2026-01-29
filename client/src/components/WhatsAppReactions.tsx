@@ -311,7 +311,7 @@ export function SwipeToReply({ children, onReply, enabled = true, isOwn = false 
         >
           <div
             className={`w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center transition-transform ${
-              progress >= 1 ? "scale-110 bg-emerald-500 dark:bg-emerald-600" : ""
+              progress >= 1 ? "scale-110 bg-rose-500 dark:bg-rose-600" : ""
             }`}
             style={{ transform: `scale(${0.5 + progress * 0.5})` }}
           >

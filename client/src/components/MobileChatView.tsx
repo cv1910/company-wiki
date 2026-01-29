@@ -84,15 +84,15 @@ type ReadReceipt = {
 };
 
 // ============================================================================
-// DESIGN TOKENS - WhatsApp-style green theme
+// DESIGN TOKENS - App theme (Rose/Pink)
 // ============================================================================
 
 const colors = {
-  primary: "emerald-500",
-  primaryHover: "emerald-600",
-  primaryLight: "emerald-50",
-  primaryDark: "emerald-900",
-  ownBubble: "bg-emerald-500 dark:bg-emerald-600",
+  primary: "rose-500",
+  primaryHover: "rose-600",
+  primaryLight: "rose-50",
+  primaryDark: "rose-900",
+  ownBubble: "bg-rose-500 dark:bg-rose-600",
   ownBubbleText: "text-white",
   otherBubble: "bg-white dark:bg-gray-800",
   otherBubbleText: "text-gray-900 dark:text-gray-100",
@@ -260,9 +260,9 @@ export function MobileMessage({
     }
   };
 
-  // Use emerald/green for WhatsApp style
+  // Bubble colors
   const bubbleColors = {
-    own: "bg-emerald-500 dark:bg-emerald-600",
+    own: "bg-rose-500 dark:bg-rose-600",
     ownText: "text-white",
     other: "bg-white dark:bg-gray-800",
     otherText: "text-gray-900 dark:text-gray-100",
@@ -279,7 +279,7 @@ export function MobileMessage({
         {!isOwn && isLastInGroup ? (
           <Avatar className="w-8 h-8 flex-shrink-0 shadow-sm">
             <AvatarImage src={message.sender.avatarUrl || undefined} />
-            <AvatarFallback className="text-xs font-semibold bg-emerald-100 text-emerald-600 dark:bg-emerald-900 dark:text-emerald-300">
+            <AvatarFallback className="text-xs font-semibold bg-rose-100 text-rose-600 dark:bg-rose-900 dark:text-rose-300">
               {getInitials(message.sender.name || "?")}
             </AvatarFallback>
           </Avatar>
@@ -309,7 +309,7 @@ export function MobileMessage({
               >
                 {/* Sender name */}
                 {!isOwn && isFirstInGroup && (
-                  <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-1">
+                  <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 mb-1">
                     {message.sender.name || "Unbekannt"}
                   </p>
                 )}
@@ -320,10 +320,10 @@ export function MobileMessage({
                     className={`mb-2 pl-2 border-l-2 rounded-r py-1 pr-2 ${
                       isOwn
                         ? "border-white/50 bg-white/15"
-                        : "border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20"
+                        : "border-rose-400 bg-rose-50 dark:bg-rose-900/20"
                     }`}
                   >
-                    <p className={`text-[11px] font-semibold ${isOwn ? "text-white/90" : "text-emerald-600"}`}>
+                    <p className={`text-[11px] font-semibold ${isOwn ? "text-white/90" : "text-rose-600"}`}>
                       {quotedMessage.senderName}
                     </p>
                     <p className={`text-[12px] line-clamp-2 ${isOwn ? "text-white/70" : "text-gray-500"}`}>
@@ -435,35 +435,35 @@ export function MobileChatHeader({
   const avatarUrl = otherParticipant?.avatarUrl;
 
   return (
-    <div className="flex items-center gap-2 px-2 py-2 bg-emerald-600 dark:bg-emerald-700">
+    <div className="flex items-center gap-2 px-2 py-2 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
       <Button
         variant="ghost"
         size="sm"
         onClick={onBack}
-        className="h-9 w-9 p-0 text-white hover:bg-white/10 rounded-full"
+        className="h-9 w-9 p-0 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-full"
       >
         <ChevronLeft className="h-6 w-6" />
       </Button>
 
-      <Avatar className="h-10 w-10 shadow-sm border-2 border-white/20">
+      <Avatar className="h-10 w-10 shadow-sm">
         <AvatarImage src={avatarUrl || undefined} />
-        <AvatarFallback className="bg-emerald-500 text-white font-semibold">
+        <AvatarFallback className="bg-rose-100 text-rose-600 font-semibold dark:bg-rose-900 dark:text-rose-300">
           {getInitials(displayName)}
         </AvatarFallback>
       </Avatar>
 
       <div className="flex-1 min-w-0" onClick={onInfo}>
-        <h1 className="font-semibold text-[16px] text-white truncate">
+        <h1 className="font-semibold text-[16px] text-gray-900 dark:text-gray-100 truncate">
           {displayName}
         </h1>
-        <p className="text-[12px] text-emerald-100">online</p>
+        <p className="text-[12px] text-gray-500">online</p>
       </div>
 
       <Button
         variant="ghost"
         size="sm"
         onClick={onMenuClick || onInfo}
-        className="h-9 w-9 p-0 text-white hover:bg-white/10 rounded-full"
+        className="h-9 w-9 p-0 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
       >
         <MoreVertical className="h-5 w-5" />
       </Button>
@@ -741,7 +741,7 @@ export function MobileChatInput({
           {/* Stop/Send button */}
           <button
             onClick={stopAndSendRecording}
-            className="w-11 h-11 rounded-full bg-emerald-500 hover:bg-emerald-600 shadow-lg flex items-center justify-center text-white transition-all active:scale-95 shrink-0"
+            className="w-11 h-11 rounded-full bg-rose-500 hover:bg-rose-600 shadow-lg flex items-center justify-center text-white transition-all active:scale-95 shrink-0"
           >
             <Send className="w-5 h-5" />
           </button>
@@ -785,14 +785,14 @@ export function MobileChatInput({
           <button
             onClick={onSend}
             disabled={isLoading}
-            className="w-11 h-11 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-md flex items-center justify-center transition-all active:scale-95 disabled:opacity-50"
+            className="w-11 h-11 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md flex items-center justify-center transition-all active:scale-95 disabled:opacity-50"
           >
             <Send className="w-5 h-5" />
           </button>
         ) : (
           <button
             onClick={startRecording}
-            className="w-11 h-11 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-md flex items-center justify-center transition-all active:scale-95"
+            className="w-11 h-11 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md flex items-center justify-center transition-all active:scale-95"
           >
             <Mic className="w-5 h-5" />
           </button>
@@ -840,19 +840,19 @@ export function MobileRoomListItem({
     >
       <div className="relative flex-shrink-0">
         {room.type === "group" || room.type === "team" ? (
-          <div className="h-14 w-14 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-sm">
+          <div className="h-14 w-14 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-sm">
             <span className="text-white text-lg font-bold">#</span>
           </div>
         ) : (
           <Avatar className="h-14 w-14 shadow-sm">
             <AvatarImage src={avatarUrl || undefined} />
-            <AvatarFallback className="bg-emerald-100 text-emerald-600 font-semibold text-lg dark:bg-emerald-900 dark:text-emerald-300">
+            <AvatarFallback className="bg-rose-100 text-rose-600 font-semibold text-lg dark:bg-rose-900 dark:text-rose-300">
               {getInitials(displayName)}
             </AvatarFallback>
           </Avatar>
         )}
         {room.unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 h-6 w-6 bg-emerald-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-900">
+          <span className="absolute -top-1 -right-1 h-6 w-6 bg-rose-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-900">
             {room.unreadCount > 99 ? "99+" : room.unreadCount}
           </span>
         )}
@@ -868,7 +868,7 @@ export function MobileRoomListItem({
           <span className="text-[12px] text-gray-400 flex-shrink-0">{lastMessageTime}</span>
         </div>
         <div className="flex items-center gap-1 mt-0.5">
-          {isOwnLastMessage && <CheckCheck className="w-4 h-4 text-emerald-500 flex-shrink-0" />}
+          {isOwnLastMessage && <CheckCheck className="w-4 h-4 text-rose-500 flex-shrink-0" />}
           <p className={`text-[14px] truncate ${
             room.unreadCount > 0
               ? "text-gray-800 dark:text-gray-200 font-medium"
@@ -907,7 +907,7 @@ export function MobileAvatarBar({
       <div className="overflow-x-auto scrollbar-hide">
         <div className="flex gap-4">
           <button onClick={onNewChat} className="flex flex-col items-center gap-1.5 flex-shrink-0">
-            <div className="h-14 w-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-emerald-400 hover:bg-emerald-50 transition-colors">
+            <div className="h-14 w-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-rose-400 hover:bg-rose-50 transition-colors">
               <Plus className="h-6 w-6 text-gray-400" />
             </div>
             <span className="text-[11px] text-gray-500 font-medium">Neu</span>
@@ -927,12 +927,12 @@ export function MobileAvatarBar({
                 <div className="relative">
                   <div className={`p-0.5 rounded-full ${
                     room.unreadCount > 0
-                      ? "bg-gradient-to-tr from-emerald-400 to-teal-500"
+                      ? "bg-gradient-to-tr from-rose-400 to-pink-500"
                       : "bg-gray-200 dark:bg-gray-700"
                   }`}>
                     <Avatar className="h-13 w-13 ring-2 ring-white dark:ring-gray-900">
                       <AvatarImage src={other?.avatarUrl || undefined} />
-                      <AvatarFallback className="bg-emerald-100 text-emerald-600 font-semibold dark:bg-emerald-900 dark:text-emerald-300">
+                      <AvatarFallback className="bg-rose-100 text-rose-600 font-semibold dark:bg-rose-900 dark:text-rose-300">
                         {getInitials(name)}
                       </AvatarFallback>
                     </Avatar>
