@@ -115,6 +115,15 @@ export default function OhweeesPage() {
     { enabled: messageIds.length > 0 }
   );
 
+  // Mark messages as read
+  const markAsRead = trpc.ohweees.markAsRead.useMutation();
+
+  useEffect(() => {
+    if (messageIds.length > 0 && user?.id) {
+      markAsRead.mutate({ ohweeeIds: messageIds });
+    }
+  }, [messageIds, user?.id]);
+
   // Mutations
   const sendMessage = trpc.ohweees.send.useMutation({
     onSuccess: () => {
