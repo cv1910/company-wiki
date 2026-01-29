@@ -1461,16 +1461,14 @@ export default function OhweeesPage() {
   // Mobile View - fills available space (DashboardLayout removes padding for /taps)
   if (isMobile) {
     return (
-      <div className="flex flex-col h-[calc(100dvh-56px-56px)] overflow-hidden overscroll-none bg-[#FAFAF8] dark:bg-gray-900">
-        {mobileView === "list" ? (
-          // Mobile Room List View
-          <>
-            {/* Mobile Header - Premium Design */}
-            <div className="px-4 pt-3 pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg">
-                    <MessageCircle className="h-5 w-5 text-white" />
+      <div className="p-4">
+        <h1>Mobile Test - Fehler sollte jetzt weg sein</h1>
+        <p>Wenn dieser Text erscheint ohne Fehler, liegt das Problem in der Mobile-Ansicht.</p>
+      </div>
+    );
+  }
+
+  /* OLD MOBILE VIEW REMOVED FOR DEBUGGING - STARTS HERE
                   </div>
                   <h1 className="text-2xl font-bold">Taps</h1>
                 </div>
@@ -2215,7 +2213,7 @@ export default function OhweeesPage() {
         {/* Task creation disabled for debugging */}
       </div>
     );
-  }
+    OLD MOBILE VIEW REMOVED FOR DEBUGGING - ENDS HERE */
 
   // Desktop View
   return (
