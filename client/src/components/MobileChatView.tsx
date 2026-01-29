@@ -142,99 +142,6 @@ export function MobileDateSeparator({ date }: { date: Date }) {
 }
 
 // ============================================================================
-// VOICE MESSAGE PLAYER
-// ============================================================================
-
-function VoicePlayer({
-  duration,
-  isOwn,
-}: {
-  duration: number;
-  isOwn: boolean;
-}) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  const waveformBars = useRef(
-    Array.from({ length: 35 }, () => 20 + Math.random() * 80)
-  ).current;
-
-  const togglePlay = () => {
-    if (isPlaying) {
-      setIsPlaying(false);
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    } else {
-      setIsPlaying(true);
-      intervalRef.current = setInterval(() => {
-        setCurrentTime((t) => {
-          const newTime = t + 0.1;
-          if (newTime >= duration) {
-            setIsPlaying(false);
-            if (intervalRef.current) clearInterval(intervalRef.current);
-            setProgress(0);
-            return 0;
-          }
-          setProgress((newTime / duration) * 100);
-          return newTime;
-        });
-      }, 100);
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
-
-  const displayTime = isPlaying ? currentTime : duration;
-
-  return (
-    <div className="flex items-center gap-3 min-w-[180px] max-w-[260px]">
-      <button
-        onClick={togglePlay}
-        className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-95 ${
-          isOwn
-            ? "bg-white/25 hover:bg-white/35 text-white"
-            : "bg-rose-500 hover:bg-rose-600 text-white"
-        }`}
-      >
-        {isPlaying ? (
-          <Pause className="w-5 h-5 fill-current" />
-        ) : (
-          <Play className="w-5 h-5 fill-current ml-0.5" />
-        )}
-      </button>
-
-      <div className="flex-1 flex flex-col gap-1">
-        <div className="flex items-center gap-[2px] h-7">
-          {waveformBars.map((height, i) => {
-            const barProgress = (i / waveformBars.length) * 100;
-            const isActive = barProgress <= progress;
-            return (
-              <div
-                key={i}
-                className={`w-[3px] rounded-full transition-colors duration-100 ${
-                  isOwn
-                    ? isActive ? "bg-white" : "bg-white/40"
-                    : isActive ? "bg-rose-500" : "bg-gray-300 dark:bg-gray-600"
-                }`}
-                style={{ height: `${height}%` }}
-              />
-            );
-          })}
-        </div>
-        <span className={`text-[11px] ${isOwn ? "text-white/70" : "text-gray-500"}`}>
-          {formatDuration(displayTime)}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-// ============================================================================
 // MESSAGE BUBBLE
 // ============================================================================
 
@@ -271,10 +178,12 @@ export function MobileMessage({
   isLastInGroup?: boolean;
 }) {
   const time = formatMessageTime(message.ohweee.createdAt);
+  
+  // Parse attachments and find audio URL
   const attachments = (message.ohweee.attachments as { url: string; filename: string; mimeType: string; size: number }[] | null) || [];
   const audioAttachment = attachments.find(a => a.mimeType.startsWith("audio/"));
   const audioUrl = audioAttachment?.url || message.ohweee.voiceUrl;
-  const isVoice = message.ohweee.voiceDuration && message.ohweee.voiceDuration > 0;
+  
   const groupedReactions = reactions.reduce(
     (acc, r) => {
       if (!acc[r.reaction.emoji]) acc[r.reaction.emoji] = [];
@@ -378,8 +287,8 @@ export function MobileMessage({
               </div>
             )}
 
-            {/* Content */}
-           {isVoice && audioUrl ? (
+            {/* Content - Voice Message or Text */}
+            {audioUrl ? (
               <VoiceMessagePlayer 
                 url={audioUrl}
                 isOwn={isOwn}
@@ -561,7 +470,7 @@ export function MobileChatInput({
       streamRef.current = stream;
       
       const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
-const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
 
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
@@ -581,8 +490,8 @@ const mediaRecorder = new MediaRecorder(stream, { mimeType });
         
         // Create blob and send
         if (chunksRef.current.length > 0 && recordingTimeRef.current > 0) {
-          const mimeType = chunksRef.current[0]?.type || 'audio/mp4';
-const blob = new Blob(chunksRef.current, { type: mimeType });
+          const blobMimeType = chunksRef.current[0]?.type || 'audio/mp4';
+          const blob = new Blob(chunksRef.current, { type: blobMimeType });
 
           if (onSendVoice) {
             onSendVoice(blob, recordingTimeRef.current);
