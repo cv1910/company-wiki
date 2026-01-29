@@ -564,7 +564,7 @@ function DashboardLayoutContent({
         />
       </div>
 
-      <SidebarInset className="bg-background">
+      <SidebarInset className={`bg-background ${isMobile && location.startsWith("/taps") ? "overflow-hidden overscroll-none" : ""}`}>
         {/* Desktop Header with Breadcrumbs */}
         {!isMobile && (
           <div className="flex border-b min-h-14 h-14 shrink-0 items-center justify-between bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
