@@ -12,7 +12,6 @@ import {
 import {
   ChevronLeft,
   MoreVertical,
-  Paperclip,
   Send,
   Smile,
   Reply,
@@ -22,13 +21,11 @@ import {
   CheckSquare,
   Mic,
   Plus,
-  Play,
-  Pause,
   Check,
   CheckCheck,
-  X,
-  Square,
-  Image,
+  Camera,
+  Image as ImageIcon,
+  FileText,
 } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
 import { de } from "date-fns/locale";
@@ -84,21 +81,6 @@ type ReadReceipt = {
 };
 
 // ============================================================================
-// DESIGN TOKENS - App theme (Rose/Pink)
-// ============================================================================
-
-const colors = {
-  primary: "rose-500",
-  primaryHover: "rose-600",
-  primaryLight: "rose-50",
-  primaryDark: "rose-900",
-  ownBubble: "bg-rose-500 dark:bg-rose-600",
-  ownBubbleText: "text-white",
-  otherBubble: "bg-white dark:bg-gray-800",
-  otherBubbleText: "text-gray-900 dark:text-gray-100",
-};
-
-// ============================================================================
 // UTILITIES
 // ============================================================================
 
@@ -120,7 +102,7 @@ const formatDuration = (seconds: number) => {
 };
 
 // ============================================================================
-// DATE SEPARATOR
+// DATE SEPARATOR - WhatsApp Style
 // ============================================================================
 
 export function MobileDateSeparator({ date }: { date: Date }) {
@@ -134,8 +116,8 @@ export function MobileDateSeparator({ date }: { date: Date }) {
   }
 
   return (
-    <div className="flex justify-center py-3">
-      <span className="px-3 py-1 text-[11px] font-semibold text-gray-500 bg-white/80 dark:bg-gray-800/80 dark:text-gray-400 rounded-full shadow-sm backdrop-blur-sm">
+    <div className="flex justify-center py-4">
+      <span className="px-4 py-1.5 text-[11px] font-semibold tracking-wide text-gray-500 bg-white/90 dark:bg-gray-800/90 dark:text-gray-400 rounded-lg shadow-sm backdrop-blur-sm">
         {label}
       </span>
     </div>
@@ -143,7 +125,34 @@ export function MobileDateSeparator({ date }: { date: Date }) {
 }
 
 // ============================================================================
-// MESSAGE BUBBLE
+// BUBBLE TAIL SVG - WhatsApp Style
+// ============================================================================
+
+function BubbleTail({ isOwn, className = "" }: { isOwn: boolean; className?: string }) {
+  if (isOwn) {
+    return (
+      <svg
+        className={`absolute -right-2 bottom-0 w-3 h-4 ${className}`}
+        viewBox="0 0 12 16"
+        fill="currentColor"
+      >
+        <path d="M0 16V0C0 0 2 0 4 4C6 8 12 16 12 16H0Z" />
+      </svg>
+    );
+  }
+  return (
+    <svg
+      className={`absolute -left-2 bottom-0 w-3 h-4 ${className}`}
+      viewBox="0 0 12 16"
+      fill="currentColor"
+    >
+      <path d="M12 16V0C12 0 10 0 8 4C6 8 0 16 0 16H12Z" />
+    </svg>
+  );
+}
+
+// ============================================================================
+// MESSAGE BUBBLE - WhatsApp Style
 // ============================================================================
 
 export function MobileMessage({
@@ -186,7 +195,8 @@ export function MobileMessage({
 
   // Parse attachments and find audio URL
   const attachments = (message.ohweee.attachments as { url: string; filename: string; mimeType: string; size: number }[] | null) || [];
-  const audioAttachment = attachments.find(a => a.mimeType.startsWith("audio/"));
+  const audioAttachment = attachments.find(a => a.mimeType?.startsWith("audio/"));
+  const imageAttachments = attachments.filter(a => a.mimeType?.startsWith("image/"));
   const audioUrl = audioAttachment?.url || message.ohweee.voiceUrl;
 
   // Group reactions for display
@@ -214,7 +224,7 @@ export function MobileMessage({
   const longPressHandlers = useLongPress({
     onLongPress: () => setShowQuickReactions(true),
     onClick: () => setShowMenu(true),
-    delay: 400,
+    delay: 350,
   });
 
   const renderContent = (content: string) => {
@@ -233,7 +243,7 @@ export function MobileMessage({
       parts.push(
         <span
           key={`mention-${match.index}`}
-          className={`font-semibold ${isSelfMention ? "bg-yellow-200/50 px-0.5 rounded" : ""}`}
+          className={`font-semibold ${isSelfMention ? "bg-yellow-200/50 dark:bg-yellow-500/30 px-0.5 rounded" : ""}`}
         >
           @{userName}
         </span>
@@ -246,49 +256,30 @@ export function MobileMessage({
     return parts.length > 0 ? parts : content;
   };
 
-  const getBubbleRadius = () => {
-    if (isOwn) {
-      if (isFirstInGroup && isLastInGroup) return "rounded-2xl rounded-br-sm";
-      if (isFirstInGroup) return "rounded-2xl rounded-br-sm";
-      if (isLastInGroup) return "rounded-2xl rounded-br-sm";
-      return "rounded-2xl rounded-r-sm";
-    } else {
-      if (isFirstInGroup && isLastInGroup) return "rounded-2xl rounded-bl-sm";
-      if (isFirstInGroup) return "rounded-2xl rounded-bl-sm";
-      if (isLastInGroup) return "rounded-2xl rounded-bl-sm";
-      return "rounded-2xl rounded-l-sm";
-    }
-  };
-
-  // Bubble colors
-  const bubbleColors = {
-    own: "bg-rose-500 dark:bg-rose-600",
-    ownText: "text-white",
-    other: "bg-white dark:bg-gray-800",
-    otherText: "text-gray-900 dark:text-gray-100",
-  };
+  // Check if message is just a voice message
+  const isVoiceOnly = audioUrl && (message.ohweee.content === "[Sprachnachricht]" || message.ohweee.content.startsWith("🎙️"));
 
   return (
     <SwipeToReply onReply={onReply} isOwn={isOwn}>
       <div
-        className={`flex items-end gap-2 px-3 ${isOwn ? "flex-row-reverse" : ""} ${
-          isFirstInGroup ? "mt-3" : "mt-0.5"
+        className={`flex items-end gap-1.5 px-3 ${isOwn ? "flex-row-reverse" : ""} ${
+          isFirstInGroup ? "mt-2" : "mt-0.5"
         }`}
       >
         {/* Avatar */}
         {!isOwn && isLastInGroup ? (
-          <Avatar className="w-8 h-8 flex-shrink-0 shadow-sm">
+          <Avatar className="w-7 h-7 flex-shrink-0 shadow-sm mb-0.5">
             <AvatarImage src={message.sender.avatarUrl || undefined} />
-            <AvatarFallback className="text-xs font-semibold bg-rose-100 text-rose-600 dark:bg-rose-900 dark:text-rose-300">
+            <AvatarFallback className="text-[10px] font-bold bg-gradient-to-br from-rose-400 to-pink-500 text-white">
               {getInitials(message.sender.name || "?")}
             </AvatarFallback>
           </Avatar>
         ) : !isOwn ? (
-          <div className="w-8 flex-shrink-0" />
+          <div className="w-7 flex-shrink-0" />
         ) : null}
 
         {/* Bubble with long press */}
-        <div className="relative max-w-[80%]">
+        <div className={`relative max-w-[78%] ${isOwn ? "mr-1" : "ml-1"}`}>
           {/* Quick Reactions Popup */}
           <QuickReactions
             isVisible={showQuickReactions}
@@ -303,88 +294,132 @@ export function MobileMessage({
             <DropdownMenuTrigger asChild>
               <div
                 {...longPressHandlers}
-                className={`relative shadow-sm select-none ${
-                  isOwn ? bubbleColors.own : bubbleColors.other
-                } ${getBubbleRadius()} px-3 py-2`}
+                className="relative select-none"
               >
-                {/* Sender name */}
-                {!isOwn && isFirstInGroup && (
-                  <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 mb-1">
-                    {message.sender.name || "Unbekannt"}
-                  </p>
-                )}
-
-                {/* Quoted message */}
-                {quotedMessage && (
-                  <div
-                    className={`mb-2 pl-2 border-l-2 rounded-r py-1 pr-2 ${
-                      isOwn
-                        ? "border-white/50 bg-white/15"
-                        : "border-rose-400 bg-rose-50 dark:bg-rose-900/20"
-                    }`}
-                  >
-                    <p className={`text-[11px] font-semibold ${isOwn ? "text-white/90" : "text-rose-600"}`}>
-                      {quotedMessage.senderName}
-                    </p>
-                    <p className={`text-[12px] line-clamp-2 ${isOwn ? "text-white/70" : "text-gray-500"}`}>
-                      {quotedMessage.content}
-                    </p>
-                  </div>
-                )}
-
-                {/* Content - Voice Message or Text */}
-                {audioUrl ? (
-                  <WhatsAppVoicePlayer
-                    url={audioUrl}
-                    isOwn={isOwn}
-                    senderAvatar={message.sender.avatarUrl || undefined}
-                    senderName={message.sender.name || undefined}
-                  />
-                ) : (
-                  <p className={`text-[15px] leading-relaxed whitespace-pre-wrap break-words ${
-                    isOwn ? bubbleColors.ownText : bubbleColors.otherText
-                  }`}>
-                    {renderContent(message.ohweee.content)}
-                  </p>
-                )}
-
-                {/* Time & Status */}
-                <div className={`flex items-center justify-end gap-1 mt-1 ${
-                  isOwn ? "text-white/70" : "text-gray-400"
-                }`}>
-                  {message.ohweee.isEdited && <span className="text-[10px]">bearbeitet</span>}
-                  <span className="text-[10px]">{time}</span>
-                  {isOwn && (
-                    <span className="ml-0.5">
-                      {readReceipts && readReceipts.length > 0 ? (
-                        <CheckCheck className="w-4 h-4 text-sky-300" />
-                      ) : (
-                        <Check className="w-4 h-4" />
-                      )}
-                    </span>
+                {/* Bubble */}
+                <div
+                  className={`relative shadow-sm ${
+                    isOwn
+                      ? "bg-rose-500 dark:bg-rose-600 text-white"
+                      : "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  } ${
+                    isLastInGroup
+                      ? isOwn ? "rounded-2xl rounded-br-md" : "rounded-2xl rounded-bl-md"
+                      : "rounded-2xl"
+                  } ${imageAttachments.length > 0 ? "overflow-hidden" : "px-3 py-2"}`}
+                >
+                  {/* Bubble tail - only on last message in group */}
+                  {isLastInGroup && (
+                    <BubbleTail
+                      isOwn={isOwn}
+                      className={isOwn ? "text-rose-500 dark:text-rose-600" : "text-white dark:text-gray-800"}
+                    />
                   )}
+
+                  {/* Image attachments */}
+                  {imageAttachments.length > 0 && (
+                    <div className={`${imageAttachments.length > 1 ? "grid grid-cols-2 gap-0.5" : ""}`}>
+                      {imageAttachments.map((img, idx) => (
+                        <img
+                          key={idx}
+                          src={img.url}
+                          alt=""
+                          className="w-full h-auto max-h-64 object-cover"
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Content wrapper for padding when has images */}
+                  <div className={imageAttachments.length > 0 ? "px-3 py-2" : ""}>
+                    {/* Sender name - only for others in groups */}
+                    {!isOwn && isFirstInGroup && (
+                      <p className="text-[13px] font-semibold text-rose-500 dark:text-rose-400 mb-0.5">
+                        {message.sender.name || "Unbekannt"}
+                      </p>
+                    )}
+
+                    {/* Quoted message */}
+                    {quotedMessage && (
+                      <div
+                        className={`mb-2 pl-2 border-l-[3px] rounded-r py-1.5 pr-2 ${
+                          isOwn
+                            ? "border-white/60 bg-white/15"
+                            : "border-rose-400 bg-rose-50 dark:bg-rose-900/30"
+                        }`}
+                      >
+                        <p className={`text-[12px] font-semibold ${isOwn ? "text-white/95" : "text-rose-600 dark:text-rose-400"}`}>
+                          {quotedMessage.senderName}
+                        </p>
+                        <p className={`text-[13px] line-clamp-2 ${isOwn ? "text-white/75" : "text-gray-500 dark:text-gray-400"}`}>
+                          {quotedMessage.content}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Content - Voice Message or Text */}
+                    {audioUrl ? (
+                      <WhatsAppVoicePlayer
+                        url={audioUrl}
+                        isOwn={isOwn}
+                        senderAvatar={message.sender.avatarUrl || undefined}
+                        senderName={message.sender.name || undefined}
+                      />
+                    ) : (
+                      !isVoiceOnly && (
+                        <p className="text-[15px] leading-[1.35] whitespace-pre-wrap break-words">
+                          {renderContent(message.ohweee.content)}
+                        </p>
+                      )
+                    )}
+
+                    {/* Time & Status - inline for short messages, separate line for long */}
+                    <div className={`flex items-center gap-1.5 mt-1 ${
+                      isOwn ? "justify-end text-white/70" : "justify-end text-gray-400"
+                    }`}>
+                      {message.ohweee.isEdited && (
+                        <span className="text-[10px] italic">bearbeitet</span>
+                      )}
+                      {message.ohweee.isPinned && (
+                        <Pin className="w-3 h-3" />
+                      )}
+                      <span className="text-[11px] font-medium">{time}</span>
+                      {isOwn && (
+                        <span className="ml-0.5">
+                          {readReceipts && readReceipts.length > 0 ? (
+                            <CheckCheck className="w-[18px] h-[18px] text-sky-200" />
+                          ) : (
+                            <Check className="w-[18px] h-[18px]" />
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align={isOwn ? "end" : "start"} className="w-48 shadow-xl rounded-xl">
-              <DropdownMenuItem onClick={onReply} className="gap-3">
-                <Reply className="w-4 h-4" /> Antworten
+            <DropdownMenuContent
+              align={isOwn ? "end" : "start"}
+              className="w-52 shadow-2xl rounded-xl border-0 bg-white dark:bg-gray-800 py-1"
+            >
+              <DropdownMenuItem onClick={onReply} className="gap-3 py-2.5 px-3 cursor-pointer">
+                <Reply className="w-4 h-4 text-gray-500" /> Antworten
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowQuickReactions(true)} className="gap-3">
-                <Smile className="w-4 h-4" /> Reagieren
+              <DropdownMenuItem onClick={() => setShowQuickReactions(true)} className="gap-3 py-2.5 px-3 cursor-pointer">
+                <Smile className="w-4 h-4 text-gray-500" /> Reagieren
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onPin} className="gap-3">
-                <Pin className="w-4 h-4" /> {message.ohweee.isPinned ? "Lösen" : "Anheften"}
+              <DropdownMenuItem onClick={onPin} className="gap-3 py-2.5 px-3 cursor-pointer">
+                <Pin className="w-4 h-4 text-gray-500" /> {message.ohweee.isPinned ? "Lösen" : "Anheften"}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onCreateTask} className="gap-3">
-                <CheckSquare className="w-4 h-4" /> Aufgabe erstellen
+              <DropdownMenuItem onClick={onCreateTask} className="gap-3 py-2.5 px-3 cursor-pointer">
+                <CheckSquare className="w-4 h-4 text-gray-500" /> Aufgabe erstellen
               </DropdownMenuItem>
               {isOwn && (
                 <>
-                  <DropdownMenuItem onClick={onEdit} className="gap-3">
-                    <Pencil className="w-4 h-4" /> Bearbeiten
+                  <DropdownMenuItem onClick={onEdit} className="gap-3 py-2.5 px-3 cursor-pointer">
+                    <Pencil className="w-4 h-4 text-gray-500" /> Bearbeiten
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={onDelete} className="gap-3 text-red-600">
+                  <DropdownMenuItem onClick={onDelete} className="gap-3 py-2.5 px-3 text-red-600 cursor-pointer">
                     <Trash2 className="w-4 h-4" /> Löschen
                   </DropdownMenuItem>
                 </>
@@ -394,7 +429,7 @@ export function MobileMessage({
 
           {/* Reactions Display */}
           {reactionsList.length > 0 && (
-            <div className={`mt-1 ${isOwn ? "flex justify-end" : ""}`}>
+            <div className={`${isOwn ? "flex justify-end" : ""}`}>
               <ReactionsDisplay
                 reactions={reactionsList}
                 onReactionClick={onAddReaction}
@@ -409,7 +444,7 @@ export function MobileMessage({
 }
 
 // ============================================================================
-// CHAT HEADER
+// CHAT HEADER - WhatsApp Style
 // ============================================================================
 
 export function MobileChatHeader({
@@ -433,37 +468,42 @@ export function MobileChatHeader({
 
   const displayName = otherParticipant?.name || room.name || "Chat";
   const avatarUrl = otherParticipant?.avatarUrl;
+  const participantCount = room.participants?.length || 0;
 
   return (
-    <div className="flex items-center gap-2 px-2 py-2 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+    <div className="flex items-center gap-2 px-1 py-2 bg-rose-500 dark:bg-rose-600">
       <Button
         variant="ghost"
         size="sm"
         onClick={onBack}
-        className="h-9 w-9 p-0 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-full"
+        className="h-10 w-10 p-0 text-white hover:bg-white/20 rounded-full"
       >
-        <ChevronLeft className="h-6 w-6" />
+        <ChevronLeft className="h-7 w-7" />
       </Button>
 
-      <Avatar className="h-10 w-10 shadow-sm">
-        <AvatarImage src={avatarUrl || undefined} />
-        <AvatarFallback className="bg-rose-100 text-rose-600 font-semibold dark:bg-rose-900 dark:text-rose-300">
-          {getInitials(displayName)}
-        </AvatarFallback>
-      </Avatar>
+      <div className="flex items-center gap-3 flex-1 min-w-0" onClick={onInfo}>
+        <Avatar className="h-10 w-10 ring-2 ring-white/30">
+          <AvatarImage src={avatarUrl || undefined} />
+          <AvatarFallback className="bg-white/20 text-white font-bold">
+            {room.type === "group" || room.type === "team" ? "#" : getInitials(displayName)}
+          </AvatarFallback>
+        </Avatar>
 
-      <div className="flex-1 min-w-0" onClick={onInfo}>
-        <h1 className="font-semibold text-[16px] text-gray-900 dark:text-gray-100 truncate">
-          {displayName}
-        </h1>
-        <p className="text-[12px] text-gray-500">online</p>
+        <div className="flex-1 min-w-0">
+          <h1 className="font-semibold text-[17px] text-white truncate leading-tight">
+            {displayName}
+          </h1>
+          <p className="text-[13px] text-white/75 truncate">
+            {room.type === "direct" ? "online" : `${participantCount} Teilnehmer`}
+          </p>
+        </div>
       </div>
 
       <Button
         variant="ghost"
         size="sm"
         onClick={onMenuClick || onInfo}
-        className="h-9 w-9 p-0 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
+        className="h-10 w-10 p-0 text-white hover:bg-white/20 rounded-full"
       >
         <MoreVertical className="h-5 w-5" />
       </Button>
@@ -483,7 +523,7 @@ export function MobileChatInput({
   onAttach,
   onShowEmoji,
   isLoading,
-  placeholder = "Nachricht schreiben...",
+  placeholder = "Nachricht",
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -499,7 +539,7 @@ export function MobileChatInput({
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [slideOffset, setSlideOffset] = useState(0);
-  const [audioLevels, setAudioLevels] = useState<number[]>(Array(20).fill(0.1));
+  const [audioLevels, setAudioLevels] = useState<number[]>(Array(24).fill(0.1));
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -542,7 +582,6 @@ export function MobileChatInput({
       };
 
       mediaRecorder.onstop = () => {
-        // Stop all tracks
         if (streamRef.current) {
           streamRef.current.getTracks().forEach((track) => track.stop());
         }
@@ -550,7 +589,6 @@ export function MobileChatInput({
           audioContextRef.current.close();
         }
 
-        // Create blob and send (only if not cancelled)
         if (!isCancelledRef.current && chunksRef.current.length > 0 && recordingTimeRef.current > 0) {
           const blobMimeType = chunksRef.current[0]?.type || 'audio/mp4';
           const blob = new Blob(chunksRef.current, { type: blobMimeType });
@@ -560,17 +598,19 @@ export function MobileChatInput({
           }
         }
 
-        // Reset
         chunksRef.current = [];
         recordingTimeRef.current = 0;
         setRecordingTime(0);
         setSlideOffset(0);
-        setAudioLevels(Array(20).fill(0.1));
+        setAudioLevels(Array(24).fill(0.1));
       };
 
       mediaRecorder.start();
       setIsRecording(true);
       setRecordingTime(0);
+
+      // Haptic feedback
+      if (navigator.vibrate) navigator.vibrate(30);
 
       // Timer
       intervalRef.current = setInterval(() => {
@@ -584,8 +624,8 @@ export function MobileChatInput({
           const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
           analyserRef.current.getByteFrequencyData(dataArray);
 
-          const newLevels = Array(20).fill(0).map((_, i) => {
-            const idx = Math.floor((i / 20) * dataArray.length);
+          const newLevels = Array(24).fill(0).map((_, i) => {
+            const idx = Math.floor((i / 24) * dataArray.length);
             return Math.max(0.1, dataArray[idx] / 255);
           });
           setAudioLevels(newLevels);
@@ -635,7 +675,6 @@ export function MobileChatInput({
       mediaRecorderRef.current.stop();
     }
 
-    // Stop stream
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
     }
@@ -643,12 +682,11 @@ export function MobileChatInput({
       audioContextRef.current.close();
     }
 
-    // Reset
     chunksRef.current = [];
     recordingTimeRef.current = 0;
     setRecordingTime(0);
     setSlideOffset(0);
-    setAudioLevels(Array(20).fill(0.1));
+    setAudioLevels(Array(24).fill(0.1));
     setIsRecording(false);
   };
 
@@ -663,8 +701,7 @@ export function MobileChatInput({
     setSlideOffset(Math.max(0, Math.min(diff, CANCEL_THRESHOLD + 50)));
 
     if (diff > CANCEL_THRESHOLD) {
-      // Haptic feedback
-      if (navigator.vibrate) navigator.vibrate(10);
+      if (navigator.vibrate) navigator.vibrate(20);
       cancelRecording();
     }
   };
@@ -703,29 +740,29 @@ export function MobileChatInput({
     return (
       <div
         ref={containerRef}
-        className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+        className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-3 py-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))]"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
         <div className="flex items-center gap-3 h-12">
-          {/* Slide to cancel */}
+          {/* Cancel hint */}
           <div
             className="flex items-center gap-2 transition-opacity"
             style={{ opacity: 1 - cancelProgress }}
           >
-            <span className="text-gray-400 text-sm whitespace-nowrap">
-              ◀ Zum Abbrechen schieben
+            <span className="text-gray-400 text-[13px] font-medium whitespace-nowrap">
+              ◀ Schieben zum Abbrechen
             </span>
           </div>
 
           {/* Waveform visualization */}
-          <div className="flex-1 flex items-center justify-center gap-[3px] h-8 overflow-hidden">
+          <div className="flex-1 flex items-center justify-center gap-[2px] h-9 overflow-hidden">
             {audioLevels.map((level, i) => (
               <div
                 key={i}
-                className="w-1 bg-red-500 rounded-full transition-all duration-75"
-                style={{ height: `${Math.max(4, level * 28)}px` }}
+                className="w-[3px] bg-rose-500 rounded-full transition-all duration-75"
+                style={{ height: `${Math.max(4, level * 32)}px` }}
               />
             ))}
           </div>
@@ -733,7 +770,7 @@ export function MobileChatInput({
           {/* Recording time */}
           <div className="flex items-center gap-2 shrink-0">
             <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
-            <span className="text-red-500 font-mono font-semibold text-sm min-w-[40px]">
+            <span className="text-red-500 font-mono font-bold text-[15px] min-w-[45px]">
               {formatDuration(recordingTime)}
             </span>
           </div>
@@ -741,7 +778,7 @@ export function MobileChatInput({
           {/* Stop/Send button */}
           <button
             onClick={stopAndSendRecording}
-            className="w-11 h-11 rounded-full bg-rose-500 hover:bg-rose-600 shadow-lg flex items-center justify-center text-white transition-all active:scale-95 shrink-0"
+            className="w-12 h-12 rounded-full bg-rose-500 hover:bg-rose-600 shadow-lg flex items-center justify-center text-white transition-all active:scale-95 shrink-0"
           >
             <Send className="w-5 h-5" />
           </button>
@@ -751,18 +788,19 @@ export function MobileChatInput({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+    <div className="bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-2 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
       <div className="flex items-center gap-2">
-        {/* Attachment */}
-        <button
-          onClick={onAttach}
-          className="w-10 h-10 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center transition-colors"
-        >
-          <Plus className="w-6 h-6" />
-        </button>
+        {/* Input container */}
+        <div className="flex-1 flex items-center bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-700">
+          {/* Emoji button */}
+          <button
+            onClick={onShowEmoji}
+            className="w-11 h-11 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-full"
+          >
+            <Smile className="w-6 h-6" />
+          </button>
 
-        {/* Input */}
-        <div className="flex-1 flex items-center bg-gray-100 dark:bg-gray-800 rounded-full px-4 h-11">
+          {/* Input */}
           <input
             ref={inputRef}
             type="text"
@@ -770,31 +808,41 @@ export function MobileChatInput({
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className="flex-1 bg-transparent outline-none text-[15px] text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
+            className="flex-1 bg-transparent outline-none text-[16px] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 py-2.5 min-w-0"
           />
+
+          {/* Attachment button */}
           <button
-            onClick={onShowEmoji}
-            className="ml-2 text-gray-400 hover:text-gray-600 transition-colors"
+            onClick={onAttach}
+            className="w-11 h-11 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-full"
           >
-            <Smile className="w-5 h-5" />
+            <Plus className="w-6 h-6" />
+          </button>
+
+          {/* Camera button */}
+          <button
+            onClick={onAttach}
+            className="w-11 h-11 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-full mr-1"
+          >
+            <Camera className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Send or Mic */}
+        {/* Send or Mic button */}
         {hasText ? (
           <button
             onClick={onSend}
             disabled={isLoading}
-            className="w-11 h-11 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md flex items-center justify-center transition-all active:scale-95 disabled:opacity-50"
+            className="w-12 h-12 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 flex-shrink-0"
           >
             <Send className="w-5 h-5" />
           </button>
         ) : (
           <button
             onClick={startRecording}
-            className="w-11 h-11 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md flex items-center justify-center transition-all active:scale-95"
+            className="w-12 h-12 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md flex items-center justify-center transition-all active:scale-95 flex-shrink-0"
           >
-            <Mic className="w-5 h-5" />
+            <Mic className="w-6 h-6" />
           </button>
         )}
       </div>
@@ -803,7 +851,7 @@ export function MobileChatInput({
 }
 
 // ============================================================================
-// ROOM LIST ITEM
+// ROOM LIST ITEM - WhatsApp Style
 // ============================================================================
 
 export function MobileRoomListItem({
@@ -828,7 +876,7 @@ export function MobileRoomListItem({
     : "";
 
   const lastMessagePreview = room.lastMessage?.content
-    ? room.lastMessage.content.replace(/@\[(.*?)\]\(\d+\)/g, "@$1").substring(0, 40)
+    ? room.lastMessage.content.replace(/@\[(.*?)\]\(\d+\)/g, "@$1").substring(0, 35)
     : "Keine Nachrichten";
 
   const isOwnLastMessage = room.lastMessage?.senderId === currentUserId;
@@ -836,42 +884,50 @@ export function MobileRoomListItem({
   return (
     <button
       onClick={onSelect}
-      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 active:bg-gray-100 transition-colors"
+      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 active:bg-gray-100 dark:active:bg-gray-800 transition-colors"
     >
       <div className="relative flex-shrink-0">
         {room.type === "group" || room.type === "team" ? (
-          <div className="h-14 w-14 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-sm">
-            <span className="text-white text-lg font-bold">#</span>
+          <div className="h-[52px] w-[52px] rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-sm">
+            <span className="text-white text-xl font-bold">#</span>
           </div>
         ) : (
-          <Avatar className="h-14 w-14 shadow-sm">
+          <Avatar className="h-[52px] w-[52px] shadow-sm">
             <AvatarImage src={avatarUrl || undefined} />
-            <AvatarFallback className="bg-rose-100 text-rose-600 font-semibold text-lg dark:bg-rose-900 dark:text-rose-300">
+            <AvatarFallback className="bg-gradient-to-br from-rose-400 to-pink-500 text-white font-bold text-lg">
               {getInitials(displayName)}
             </AvatarFallback>
           </Avatar>
         )}
         {room.unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 h-6 w-6 bg-rose-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-900">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[20px] h-5 px-1.5 bg-rose-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-900">
             {room.unreadCount > 99 ? "99+" : room.unreadCount}
           </span>
         )}
       </div>
 
-      <div className="flex-1 min-w-0 text-left">
+      <div className="flex-1 min-w-0 text-left border-b border-gray-100 dark:border-gray-800 pb-3">
         <div className="flex items-center justify-between gap-2">
-          <span className={`font-semibold text-[16px] truncate ${
-            room.unreadCount > 0 ? "text-gray-900 dark:text-gray-100" : "text-gray-700 dark:text-gray-300"
+          <span className={`font-semibold text-[17px] truncate ${
+            room.unreadCount > 0 ? "text-gray-900 dark:text-white" : "text-gray-700 dark:text-gray-300"
           }`}>
             {displayName}
           </span>
-          <span className="text-[12px] text-gray-400 flex-shrink-0">{lastMessageTime}</span>
+          <span className={`text-[12px] flex-shrink-0 ${
+            room.unreadCount > 0 ? "text-rose-500 font-semibold" : "text-gray-400"
+          }`}>
+            {lastMessageTime}
+          </span>
         </div>
         <div className="flex items-center gap-1 mt-0.5">
-          {isOwnLastMessage && <CheckCheck className="w-4 h-4 text-rose-500 flex-shrink-0" />}
-          <p className={`text-[14px] truncate ${
+          {isOwnLastMessage && (
+            <CheckCheck className={`w-[18px] h-[18px] flex-shrink-0 ${
+              room.unreadCount === 0 ? "text-sky-500" : "text-gray-400"
+            }`} />
+          )}
+          <p className={`text-[15px] truncate ${
             room.unreadCount > 0
-              ? "text-gray-800 dark:text-gray-200 font-medium"
+              ? "text-gray-900 dark:text-gray-100 font-medium"
               : "text-gray-500"
           }`}>
             {lastMessagePreview}
@@ -883,7 +939,7 @@ export function MobileRoomListItem({
 }
 
 // ============================================================================
-// AVATAR BAR
+// AVATAR BAR - Story-like WhatsApp Style
 // ============================================================================
 
 export function MobileAvatarBar({
@@ -904,11 +960,11 @@ export function MobileAvatarBar({
 
   return (
     <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-      <div className="overflow-x-auto scrollbar-hide">
+      <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
         <div className="flex gap-4">
           <button onClick={onNewChat} className="flex flex-col items-center gap-1.5 flex-shrink-0">
-            <div className="h-14 w-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-rose-400 hover:bg-rose-50 transition-colors">
-              <Plus className="h-6 w-6 text-gray-400" />
+            <div className="h-[60px] w-[60px] rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all">
+              <Plus className="h-7 w-7 text-gray-400" />
             </div>
             <span className="text-[11px] text-gray-500 font-medium">Neu</span>
           </button>
@@ -925,20 +981,27 @@ export function MobileAvatarBar({
                 className="flex flex-col items-center gap-1.5 flex-shrink-0"
               >
                 <div className="relative">
-                  <div className={`p-0.5 rounded-full ${
+                  <div className={`p-[2.5px] rounded-full ${
                     room.unreadCount > 0
-                      ? "bg-gradient-to-tr from-rose-400 to-pink-500"
+                      ? "bg-gradient-to-tr from-rose-500 via-pink-500 to-rose-400"
                       : "bg-gray-200 dark:bg-gray-700"
                   }`}>
-                    <Avatar className="h-13 w-13 ring-2 ring-white dark:ring-gray-900">
+                    <Avatar className="h-[55px] w-[55px] ring-[2.5px] ring-white dark:ring-gray-900">
                       <AvatarImage src={other?.avatarUrl || undefined} />
-                      <AvatarFallback className="bg-rose-100 text-rose-600 font-semibold dark:bg-rose-900 dark:text-rose-300">
+                      <AvatarFallback className="bg-gradient-to-br from-rose-400 to-pink-500 text-white font-bold">
                         {getInitials(name)}
                       </AvatarFallback>
                     </Avatar>
                   </div>
+                  {room.unreadCount > 0 && (
+                    <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-rose-500 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-900">
+                      <span className="text-[10px] font-bold text-white">
+                        {room.unreadCount > 9 ? "9+" : room.unreadCount}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <span className="text-[11px] text-gray-600 dark:text-gray-400 max-w-[56px] truncate font-medium">
+                <span className="text-[11px] text-gray-600 dark:text-gray-400 max-w-[60px] truncate font-medium">
                   {firstName}
                 </span>
               </button>

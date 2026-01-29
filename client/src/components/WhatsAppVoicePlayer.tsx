@@ -1,15 +1,18 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Play, Pause, Mic } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface WhatsAppVoicePlayerProps {
   url: string;
   duration?: number;
   isOwn?: boolean;
+  senderAvatar?: string;
+  senderName?: string;
   className?: string;
 }
 
-// Generate consistent waveform data from URL
-function generateWaveformData(seed: string, bars: number = 35): number[] {
+// Generate consistent waveform data from URL (more natural looking)
+function generateWaveformData(seed: string, bars: number = 40): number[] {
   let hash = 0;
   for (let i = 0; i < seed.length; i++) {
     const char = seed.charCodeAt(i);
@@ -19,16 +22,31 @@ function generateWaveformData(seed: string, bars: number = 35): number[] {
 
   const waveform: number[] = [];
   for (let i = 0; i < bars; i++) {
-    const value = Math.abs(Math.sin(hash * (i + 1) * 0.1) * Math.cos(hash * (i + 1) * 0.05));
-    waveform.push(Math.max(0.2, Math.min(1, value * 1.3)));
+    // Create more natural looking waveform with multiple sine waves
+    const base = Math.abs(Math.sin(hash * (i + 1) * 0.1));
+    const variation = Math.abs(Math.cos(hash * (i + 2) * 0.15) * 0.3);
+    const noise = Math.abs(Math.sin((hash + i) * 0.5) * 0.2);
+    const value = base * 0.6 + variation + noise;
+    waveform.push(Math.max(0.15, Math.min(1, value)));
   }
   return waveform;
 }
+
+const getInitials = (name: string) => {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
 
 export function WhatsAppVoicePlayer({
   url,
   duration: initialDuration,
   isOwn = false,
+  senderAvatar,
+  senderName = "?",
   className = "",
 }: WhatsAppVoicePlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -39,7 +57,7 @@ export function WhatsAppVoicePlayer({
   const [error, setError] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressRef = useRef<HTMLDivElement>(null);
-  const waveformData = useRef(generateWaveformData(url, 35)).current;
+  const waveformData = useRef(generateWaveformData(url, 40)).current;
 
   const formatTime = (seconds: number): string => {
     if (!seconds || !isFinite(seconds)) return "0:00";
@@ -53,7 +71,6 @@ export function WhatsAppVoicePlayer({
     const audio = new Audio();
     audio.preload = "metadata";
     audio.playsInline = true;
-    // iOS Safari fix
     audio.setAttribute("playsinline", "true");
     audio.setAttribute("webkit-playsinline", "true");
 
@@ -91,7 +108,6 @@ export function WhatsAppVoicePlayer({
     audio.addEventListener("ended", handleEnded);
     audio.addEventListener("error", handleError);
 
-    // Set source after event listeners
     audio.src = url;
     audio.load();
 
@@ -115,7 +131,6 @@ export function WhatsAppVoicePlayer({
         audio.pause();
         setIsPlaying(false);
       } else {
-        // iOS requires user interaction - this should work since it's in a click handler
         await audio.play();
         setIsPlaying(true);
       }
@@ -162,33 +177,55 @@ export function WhatsAppVoicePlayer({
   }
 
   return (
-    <div className={`flex items-center gap-3 min-w-[220px] ${className}`}>
-      {/* Play/Pause Button */}
-      <button
-        onClick={togglePlayback}
-        disabled={!isLoaded}
-        className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-95 ${
-          isOwn
-            ? "bg-white/25 hover:bg-white/35 text-white"
-            : "bg-rose-500 hover:bg-rose-600 text-white shadow-sm"
-        } ${!isLoaded ? "opacity-50" : ""}`}
-      >
-        {isPlaying ? (
-          <Pause className="w-5 h-5" />
-        ) : (
-          <Play className="w-5 h-5 ml-0.5" />
-        )}
-      </button>
+    <div className={`flex items-center gap-2.5 min-w-[240px] py-1 ${className}`}>
+      {/* Avatar with Play/Pause overlay - WhatsApp style */}
+      <div className="relative flex-shrink-0">
+        <Avatar className="w-12 h-12 shadow-sm">
+          <AvatarImage src={senderAvatar} />
+          <AvatarFallback className={`font-semibold ${
+            isOwn
+              ? "bg-white/20 text-white"
+              : "bg-rose-100 text-rose-600 dark:bg-rose-900 dark:text-rose-300"
+          }`}>
+            {getInitials(senderName)}
+          </AvatarFallback>
+        </Avatar>
 
-      {/* Waveform */}
-      <div className="flex-1 flex flex-col gap-1">
+        {/* Play/Pause button overlay */}
+        <button
+          onClick={togglePlayback}
+          disabled={!isLoaded}
+          className={`absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-all active:scale-90 ${
+            isOwn
+              ? "bg-white text-rose-500"
+              : "bg-rose-500 text-white"
+          } ${!isLoaded ? "opacity-50" : ""}`}
+        >
+          {isPlaying ? (
+            <Pause className="w-3 h-3" fill="currentColor" />
+          ) : (
+            <Play className="w-3 h-3 ml-0.5" fill="currentColor" />
+          )}
+        </button>
+
+        {/* Microphone icon indicator */}
+        <div className={`absolute -top-0.5 -left-0.5 w-5 h-5 rounded-full flex items-center justify-center ${
+          isOwn ? "bg-white/30" : "bg-rose-100 dark:bg-rose-900"
+        }`}>
+          <Mic className={`w-3 h-3 ${isOwn ? "text-white" : "text-rose-500"}`} />
+        </div>
+      </div>
+
+      {/* Waveform and controls */}
+      <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+        {/* Waveform */}
         <div
           ref={progressRef}
-          className="relative h-7 flex items-center cursor-pointer"
+          className="relative h-8 flex items-center cursor-pointer touch-none"
           onClick={handleSeek}
-          onTouchEnd={handleSeek}
+          onTouchStart={handleSeek}
         >
-          <div className="absolute inset-0 flex items-center gap-[2px]">
+          <div className="absolute inset-0 flex items-end gap-[1.5px] pb-0.5">
             {waveformData.map((height, i) => {
               const barProgress = (i / waveformData.length) * 100;
               const isBarPlayed = barProgress <= progress;
@@ -196,43 +233,39 @@ export function WhatsAppVoicePlayer({
               return (
                 <div
                   key={i}
-                  className={`flex-1 rounded-full transition-colors ${
+                  className={`flex-1 rounded-full transition-colors duration-100 ${
                     isBarPlayed
                       ? isOwn ? "bg-white" : "bg-rose-500"
-                      : isOwn ? "bg-white/40" : "bg-rose-200 dark:bg-rose-900/50"
+                      : isOwn ? "bg-white/35" : "bg-rose-200 dark:bg-rose-800/60"
                   }`}
-                  style={{ height: `${height * 100}%` }}
+                  style={{
+                    height: `${Math.max(12, height * 100)}%`,
+                    minHeight: '3px'
+                  }}
                 />
               );
             })}
           </div>
-
-          {/* Progress dot */}
-          {duration > 0 && (
-            <div
-              className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full shadow ${
-                isOwn ? "bg-white" : "bg-rose-500"
-              }`}
-              style={{ left: `calc(${progress}% - 6px)` }}
-            />
-          )}
         </div>
 
-        {/* Time and speed */}
-        <div className="flex items-center justify-between">
-          <span className={`text-[11px] tabular-nums ${
-            isOwn ? "text-white/70" : "text-gray-500"
+        {/* Time and speed controls */}
+        <div className="flex items-center justify-between gap-2">
+          <span className={`text-[11px] tabular-nums font-medium ${
+            isOwn ? "text-white/80" : "text-gray-500"
           }`}>
-            {formatTime(currentTime > 0 ? currentTime : duration)}
+            {formatTime(isPlaying || currentTime > 0 ? currentTime : duration)}
           </span>
 
           {duration > 0 && (
             <button
-              onClick={cyclePlaybackRate}
-              className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+              onClick={(e) => {
+                e.stopPropagation();
+                cyclePlaybackRate();
+              }}
+              className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-all active:scale-95 ${
                 isOwn
-                  ? "bg-white/20 text-white"
-                  : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                  ? "bg-white/25 text-white hover:bg-white/35"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
               }`}
             >
               {playbackRate}×
