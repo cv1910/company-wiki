@@ -1817,21 +1817,33 @@ export default function OhweeesPage() {
 
             {/* Input - stays at bottom */}
              <MobileChatInput
-  value={messageInput}
+  value={editingMessageId ? editContent : messageInput}
   onChange={(value) => {
-    setMessageInput(value);
-    if (selectedRoomId) {
-      const now = Date.now();
-      if (now - lastTypingTime > 2000) {
-        setLastTypingTime(now);
-        setTyping.mutate({ roomId: selectedRoomId });
+    if (editingMessageId) {
+      setEditContent(value);
+    } else {
+      setMessageInput(value);
+      if (selectedRoomId) {
+        const now = Date.now();
+        if (now - lastTypingTime > 2000) {
+          setLastTypingTime(now);
+          setTyping.mutate({ roomId: selectedRoomId });
+        }
       }
     }
   }}
-  onSend={handleSendMessage}
+  onSend={editingMessageId ? handleEditMessage : handleSendMessage}
   onAttach={() => fileInputRef.current?.click()}
   replyTo={replyToMessage}
   onCancelReply={() => setReplyToMessage(null)}
+  isEditing={!!editingMessageId}
+  onCancelEdit={() => {
+    setEditingMessageId(null);
+    setEditContent("");
+  }}
+  onCreateTask={() => {
+    setShowCreateTaskDialog(true);
+  }}
   onSendVoice={async (blob, duration) => {
   if (!selectedRoomId) return;
 
@@ -2850,10 +2862,10 @@ export default function OhweeesPage() {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7"
-                      onClick={() => setShowCreatePollDialog(true)}
-                      title="Umfrage erstellen"
+                      onClick={() => setShowCreateTaskDialog(true)}
+                      title="Aufgabe erstellen"
                     >
-                      <BarChart3 className="h-4 w-4" />
+                      <ListTodo className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
