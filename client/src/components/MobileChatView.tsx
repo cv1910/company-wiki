@@ -273,8 +273,8 @@ export function MobileMessage({
   const time = formatMessageTime(message.ohweee.createdAt);
   const attachments = (message.ohweee.attachments as { url: string; filename: string; mimeType: string; size: number }[] | null) || [];
   const audioAttachment = attachments.find(a => a.mimeType.startsWith("audio/"));
+  const audioUrl = audioAttachment?.url || message.ohweee.voiceUrl;
   const isVoice = message.ohweee.voiceDuration && message.ohweee.voiceDuration > 0;
-
   const groupedReactions = reactions.reduce(
     (acc, r) => {
       if (!acc[r.reaction.emoji]) acc[r.reaction.emoji] = [];
@@ -379,9 +379,9 @@ export function MobileMessage({
             )}
 
             {/* Content */}
-            {isVoice && audioAttachment ? (
+           {isVoice && audioUrl ? (
               <VoiceMessagePlayer 
-                url={audioAttachment.url}
+                url={audioUrl}
                 isOwn={isOwn}
                 senderAvatar={message.sender.avatarUrl || undefined}
                 senderName={message.sender.name || undefined}
