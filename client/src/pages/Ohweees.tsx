@@ -2233,35 +2233,88 @@ export default function OhweeesPage() {
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Neue Aufgabe</DialogTitle>
+              <DialogDescription>Erstelle eine Aufgabe für diesen Chat.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-2">
               <div>
                 <Label>Titel</Label>
                 <Input
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
-                  placeholder="Aufgabentitel..."
+                  placeholder="Was soll erledigt werden?"
                 />
               </div>
               <div>
-                <Label>Beschreibung</Label>
+                <Label>Beschreibung (optional)</Label>
                 <Textarea
                   value={newTaskDescription}
                   onChange={(e) => setNewTaskDescription(e.target.value)}
-                  placeholder="Beschreibung..."
-                  rows={3}
+                  placeholder="Weitere Details..."
+                  rows={2}
                 />
               </div>
-              <div>
-                <Label>Fälligkeitsdatum</Label>
-                <Input
-                  type="date"
-                  value={newTaskDueDate}
-                  onChange={(e) => setNewTaskDueDate(e.target.value)}
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Priorität</Label>
+                  <select
+                    value={newTaskPriority}
+                    onChange={(e) => setNewTaskPriority(e.target.value as "low" | "medium" | "high")}
+                    className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="low">Niedrig</option>
+                    <option value="medium">Mittel</option>
+                    <option value="high">Hoch</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Zuweisen an</Label>
+                  <select
+                    value={newTaskAssigneeId || ""}
+                    onChange={(e) => setNewTaskAssigneeId(e.target.value ? parseInt(e.target.value) : null)}
+                    className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="">Niemand</option>
+                    {currentRoom?.participants?.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name || p.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Fällig am</Label>
+                  <Input
+                    type="date"
+                    value={newTaskDueDate.split("T")[0] || ""}
+                    onChange={(e) => {
+                      const time = newTaskDueDate.split("T")[1] || "";
+                      setNewTaskDueDate(e.target.value + (time ? "T" + time : ""));
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label>Uhrzeit</Label>
+                  <Input
+                    type="time"
+                    value={newTaskDueDate.split("T")[1] || ""}
+                    onChange={(e) => {
+                      const date = newTaskDueDate.split("T")[0] || "";
+                      if (date) {
+                        setNewTaskDueDate(date + "T" + e.target.value);
+                      }
+                    }}
+                    disabled={!newTaskDueDate.split("T")[0]}
+                  />
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setShowCreateTaskDialog(false)}>
+                Abbrechen
+              </Button>
               <Button
-                className="w-full"
                 onClick={() => {
                   if (newTaskTitle.trim() && selectedRoomId) {
                     createTask.mutate({
@@ -2273,18 +2326,13 @@ export default function OhweeesPage() {
                       assigneeId: newTaskAssigneeId || undefined,
                       sourceOhweeeId: taskFromMessageId || undefined,
                     });
-                    setShowCreateTaskDialog(false);
-                    setNewTaskTitle("");
-                    setNewTaskDescription("");
-                    setNewTaskDueDate("");
-                    setTaskFromMessageId(null);
                   }
                 }}
-                disabled={!newTaskTitle.trim()}
+                disabled={!newTaskTitle.trim() || createTask.isPending}
               >
-                Aufgabe erstellen
+                {createTask.isPending ? "Erstelle..." : "Erstellen"}
               </Button>
-            </div>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
@@ -3280,29 +3328,49 @@ export default function OhweeesPage() {
                 </select>
               </div>
               <div>
+                <label className="text-sm font-medium">Zuweisen an (optional)</label>
+                <select
+                  value={newTaskAssigneeId || ""}
+                  onChange={(e) => setNewTaskAssigneeId(e.target.value ? parseInt(e.target.value) : null)}
+                  className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">Niemand</option>
+                  {currentRoom?.participants?.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name || p.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <label className="text-sm font-medium">Fällig am (optional)</label>
                 <Input
                   type="date"
-                  value={newTaskDueDate}
-                  onChange={(e) => setNewTaskDueDate(e.target.value)}
+                  value={newTaskDueDate.split("T")[0] || ""}
+                  onChange={(e) => {
+                    const time = newTaskDueDate.split("T")[1] || "";
+                    setNewTaskDueDate(e.target.value + (time ? "T" + time : ""));
+                  }}
                   className="mt-1"
                 />
               </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Zuweisen an (optional)</label>
-              <select
-                value={newTaskAssigneeId || ""}
-                onChange={(e) => setNewTaskAssigneeId(e.target.value ? parseInt(e.target.value) : null)}
-                className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="">Niemand</option>
-                {currentRoom?.participants?.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name || p.email}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label className="text-sm font-medium">Uhrzeit</label>
+                <Input
+                  type="time"
+                  value={newTaskDueDate.split("T")[1] || ""}
+                  onChange={(e) => {
+                    const date = newTaskDueDate.split("T")[0] || "";
+                    if (date) {
+                      setNewTaskDueDate(date + "T" + e.target.value);
+                    }
+                  }}
+                  className="mt-1"
+                  disabled={!newTaskDueDate.split("T")[0]}
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>
