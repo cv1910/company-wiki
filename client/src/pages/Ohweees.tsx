@@ -1419,15 +1419,15 @@ export default function OhweeesPage() {
     );
   }
 
-  // Mobile View
+  // Mobile View - fixed positioning between header and bottom nav
   if (isMobile) {
     return (
-      <div className="-m-6 -mb-24 flex flex-col h-[calc(100dvh-56px)] overflow-hidden bg-[#FAFAF8] dark:bg-gray-900">
+      <div className="fixed inset-x-0 top-14 bottom-14 flex flex-col overflow-hidden bg-[#FAFAF8] dark:bg-gray-900 z-30">
         {mobileView === "list" ? (
           // Mobile Room List View
           <>
             {/* Mobile Header - Premium Design */}
-            <div className="px-4 pt-4 pb-3 safe-area-top">
+            <div className="px-4 pt-3 pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg">
@@ -1491,7 +1491,7 @@ export default function OhweeesPage() {
             </div>
 
             {activeTab === "chats" ? (
-              <div className="flex flex-col flex-1 overflow-hidden pb-20">
+              <div className="flex flex-col flex-1 overflow-hidden">
                 {/* Horizontal Avatar Bar */}
                 <MobileAvatarBar
               rooms={rooms?.map(r => ({
@@ -1632,8 +1632,8 @@ export default function OhweeesPage() {
             )}
           </>
         ) : (
-          // Mobile Chat View - fills parent container with bottom padding for nav
-         <div className="flex flex-col flex-1 min-h-0 pb-14 bg-[#FAFAF8] dark:bg-gray-900">
+          // Mobile Chat View - fills parent container
+         <div className="flex flex-col flex-1 min-h-0 bg-[#FAFAF8] dark:bg-gray-900">
 
             {/* Mobile Chat Header */}
             {currentRoom && !showChatSearch && (
