@@ -637,7 +637,10 @@ export default function OhweeesPage() {
 
   // Mobile quote-reply state (WhatsApp style)
   const [replyToMessage, setReplyToMessage] = useState<{id: number, senderName: string, content: string} | null>(null);
-  
+
+  // Mobile message menu state (only one open at a time)
+  const [activeMessageMenu, setActiveMessageMenu] = useState<number | null>(null);
+
   // Reaction picker state
   const [showReactionPicker, setShowReactionPicker] = useState<number | null>(null);
   
@@ -1756,7 +1759,11 @@ export default function OhweeesPage() {
                           avatarUrl: r.userAvatar,
                           readAt: new Date(),
                         }))}
+                        isMenuOpen={activeMessageMenu === message.ohweee.id}
+                        onMenuOpen={() => setActiveMessageMenu(message.ohweee.id)}
+                        onMenuClose={() => setActiveMessageMenu(null)}
                         onReply={() => {
+                          setActiveMessageMenu(null);
                           setReplyToMessage({
                             id: message.ohweee.id,
                             senderName: message.sender.name || "Unbekannt",
@@ -1764,19 +1771,23 @@ export default function OhweeesPage() {
                           });
                         }}
                         onEdit={() => {
+                          setActiveMessageMenu(null);
                           setEditingMessageId(message.ohweee.id);
                           setEditContent(message.ohweee.content);
                         }}
                         onDelete={() => {
+                          setActiveMessageMenu(null);
                           deleteMessage.mutate({ id: message.ohweee.id });
                         }}
                         onPin={() => {
+                          setActiveMessageMenu(null);
                           togglePin.mutate({ id: message.ohweee.id });
                         }}
                         onAddReaction={(emoji) => {
                           addReaction.mutate({ ohweeeId: message.ohweee.id, emoji });
                         }}
                         onCreateTask={() => {
+                          setActiveMessageMenu(null);
                           setTaskFromMessageId(message.ohweee.id);
                           setNewTaskTitle(message.ohweee.content.substring(0, 100));
                           setShowCreateTaskDialog(true);

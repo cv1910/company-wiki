@@ -106,6 +106,9 @@ export function MobileMessage({
   onShowEmojiPicker,
   quotedMessage,
   showSenderName = false,
+  isMenuOpen = false,
+  onMenuOpen,
+  onMenuClose,
 }: {
   message: Message;
   isOwn: boolean;
@@ -121,9 +124,10 @@ export function MobileMessage({
   onShowEmojiPicker?: () => void;
   quotedMessage?: { senderName: string; content: string } | null;
   showSenderName?: boolean;
+  isMenuOpen?: boolean;
+  onMenuOpen?: () => void;
+  onMenuClose?: () => void;
 }) {
-  const [showReactions, setShowReactions] = useState(false);
-  const [showActions, setShowActions] = useState(false);
   const time = formatTime(message.ohweee.createdAt);
 
   const attachments = (message.ohweee.attachments as { url: string; mimeType: string }[] | null) || [];
@@ -142,54 +146,30 @@ export function MobileMessage({
   }));
 
   const longPress = useLongPress({
-    onLongPress: () => setShowReactions(true),
-    delay: 300,
+    onLongPress: () => onMenuOpen?.(),
+    delay: 400,
   });
 
   const isVoiceMessage = audioUrl && message.ohweee.content.includes("Sprachnachricht");
+
+  const handleClose = () => onMenuClose?.();
 
   return (
     <SwipeToReply onReply={onReply} isOwn={isOwn}>
       <div className={`flex px-3 mb-0.5 ${isOwn ? "justify-end" : "justify-start"}`}>
         <div className="relative max-w-[85%]">
-          {/* Quick Reactions */}
+          {/* Quick Reactions - only on long press */}
           <QuickReactions
-            isVisible={showReactions}
-            onReaction={(emoji) => { onAddReaction(emoji); setShowReactions(false); }}
-            onShowMore={() => { onShowEmojiPicker?.(); setShowReactions(false); }}
-            onClose={() => setShowReactions(false)}
+            isVisible={isMenuOpen}
+            onReaction={(emoji) => { onAddReaction(emoji); handleClose(); }}
+            onShowMore={() => { onShowEmojiPicker?.(); handleClose(); }}
+            onClose={handleClose}
             align={isOwn ? "right" : "left"}
           />
-
-          {/* Actions Menu */}
-          {showActions && (
-            <div
-              className={`absolute ${isOwn ? "right-0" : "left-0"} bottom-full mb-1 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-1 min-w-[140px]`}
-              onClick={() => setShowActions(false)}
-            >
-              <button onClick={onReply} className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <Reply className="w-4 h-4 text-gray-500" /> Antworten
-              </button>
-              <button onClick={() => setShowReactions(true)} className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <Smile className="w-4 h-4 text-gray-500" /> Reagieren
-              </button>
-              {isOwn && (
-                <>
-                  <button onClick={onEdit} className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <Pencil className="w-4 h-4 text-gray-500" /> Bearbeiten
-                  </button>
-                  <button onClick={onDelete} className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-red-500">
-                    <Trash2 className="w-4 h-4" /> Löschen
-                  </button>
-                </>
-              )}
-            </div>
-          )}
 
           {/* Bubble */}
           <div
             {...longPress}
-            onClick={() => setShowActions(!showActions)}
             className={`relative px-3 py-1.5 rounded-2xl select-none ${
               isOwn
                 ? "bg-rose-500 text-white rounded-br-sm"
