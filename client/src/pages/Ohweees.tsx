@@ -1764,15 +1764,19 @@ export default function OhweeesPage() {
   onAttach={() => fileInputRef.current?.click()}
   onSendVoice={async (blob, duration) => {
   if (!selectedRoomId) return;
-  
+
+  // Determine file extension based on mime type
+  const mimeType = blob.type || "audio/mp4";
+  const extension = mimeType.includes("webm") ? "webm" : "m4a";
+
   // Convert blob to base64
   const reader = new FileReader();
   reader.onload = () => {
     const base64 = (reader.result as string).split(",")[1];
-    
+
     uploadFile.mutate({
-      filename: `voice-${Date.now()}.webm`,
-      mimeType: "audio/webm",
+      filename: `voice-${Date.now()}.${extension}`,
+      mimeType: mimeType,
       base64Data: base64,
     }, {
       onSuccess: (file) => {
@@ -1879,9 +1883,14 @@ export default function OhweeesPage() {
             </DialogHeader>
             <VoiceRecorder
               onRecordingComplete={async (blob, duration) => {
+                // Determine correct mimeType and extension (iOS uses audio/mp4, others use audio/webm)
+                const mimeType = blob.type || "audio/mp4";
+                const extension = mimeType.includes("webm") ? "webm" : "m4a";
+                const filename = `voice-message.${extension}`;
+
                 // Upload the blob to storage first
                 const formData = new FormData();
-                formData.append("file", blob, "voice-message.webm");
+                formData.append("file", blob, filename);
                 try {
                   const response = await fetch("/api/upload", {
                     method: "POST",
@@ -1894,8 +1903,8 @@ export default function OhweeesPage() {
                       content: "[Sprachnachricht]",
                       attachments: [{
                         url,
-                        filename: "voice-message.webm",
-                        mimeType: "audio/webm",
+                        filename,
+                        mimeType,
                         size: blob.size,
                       }],
                     });
@@ -2632,10 +2641,14 @@ export default function OhweeesPage() {
                     onRecordingComplete={async (blob, duration) => {
                       setIsRecordingVoice(false);
                       if (!selectedRoomId) return;
-                      
+
+                      // Determine correct mimeType and extension (iOS uses audio/mp4, others use audio/webm)
+                      const blobMimeType = blob.type || "audio/mp4";
+                      const extension = blobMimeType.includes("webm") ? "webm" : "m4a";
+
                       // Upload the audio file
                       const formData = new FormData();
-                      formData.append("file", blob, `voice-${Date.now()}.webm`);
+                      formData.append("file", blob, `voice-${Date.now()}.${extension}`);
                       
                       try {
                         const response = await fetch("/api/upload", {
