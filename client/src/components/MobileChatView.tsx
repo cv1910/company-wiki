@@ -16,6 +16,9 @@ import {
   Pencil,
   Trash2,
   Pin,
+  Copy,
+  Star,
+  Forward,
 } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
 import { de } from "date-fns/locale";
@@ -154,18 +157,93 @@ export function MobileMessage({
 
   const handleClose = () => onMenuClose?.();
 
+  const handleCopy = () => {
+    navigator.clipboard.writeText(message.ohweee.content.replace(/@\[(.*?)\]\(\d+\)/g, "@$1"));
+    handleClose();
+  };
+
   return (
     <SwipeToReply onReply={onReply} isOwn={isOwn}>
       <div className={`flex px-3 mb-0.5 ${isOwn ? "justify-end" : "justify-start"}`}>
         <div className="relative max-w-[85%]">
-          {/* Quick Reactions - only on long press */}
-          <QuickReactions
-            isVisible={isMenuOpen}
-            onReaction={(emoji) => { onAddReaction(emoji); handleClose(); }}
-            onShowMore={() => { onShowEmojiPicker?.(); handleClose(); }}
-            onClose={handleClose}
-            align={isOwn ? "right" : "left"}
-          />
+          {/* WhatsApp-style Menu (Quick Reactions + Actions) */}
+          {isMenuOpen && (
+            <div
+              className={`absolute ${isOwn ? "right-0" : "left-0"} bottom-full mb-2 z-50 animate-in fade-in zoom-in-95 duration-150`}
+            >
+              {/* Quick Reactions Bar */}
+              <div className="flex items-center bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 p-1 mb-2">
+                {["👍", "❤️", "😂", "😮", "😢", "🙏"].map((emoji) => (
+                  <button
+                    key={emoji}
+                    onClick={() => { onAddReaction(emoji); handleClose(); }}
+                    className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-90 transition-transform"
+                  >
+                    <span className="text-2xl leading-none">{emoji}</span>
+                  </button>
+                ))}
+                <div className="w-px h-6 bg-gray-200 dark:bg-gray-600 mx-0.5" />
+                <button
+                  onClick={() => { onShowEmojiPicker?.(); handleClose(); }}
+                  className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <Plus className="w-5 h-5 text-gray-400" />
+                </button>
+              </div>
+
+              {/* Actions Menu */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 min-w-[200px]">
+                <button
+                  onClick={() => { onReply(); handleClose(); }}
+                  className="w-full px-4 py-3 text-left text-[15px] flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <span>Antworten</span>
+                  <Reply className="w-5 h-5 text-gray-400" />
+                </button>
+                <button
+                  onClick={handleCopy}
+                  className="w-full px-4 py-3 text-left text-[15px] flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <span>Kopieren</span>
+                  <Copy className="w-5 h-5 text-gray-400" />
+                </button>
+                <button
+                  onClick={() => { onPin(); handleClose(); }}
+                  className="w-full px-4 py-3 text-left text-[15px] flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <span>{message.ohweee.isPinned ? "Markierung entfernen" : "Mit Stern markieren"}</span>
+                  <Star className={`w-5 h-5 ${message.ohweee.isPinned ? "text-yellow-500 fill-yellow-500" : "text-gray-400"}`} />
+                </button>
+                {isOwn && (
+                  <>
+                    <button
+                      onClick={() => { onEdit(); handleClose(); }}
+                      className="w-full px-4 py-3 text-left text-[15px] flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <span>Bearbeiten</span>
+                      <Pencil className="w-5 h-5 text-gray-400" />
+                    </button>
+                    <button
+                      onClick={() => { onDelete(); handleClose(); }}
+                      className="w-full px-4 py-3 text-left text-[15px] flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 text-red-500"
+                    >
+                      <span>Löschen</span>
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Backdrop to close menu */}
+          {isMenuOpen && (
+            <div
+              className="fixed inset-0 z-40"
+              onClick={handleClose}
+              onTouchStart={handleClose}
+            />
+          )}
 
           {/* Bubble */}
           <div
