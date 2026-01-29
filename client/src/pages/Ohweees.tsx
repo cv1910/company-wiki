@@ -1422,7 +1422,7 @@ export default function OhweeesPage() {
   // Mobile View - fills available space (DashboardLayout removes padding for /taps)
   if (isMobile) {
     return (
-      <div className="flex flex-col h-[calc(100dvh-56px-56px)] overflow-hidden bg-[#FAFAF8] dark:bg-gray-900">
+      <div className="flex flex-col h-[calc(100dvh-56px-56px)] overflow-hidden overscroll-none bg-[#FAFAF8] dark:bg-gray-900">
         {mobileView === "list" ? (
           // Mobile Room List View
           <>
@@ -1633,7 +1633,7 @@ export default function OhweeesPage() {
           </>
         ) : (
           // Mobile Chat View - fills parent container
-         <div className="flex flex-col flex-1 min-h-0 bg-[#FAFAF8] dark:bg-gray-900">
+         <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-[#FAFAF8] dark:bg-gray-900">
 
             {/* Mobile Chat Header */}
             {currentRoom && !showChatSearch && (
@@ -1676,7 +1676,7 @@ export default function OhweeesPage() {
             )}
 
             {/* Messages - scrollable */}
-            <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
+            <div className="flex-1 overflow-y-auto overscroll-none min-h-0">
               <div className="py-2">
                 {currentRoom?.messages?.map((message, index) => {
                   const prevMessage = currentRoom.messages?.[index - 1];
