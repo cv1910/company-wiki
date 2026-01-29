@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { VoiceMessagePlayer } from "./VoiceRecorder";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -270,6 +271,8 @@ export function MobileMessage({
   isLastInGroup?: boolean;
 }) {
   const time = formatMessageTime(message.ohweee.createdAt);
+  const attachments = (message.ohweee.attachments as { url: string; filename: string; mimeType: string; size: number }[] | null) || [];
+  const audioAttachment = attachments.find(a => a.mimeType.startsWith("audio/"));
   const isVoice = message.ohweee.voiceDuration && message.ohweee.voiceDuration > 0;
 
   const groupedReactions = reactions.reduce(
@@ -376,8 +379,13 @@ export function MobileMessage({
             )}
 
             {/* Content */}
-            {isVoice ? (
-              <VoicePlayer duration={message.ohweee.voiceDuration!} isOwn={isOwn} />
+            {isVoice && audioAttachment ? (
+              <VoiceMessagePlayer 
+                url={audioAttachment.url}
+                isOwn={isOwn}
+                senderAvatar={message.sender.avatarUrl || undefined}
+                senderName={message.sender.name || undefined}
+              />
             ) : (
               <p className={`text-[15px] leading-relaxed whitespace-pre-wrap break-words ${
                 isOwn ? colors.ownBubbleText : colors.otherBubbleText
