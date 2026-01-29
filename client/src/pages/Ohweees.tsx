@@ -72,7 +72,8 @@ import { de } from "date-fns/locale";
 import { EmojiPicker } from "@/components/EmojiPicker";
 import { MessageContent } from "@/components/MessageContent";
 import { ImageLightbox } from "@/components/ImageLightbox";
-import { VoiceRecorder, VoiceMessagePlayer } from "@/components/VoiceRecorder";
+import { VoiceRecorder } from "@/components/VoiceRecorder";
+import { WhatsAppVoicePlayer } from "@/components/WhatsAppVoicePlayer";
 import { PollDisplay } from "@/components/PollDisplay";
 import { ChatSearch, ChatSearchBar } from "@/components/ChatSearch";
 import {
@@ -311,12 +312,7 @@ function OhweeeMessage({
                         <p className="text-xs text-muted-foreground mt-1">{attachment.filename}</p>
                       </button>
                     ) : attachment.mimeType.startsWith("audio/") ? (
-  <VoiceMessagePlayer
-    url={attachment.url}
-    isOwn={isOwn}
-    senderAvatar={message.ohweee.sender?.avatarUrl || undefined}
-    senderName={message.ohweee.sender?.displayName || message.ohweee.sender?.email}
-  />
+                      <WhatsAppVoicePlayer url={attachment.url} isOwn={isOwn} />
                     ) : attachment.mimeType === "application/pdf" ? (
                       <div className={`rounded-lg overflow-hidden border ${isOwn ? "border-amber-300/50" : "border-border"}`}>
                         <div className="bg-gradient-to-r from-red-500 to-red-600 p-3 flex items-center gap-3">
@@ -1003,14 +999,14 @@ export default function OhweeesPage() {
   // Reaction mutations
   const addReaction = trpc.ohweees.addReaction.useMutation({
     onSuccess: () => {
-      utils.ohweees.getRoom.invalidate({ id: selectedRoomId! });
+      utils.ohweees.getReactionsBatch.invalidate();
       setShowReactionPicker(null);
     },
   });
 
   const removeReaction = trpc.ohweees.removeReaction.useMutation({
     onSuccess: () => {
-      utils.ohweees.getRoom.invalidate({ id: selectedRoomId! });
+      utils.ohweees.getReactionsBatch.invalidate();
     },
   });
 

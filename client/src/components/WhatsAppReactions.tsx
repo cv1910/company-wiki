@@ -107,15 +107,15 @@ export function ReactionsDisplay({
         <button
           key={emoji}
           onClick={() => onReactionClick(emoji)}
-          className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-sm shadow-sm active:scale-95 ${
+          className={`inline-flex items-center justify-center gap-1 px-2 py-1 rounded-full text-sm shadow-sm active:scale-95 ${
             hasReacted
               ? "bg-rose-100 dark:bg-rose-900/50"
               : "bg-white dark:bg-gray-800"
           } border border-gray-200 dark:border-gray-700`}
         >
-          <span className="leading-none">{emoji}</span>
+          <span className="text-base leading-none flex items-center justify-center">{emoji}</span>
           {users.length > 1 && (
-            <span className="text-[11px] text-gray-500">{users.length}</span>
+            <span className="text-[11px] text-gray-500 leading-none">{users.length}</span>
           )}
         </button>
       ))}
