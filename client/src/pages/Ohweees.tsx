@@ -1422,7 +1422,7 @@ export default function OhweeesPage() {
   // Mobile View
   if (isMobile) {
     return (
-      <div className="flex flex-col h-[calc(100dvh-64px)] overflow-hidden bg-[#FAFAF8] dark:bg-gray-900">
+      <div className="-m-6 -mb-24 flex flex-col h-[calc(100dvh-56px)] overflow-hidden bg-[#FAFAF8] dark:bg-gray-900">
         {mobileView === "list" ? (
           // Mobile Room List View
           <>
@@ -1632,8 +1632,8 @@ export default function OhweeesPage() {
             )}
           </>
         ) : (
-          // Mobile Chat View - fills parent container
-         <div className="flex flex-col flex-1 min-h-0 bg-[#FAFAF8] dark:bg-gray-900">
+          // Mobile Chat View - fills parent container with bottom padding for nav
+         <div className="flex flex-col flex-1 min-h-0 pb-14 bg-[#FAFAF8] dark:bg-gray-900">
 
             {/* Mobile Chat Header */}
             {currentRoom && !showChatSearch && (
