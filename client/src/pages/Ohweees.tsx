@@ -2240,118 +2240,47 @@ export default function OhweeesPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Create Task Dialog - Mobile */}
-        {showCreateTaskDialog && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowCreateTaskDialog(false)}>
-            <div
-              className="bg-white dark:bg-gray-900 rounded-xl mx-4 w-full max-w-md shadow-xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="p-4 border-b">
-                <h2 className="text-lg font-semibold">Neue Aufgabe</h2>
-                <p className="text-sm text-muted-foreground">Erstelle eine Aufgabe für diesen Chat.</p>
-              </div>
-              <div className="p-4 space-y-4">
-                <div>
-                  <Label>Titel</Label>
-                  <Input
-                    value={newTaskTitle}
-                    onChange={(e) => setNewTaskTitle(e.target.value)}
-                    placeholder="Was soll erledigt werden?"
-                  />
-                </div>
-                <div>
-                  <Label>Beschreibung (optional)</Label>
-                  <Textarea
-                    value={newTaskDescription}
-                    onChange={(e) => setNewTaskDescription(e.target.value)}
-                    placeholder="Weitere Details..."
-                    rows={2}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Priorität</Label>
-                    <select
-                      value={newTaskPriority}
-                      onChange={(e) => setNewTaskPriority(e.target.value as "low" | "medium" | "high")}
-                      className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    >
-                      <option value="low">Niedrig</option>
-                      <option value="medium">Mittel</option>
-                      <option value="high">Hoch</option>
-                    </select>
-                  </div>
-                  <div>
-                    <Label>Zuweisen an</Label>
-                    <select
-                      value={newTaskAssigneeId || ""}
-                      onChange={(e) => setNewTaskAssigneeId(e.target.value ? parseInt(e.target.value) : null)}
-                      className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    >
-                      <option value="">Niemand</option>
-                      {currentRoom?.participants?.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name || p.email}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Fällig am</Label>
-                    <Input
-                      type="date"
-                      value={newTaskDueDate.split("T")[0] || ""}
-                      onChange={(e) => {
-                        const time = newTaskDueDate.split("T")[1] || "";
-                        setNewTaskDueDate(e.target.value + (time ? "T" + time : ""));
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <Label>Uhrzeit</Label>
-                    <Input
-                      type="time"
-                      value={newTaskDueDate.split("T")[1] || ""}
-                      onChange={(e) => {
-                        const date = newTaskDueDate.split("T")[0] || "";
-                        if (date) {
-                          setNewTaskDueDate(date + "T" + e.target.value);
-                        }
-                      }}
-                      disabled={!newTaskDueDate.split("T")[0]}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="p-4 border-t flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setShowCreateTaskDialog(false)}>
-                  Abbrechen
-                </Button>
-                <Button
-                  onClick={() => {
-                    if (newTaskTitle.trim() && selectedRoomId) {
-                      createTask.mutate({
-                        roomId: selectedRoomId,
-                        title: newTaskTitle.trim(),
-                        description: newTaskDescription.trim() || undefined,
-                        priority: newTaskPriority,
-                        dueDate: newTaskDueDate ? new Date(newTaskDueDate) : undefined,
-                        assigneeId: newTaskAssigneeId || undefined,
-                        sourceOhweeeId: taskFromMessageId || undefined,
-                      });
-                    }
-                  }}
-                  disabled={!newTaskTitle.trim() || createTask.isPending}
-                >
-                  {createTask.isPending ? "Erstelle..." : "Erstellen"}
-                </Button>
-              </div>
+        {/* Create Task Dialog - Mobile - Using Dialog component */}
+        <Dialog open={showCreateTaskDialog} onOpenChange={(open) => !open && setShowCreateTaskDialog(false)}>
+          <DialogContent className="max-w-[90vw] rounded-xl">
+            <DialogHeader>
+              <DialogTitle>Neue Aufgabe</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Input
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                placeholder="Was soll erledigt werden?"
+              />
+              <select
+                value={newTaskPriority}
+                onChange={(e) => setNewTaskPriority(e.target.value as "low" | "medium" | "high")}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="low">Niedrig</option>
+                <option value="medium">Mittel</option>
+                <option value="high">Hoch</option>
+              </select>
             </div>
-          </div>
-        )}
+            <DialogFooter>
+              <Button
+                onClick={() => {
+                  if (newTaskTitle.trim() && selectedRoomId) {
+                    createTask.mutate({
+                      roomId: selectedRoomId,
+                      title: newTaskTitle.trim(),
+                      priority: newTaskPriority,
+                    });
+                  }
+                }}
+                disabled={!newTaskTitle.trim() || createTask.isPending}
+                className="w-full"
+              >
+                {createTask.isPending ? "Erstelle..." : "Erstellen"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
