@@ -1759,8 +1759,7 @@ export default function OhweeesPage() {
               </div>
             )}
 
-            {/* Input - fixed at bottom */}
-<div className="shrink-0 mt-auto">
+            {/* Input - stays at bottom */}
              <MobileChatInput
   value={messageInput}
   onChange={(value) => {
@@ -1813,9 +1812,7 @@ export default function OhweeesPage() {
     toast.error("Upload fehlgeschlagen");
   }
 }}
-      
 />
-            </div>
           </div>
         )}
 

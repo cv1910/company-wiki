@@ -448,7 +448,7 @@ export function MobileChatInput({
   if (isRecording) {
     return (
       <div
-        className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-3 py-2"
+        className="shrink-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-3 py-2"
         onTouchStart={(e) => { startXRef.current = e.touches[0].clientX; }}
         onTouchMove={(e) => {
           const diff = startXRef.current - e.touches[0].clientX;
@@ -482,7 +482,7 @@ export function MobileChatInput({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
+    <div className="shrink-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
       {replyTo && (
         <ReplyPreview senderName={replyTo.senderName} content={replyTo.content} onCancel={onCancelReply || (() => {})} />
       )}
