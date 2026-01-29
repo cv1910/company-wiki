@@ -5136,8 +5136,9 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         if (!participants.some(p => p.user.id === ctx.user.id)) {
           throw new TRPCError({ code: "FORBIDDEN", message: "Kein Zugriff auf diesen Chat" });
         }
-        
-        const taskId = await db.createChatTask({
+
+        // Create chat task (for room-specific tracking)
+        const chatTaskId = await db.createChatTask({
           roomId: input.roomId,
           title: input.title,
           description: input.description || null,
@@ -5147,8 +5148,34 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           assigneeId: input.assigneeId || null,
           createdById: ctx.user.id,
         });
-        
-        return { taskId };
+
+        // Also create main task (so it appears on Aufgaben page)
+        const mainTask = await db.createTask({
+          title: input.title,
+          description: input.description || null,
+          dueDate: input.dueDate || null,
+          priority: input.priority || "medium",
+          assignedToId: input.assigneeId || null,
+          createdById: ctx.user.id,
+          status: "open",
+          recurrencePattern: "none",
+          recurrenceEndDate: null,
+          reminderMinutes: 0,
+          reminderSent: false,
+        } as any);
+
+        // Create notification for assigned user
+        if (input.assigneeId && input.assigneeId !== ctx.user.id) {
+          await db.createNotification({
+            userId: input.assigneeId,
+            type: "task_assigned",
+            title: "Neue Aufgabe zugewiesen",
+            message: `${ctx.user.name || "Jemand"} hat dir eine Aufgabe zugewiesen: ${input.title}`,
+            link: "/aufgaben",
+          });
+        }
+
+        return { taskId: chatTaskId, mainTaskId: mainTask.id };
       }),
 
     // Get tasks for a room
