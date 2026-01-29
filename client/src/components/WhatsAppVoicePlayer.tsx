@@ -8,7 +8,7 @@ interface WhatsAppVoicePlayerProps {
 }
 
 // Generate waveform data from URL
-function generateWaveformData(seed: string, bars: number = 28): number[] {
+function generateWaveformData(seed: string, bars: number = 40): number[] {
   let hash = 0;
   for (let i = 0; i < seed.length; i++) {
     const char = seed.charCodeAt(i);
@@ -19,7 +19,7 @@ function generateWaveformData(seed: string, bars: number = 28): number[] {
   const waveform: number[] = [];
   for (let i = 0; i < bars; i++) {
     const value = Math.abs(Math.sin(hash * (i + 1) * 0.1) * Math.cos(hash * (i + 1) * 0.05));
-    waveform.push(Math.max(0.2, Math.min(1, value * 1.5)));
+    waveform.push(Math.max(0.15, Math.min(1, value * 1.5)));
   }
   return waveform;
 }
@@ -30,12 +30,14 @@ export function WhatsAppVoicePlayer({
   isOwn = false,
 }: WhatsAppVoicePlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
+  const [progress, setProgress] = useState(0); // 0 to 1
   const [duration, setDuration] = useState(initialDuration || 0);
+  const [currentTime, setCurrentTime] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isLoaded, setIsLoaded] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<number | null>(null);
   const waveformData = useRef(generateWaveformData(url)).current;
 
   const formatTime = (seconds: number): string => {
@@ -45,12 +47,12 @@ export function WhatsAppVoicePlayer({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  // Initialize audio
   useEffect(() => {
     const audio = new Audio();
     audio.preload = "metadata";
     audio.playsInline = true;
-    audio.setAttribute("playsinline", "true");
-    audio.setAttribute("webkit-playsinline", "true");
+    audio.crossOrigin = "anonymous";
     audioRef.current = audio;
 
     const handleLoadedMetadata = () => {
@@ -60,44 +62,65 @@ export function WhatsAppVoicePlayer({
       setIsLoaded(true);
     };
 
+    const handleCanPlay = () => setIsLoaded(true);
+
     const handleEnded = () => {
       setIsPlaying(false);
+      setProgress(0);
       setCurrentTime(0);
       audio.currentTime = 0;
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+    };
+
+    const handleError = (e: Event) => {
+      console.error("Audio error:", e);
+      setIsLoaded(true); // Still allow interaction
     };
 
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
-    audio.addEventListener("canplay", () => setIsLoaded(true));
+    audio.addEventListener("canplay", handleCanPlay);
     audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("error", handleError);
 
     audio.src = url;
     audio.load();
 
     return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
       audio.pause();
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("canplay", handleCanPlay);
+      audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("error", handleError);
       audio.src = "";
     };
   }, [url]);
 
-  // Use requestAnimationFrame for smooth progress updates
-  useEffect(() => {
-    let animationId: number;
-
-    const updateProgress = () => {
-      if (audioRef.current && isPlaying) {
-        setCurrentTime(audioRef.current.currentTime);
-        animationId = requestAnimationFrame(updateProgress);
-      }
-    };
-
-    if (isPlaying) {
-      animationId = requestAnimationFrame(updateProgress);
+  // Animation loop for progress
+  const updateProgress = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio && isPlaying && duration > 0) {
+      const newProgress = audio.currentTime / duration;
+      setProgress(newProgress);
+      setCurrentTime(audio.currentTime);
+      animationRef.current = requestAnimationFrame(updateProgress);
     }
+  }, [isPlaying, duration]);
 
+  useEffect(() => {
+    if (isPlaying) {
+      animationRef.current = requestAnimationFrame(updateProgress);
+    } else if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
     return () => {
-      if (animationId) cancelAnimationFrame(animationId);
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [isPlaying]);
+  }, [isPlaying, updateProgress]);
 
   const togglePlayback = useCallback(async () => {
     const audio = audioRef.current;
@@ -108,13 +131,14 @@ export function WhatsAppVoicePlayer({
         audio.pause();
         setIsPlaying(false);
       } else {
+        audio.playbackRate = playbackRate;
         await audio.play();
         setIsPlaying(true);
       }
     } catch (err) {
       console.error("Playback error:", err);
     }
-  }, [isPlaying]);
+  }, [isPlaying, playbackRate]);
 
   const handleSeek = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     const audio = audioRef.current;
@@ -125,6 +149,7 @@ export function WhatsAppVoicePlayer({
     const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
     const percentage = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     audio.currentTime = percentage * duration;
+    setProgress(percentage);
     setCurrentTime(audio.currentTime);
   }, [duration]);
 
@@ -135,62 +160,76 @@ export function WhatsAppVoicePlayer({
     if (audioRef.current) audioRef.current.playbackRate = nextRate;
   }, [playbackRate]);
 
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const progressPercent = progress * 100;
 
   return (
-    <div className="flex items-center gap-3 min-w-[200px] py-0.5">
-      {/* Play/Pause */}
+    <div className="flex items-center gap-2 min-w-[180px] py-1">
+      {/* Play/Pause Button */}
       <button
         onClick={togglePlayback}
-        disabled={!isLoaded}
-        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-95 ${
+        className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-95 flex-shrink-0 ${
           isOwn
-            ? "bg-white/20 text-white"
-            : "bg-rose-500 text-white"
-        } ${!isLoaded ? "opacity-50" : ""}`}
+            ? "bg-white/25 text-white"
+            : "bg-rose-500 text-white shadow-sm"
+        }`}
       >
         {isPlaying ? (
-          <Pause className="w-5 h-5" fill="currentColor" />
+          <Pause className="w-4 h-4" fill="currentColor" />
         ) : (
-          <Play className="w-5 h-5 ml-0.5" fill="currentColor" />
+          <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
         )}
       </button>
 
-      {/* Waveform */}
-      <div className="flex-1 flex flex-col gap-1">
+      {/* Waveform with Progress */}
+      <div className="flex-1 flex flex-col gap-0.5">
         <div
           ref={progressRef}
-          className="relative h-6 flex items-center cursor-pointer"
+          className="relative h-7 flex items-center cursor-pointer"
           onClick={handleSeek}
           onTouchStart={handleSeek}
         >
-          <div className="absolute inset-0 flex items-center gap-[2px]">
+          {/* Waveform Bars */}
+          <div className="absolute inset-0 flex items-center gap-px">
             {waveformData.map((height, i) => {
-              const isPlayed = (i / waveformData.length) * 100 <= progress;
+              const barProgress = (i / waveformData.length) * 100;
+              const isPlayed = barProgress <= progressPercent;
               return (
                 <div
                   key={i}
-                  className={`flex-1 rounded-full transition-colors ${
-                    isPlayed
-                      ? isOwn ? "bg-white" : "bg-rose-500"
-                      : isOwn ? "bg-white/40" : "bg-gray-300 dark:bg-gray-600"
-                  }`}
-                  style={{ height: `${height * 100}%` }}
+                  className="flex-1 rounded-full"
+                  style={{
+                    height: `${height * 100}%`,
+                    backgroundColor: isPlayed
+                      ? isOwn ? "rgba(255,255,255,1)" : "rgb(244,63,94)"
+                      : isOwn ? "rgba(255,255,255,0.35)" : "rgb(209,213,219)",
+                    transition: "background-color 0.1s",
+                  }}
                 />
               );
             })}
           </div>
+
+          {/* Progress Dot */}
+          <div
+            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full shadow-md z-10"
+            style={{
+              left: `calc(${progressPercent}% - 6px)`,
+              backgroundColor: isOwn ? "white" : "rgb(244,63,94)",
+            }}
+          />
         </div>
 
         {/* Time & Speed */}
-        <div className="flex items-center justify-between">
-          <span className={`text-[11px] ${isOwn ? "text-white/70" : "text-gray-500"}`}>
-            {formatTime(currentTime > 0 ? currentTime : duration)}
+        <div className="flex items-center justify-between px-0.5">
+          <span className={`text-[11px] font-medium tabular-nums ${isOwn ? "text-white/80" : "text-gray-500"}`}>
+            {formatTime(isPlaying || currentTime > 0 ? currentTime : duration)}
           </span>
           <button
             onClick={cyclePlaybackRate}
-            className={`text-[10px] font-bold px-1.5 rounded ${
-              isOwn ? "bg-white/20 text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+            className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+              isOwn
+                ? "bg-white/25 text-white"
+                : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
             }`}
           >
             {playbackRate}×

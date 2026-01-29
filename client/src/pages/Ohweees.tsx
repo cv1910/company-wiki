@@ -722,17 +722,48 @@ export default function OhweeesPage() {
   useEffect(() => {
     if (!isMobile) return;
 
-    // Lock body scroll on mobile to prevent rubber band effect
-    document.body.style.overflow = "hidden";
-    document.body.style.position = "fixed";
-    document.body.style.width = "100%";
-    document.body.style.height = "100%";
+    // Find scrollable element (custom data attribute or Radix ScrollArea viewport)
+    const findScrollable = (target: HTMLElement): HTMLElement | null => {
+      return target.closest('[data-scrollable="true"], [data-radix-scroll-area-viewport]') as HTMLElement | null;
+    };
+
+    // Prevent touchmove on document to stop iOS overscroll
+    const preventOverscroll = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      const scrollable = findScrollable(target);
+
+      if (!scrollable) {
+        e.preventDefault();
+        return;
+      }
+
+      const { scrollTop, scrollHeight, clientHeight } = scrollable;
+      const atTop = scrollTop <= 0;
+      const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
+
+      const touch = e.touches[0];
+      const startY = (scrollable as any)._touchStartY || touch.clientY;
+      const deltaY = touch.clientY - startY;
+
+      if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+        e.preventDefault();
+      }
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      const scrollable = findScrollable(target);
+      if (scrollable && e.touches.length === 1) {
+        (scrollable as any)._touchStartY = e.touches[0].clientY;
+      }
+    };
+
+    document.addEventListener("touchstart", handleTouchStart, { passive: true });
+    document.addEventListener("touchmove", preventOverscroll, { passive: false });
 
     return () => {
-      document.body.style.overflow = "";
-      document.body.style.position = "";
-      document.body.style.width = "";
-      document.body.style.height = "";
+      document.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("touchmove", preventOverscroll);
     };
   }, [isMobile]);
 
@@ -1694,7 +1725,7 @@ export default function OhweeesPage() {
             )}
 
             {/* Messages - scrollable */}
-            <div className="flex-1 overflow-y-auto overscroll-none min-h-0">
+            <div data-scrollable="true" className="flex-1 overflow-y-auto overscroll-none min-h-0">
               <div className="py-2">
                 {currentRoom?.messages?.map((message, index) => {
                   const prevMessage = currentRoom.messages?.[index - 1];
