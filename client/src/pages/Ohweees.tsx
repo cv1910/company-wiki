@@ -1099,13 +1099,7 @@ export default function OhweeesPage() {
   
   const createTask = trpc.ohweees.createTask.useMutation({
     onSuccess: (_data, variables) => {
-      // Use the roomId from the mutation variables to ensure consistency
-      utils.ohweees.getTasks.invalidate({ roomId: variables.roomId });
-      // Also invalidate main tasks queries so Aufgaben page updates
-      utils.tasks.getMyTasks.invalidate();
-      utils.tasks.getAssignedToMe.invalidate();
-      utils.tasks.getCreatedByMe.invalidate();
-      utils.tasks.openCount.invalidate();
+      // Close dialog and reset state first
       setShowCreateTaskDialog(false);
       setNewTaskTitle("");
       setNewTaskDescription("");
@@ -1114,6 +1108,15 @@ export default function OhweeesPage() {
       setNewTaskAssigneeId(null);
       setTaskFromMessageId(null);
       toast.success("Aufgabe erstellt");
+
+      // Delay query invalidations to avoid render loop on mobile
+      setTimeout(() => {
+        utils.ohweees.getTasks.invalidate({ roomId: variables.roomId });
+        utils.tasks.getMyTasks.invalidate();
+        utils.tasks.getAssignedToMe.invalidate();
+        utils.tasks.getCreatedByMe.invalidate();
+        utils.tasks.openCount.invalidate();
+      }, 100);
     },
     onError: (error) => {
       toast.error(error.message);
