@@ -1632,8 +1632,8 @@ export default function OhweeesPage() {
             )}
           </>
         ) : (
-          // Mobile Chat View - Clean fullscreen Basecamp style
-         <div className="fixed inset-0 flex flex-col bg-[#FAFAF8] dark:bg-gray-900" style={{ bottom: '64px' }}>
+          // Mobile Chat View - fits within app layout
+         <div className="flex flex-col h-full bg-[#FAFAF8] dark:bg-gray-900 -mx-4 -mt-4">
 
             {/* Mobile Chat Header */}
             {currentRoom && !showChatSearch && (
@@ -1675,12 +1675,9 @@ export default function OhweeesPage() {
               />
             )}
 
-            {/* Messages - scrollable area with padding for fixed input (~60px) + navigation (64px) + safe-area */}
-            <div 
-              className="flex-1 overflow-y-auto overscroll-none"
-              style={{ paddingBottom: 'calc(60px + 4rem + env(safe-area-inset-bottom, 0px) + 16px)' }}
-            >
-              <div className="py-2">
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto overscroll-none">
+              <div className="py-2 pb-4">
                 {currentRoom?.messages?.map((message, index) => {
                   const prevMessage = currentRoom.messages?.[index - 1];
                   const showDateSeparator = !prevMessage ||
@@ -1784,38 +1781,40 @@ export default function OhweeesPage() {
   onSendVoice={async (blob, duration) => {
   if (!selectedRoomId) return;
 
-  // Determine file extension based on mime type
   const mimeType = blob.type || "audio/mp4";
   const extension = mimeType.includes("webm") ? "webm" : "m4a";
+  const filename = `voice-${Date.now()}.${extension}`;
 
-  // Convert blob to base64
-  const reader = new FileReader();
-  reader.onload = () => {
-    const base64 = (reader.result as string).split(",")[1];
+  // Use FormData for reliable upload
+  const formData = new FormData();
+  formData.append("file", blob, filename);
 
-    uploadFile.mutate({
-      filename: `voice-${Date.now()}.${extension}`,
-      mimeType: mimeType,
-      base64Data: base64,
-    }, {
-      onSuccess: (file) => {
-        sendMessage.mutate({
-          roomId: selectedRoomId,
-          content: "🎙️ Sprachnachricht",
-          attachments: [{
-            url: file.url,
-            filename: file.filename,
-            mimeType: file.mimeType,
-            size: file.size,
-          }],
-        });
-      },
-      onError: (error) => {
-        toast.error("Upload fehlgeschlagen: " + error.message);
-      }
+  try {
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+      credentials: "include",
     });
-  };
-  reader.readAsDataURL(blob);
+
+    if (!response.ok) {
+      throw new Error("Upload fehlgeschlagen");
+    }
+
+    const file = await response.json();
+
+    sendMessage.mutate({
+      roomId: selectedRoomId,
+      content: "🎙️ Sprachnachricht",
+      attachments: [{
+        url: file.url,
+        filename: file.filename || filename,
+        mimeType: file.mimeType || mimeType,
+        size: file.size || blob.size,
+      }],
+    });
+  } catch (error) {
+    toast.error("Upload fehlgeschlagen");
+  }
 }}
       
 />

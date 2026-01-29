@@ -273,7 +273,7 @@ export function MobileChatHeader({
   const name = other?.name || room.name || "Chat";
 
   return (
-    <div className="flex items-center gap-2 px-2 py-2.5 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 safe-area-top">
+    <div className="flex items-center gap-2 px-2 py-2 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 shrink-0">
       <button onClick={onBack} className="p-2 -ml-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
         <ChevronLeft className="h-6 w-6" />
       </button>
@@ -448,7 +448,7 @@ export function MobileChatInput({
   if (isRecording) {
     return (
       <div
-        className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-3 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+        className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-3 py-2"
         onTouchStart={(e) => { startXRef.current = e.touches[0].clientX; }}
         onTouchMove={(e) => {
           const diff = startXRef.current - e.touches[0].clientX;
@@ -483,12 +483,11 @@ export function MobileChatInput({
 
   return (
     <div className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
-      {/* Reply Preview */}
       {replyTo && (
         <ReplyPreview senderName={replyTo.senderName} content={replyTo.content} onCancel={onCancelReply || (() => {})} />
       )}
 
-      <div className="px-2 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+      <div className="px-2 py-2">
         <div className="flex items-center gap-2">
           <div className="flex-1 flex items-center bg-gray-100 dark:bg-gray-800 rounded-full px-1">
             <button onClick={onShowEmoji} className="w-10 h-10 flex items-center justify-center text-gray-500">
