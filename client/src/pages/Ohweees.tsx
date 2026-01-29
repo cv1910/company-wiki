@@ -1173,12 +1173,13 @@ export default function OhweeesPage() {
   const setTyping = trpc.ohweees.setTyping.useMutation();
   const clearTyping = trpc.ohweees.clearTyping.useMutation();
   
-  useEffect(() => {
-    if (messageIds.length > 0 && user?.id) {
-      // Mark all visible messages as read
-      markAsRead.mutate({ ohweeeIds: messageIds });
-    }
-  }, [messageIds, user?.id]);
+  // Disabled for debugging - potential render loop source
+  // useEffect(() => {
+  //   if (messageIds.length > 0 && user?.id) {
+  //     // Mark all visible messages as read
+  //     markAsRead.mutate({ ohweeeIds: messageIds });
+  //   }
+  // }, [messageIds, user?.id]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
