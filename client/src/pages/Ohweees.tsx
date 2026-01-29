@@ -72,30 +72,48 @@ export default function OhweeesPage() {
   useEffect(() => {
     if (!isMobile) return;
 
-    // Lock body and html scroll on mobile to prevent rubber band effect
-    const html = document.documentElement;
-    const body = document.body;
+    // Find scrollable element (custom data attribute or Radix ScrollArea viewport)
+    const findScrollable = (target: HTMLElement): HTMLElement | null => {
+      return target.closest('[data-scrollable="true"], [data-radix-scroll-area-viewport]') as HTMLElement | null;
+    };
 
-    html.style.overflow = "hidden";
-    html.style.height = "100%";
-    body.style.overflow = "hidden";
-    body.style.position = "fixed";
-    body.style.top = "0";
-    body.style.left = "0";
-    body.style.width = "100%";
-    body.style.height = "100%";
-    body.style.overscrollBehavior = "none";
+    // Prevent touchmove on document to stop iOS overscroll
+    const preventOverscroll = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      const scrollable = findScrollable(target);
+
+      if (!scrollable) {
+        e.preventDefault();
+        return;
+      }
+
+      const { scrollTop, scrollHeight, clientHeight } = scrollable;
+      const atTop = scrollTop <= 0;
+      const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
+
+      const touch = e.touches[0];
+      const startY = (scrollable as any)._touchStartY || touch.clientY;
+      const deltaY = touch.clientY - startY;
+
+      if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+        e.preventDefault();
+      }
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      const scrollable = findScrollable(target);
+      if (scrollable && e.touches.length === 1) {
+        (scrollable as any)._touchStartY = e.touches[0].clientY;
+      }
+    };
+
+    document.addEventListener("touchstart", handleTouchStart, { passive: true });
+    document.addEventListener("touchmove", preventOverscroll, { passive: false });
 
     return () => {
-      html.style.overflow = "";
-      html.style.height = "";
-      body.style.overflow = "";
-      body.style.position = "";
-      body.style.top = "";
-      body.style.left = "";
-      body.style.width = "";
-      body.style.height = "";
-      body.style.overscrollBehavior = "";
+      document.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("touchmove", preventOverscroll);
     };
   }, [isMobile]);
 
