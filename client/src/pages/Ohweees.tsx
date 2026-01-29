@@ -1458,33 +1458,35 @@ export default function OhweeesPage() {
     );
   }
 
-  // Mobile View
+  // Mobile View - Simple version that works
   if (isMobile) {
     if (mobileView === "list") {
       return (
         <div className="flex flex-col h-[calc(100dvh-56px)] bg-background">
-          {/* Header */}
           <div className="p-4 border-b">
             <h1 className="text-xl font-bold">Ohweees</h1>
           </div>
-
-          {/* Room List */}
           <div className="flex-1 overflow-y-auto" data-scrollable="true">
             {rooms?.map((room) => (
-              <MobileRoomListItem
+              <div
                 key={room.id}
-                room={room}
-                isSelected={selectedRoomId === room.id}
+                className="p-4 border-b cursor-pointer hover:bg-muted/50"
                 onClick={() => setSelectedRoomId(room.id)}
-                currentUserId={user?.id || 0}
-              />
+              >
+                <div className="font-medium">{room.name || "Chat"}</div>
+                {room.lastMessage && (
+                  <div className="text-sm text-muted-foreground truncate">
+                    {room.lastMessage.content}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>
       );
     }
 
-    // Chat View - wait for room to load
+    // Chat View
     if (!currentRoom) {
       return (
         <div className="flex items-center justify-center h-[calc(100dvh-56px-56px)]">
@@ -1495,14 +1497,11 @@ export default function OhweeesPage() {
 
     return (
       <div className="flex flex-col h-[calc(100dvh-56px-56px)] overflow-hidden">
-        {/* Header */}
-        <MobileChatHeader
-          room={currentRoom}
-          onBack={() => setMobileView("list")}
-          currentUserId={user?.id || 0}
-        />
+        <div className="p-4 border-b flex items-center gap-2">
+          <button onClick={() => setMobileView("list")} className="text-primary">← Zurück</button>
+          <span className="font-bold">{currentRoom?.name || "Chat"}</span>
+        </div>
 
-        {/* Messages */}
         <div
           ref={messagesEndRef as any}
           className="flex-1 overflow-y-auto p-2"
@@ -1558,7 +1557,6 @@ export default function OhweeesPage() {
           })}
         </div>
 
-        {/* Input */}
         <MobileChatInput
           value={messageInput}
           onChange={setMessageInput}
