@@ -16,6 +16,8 @@ import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { de } from "date-fns/locale";
 import {
   MobileChatInput,
+  MobileChatHeader,
+  MobileRoomListItem,
   MobileDateSeparator,
   MobileMessage,
 } from "@/components/MobileChatView";
@@ -141,24 +143,34 @@ export default function OhweeesPage() {
   if (isMobile) {
     if (mobileView === "list") {
       return (
-        <div className="flex flex-col h-[calc(100dvh-56px)] bg-background">
-          <div className="p-4 border-b">
+        <div className="flex flex-col h-[calc(100dvh-56px)] bg-white dark:bg-gray-900">
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
             <h1 className="text-xl font-bold">Ohweees</h1>
           </div>
           <div className="flex-1 overflow-y-auto" data-scrollable="true">
             {rooms?.map((room) => (
-              <div
+              <MobileRoomListItem
                 key={room.id}
-                className="p-4 border-b cursor-pointer hover:bg-muted/50"
-                onClick={() => setSelectedRoomId(room.id)}
-              >
-                <div className="font-medium">{getRoomDisplayName(room)}</div>
-                {room.lastMessage && (
-                  <div className="text-sm text-muted-foreground truncate">
-                    {room.lastMessage.content}
-                  </div>
-                )}
-              </div>
+                room={{
+                  id: room.id,
+                  name: room.name,
+                  type: room.type as "direct" | "group" | "team",
+                  participants: room.participants?.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    avatarUrl: p.avatarUrl,
+                  })),
+                  unreadCount: room.unreadCount,
+                  lastMessage: room.lastMessage ? {
+                    content: room.lastMessage.content,
+                    createdAt: room.lastMessage.createdAt,
+                    senderId: room.lastMessage.senderId,
+                    senderName: room.lastMessage.senderName,
+                  } : undefined,
+                }}
+                currentUserId={user?.id || 0}
+                onSelect={() => setSelectedRoomId(room.id)}
+              />
             ))}
           </div>
         </div>
@@ -175,10 +187,21 @@ export default function OhweeesPage() {
 
     return (
       <div className="flex flex-col h-[calc(100dvh-56px-56px)] overflow-hidden">
-        <div className="p-4 border-b flex items-center gap-2">
-          <button onClick={() => setMobileView("list")} className="text-primary">← Zurück</button>
-          <span className="font-bold">{getRoomDisplayName(currentRoom as any)}</span>
-        </div>
+        <MobileChatHeader
+          room={{
+            id: currentRoom.id,
+            name: currentRoom.name,
+            type: currentRoom.type as "direct" | "group" | "team",
+            participants: currentRoom.participants?.map(p => ({
+              id: p.id,
+              name: p.name,
+              avatarUrl: p.avatarUrl,
+            })),
+            unreadCount: 0,
+          }}
+          currentUserId={user?.id || 0}
+          onBack={() => setMobileView("list")}
+        />
 
         <div className="flex-1 overflow-y-auto p-2" data-scrollable="true">
           {currentRoom?.messages?.map((message, index) => {
