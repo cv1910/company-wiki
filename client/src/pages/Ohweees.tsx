@@ -638,6 +638,9 @@ export default function OhweeesPage() {
   const [replyingToId, setReplyingToId] = useState<number | null>(null);
   const [showThreadDialog, setShowThreadDialog] = useState(false);
   const [threadParentId, setThreadParentId] = useState<number | null>(null);
+
+  // Mobile quote-reply state (WhatsApp style)
+  const [replyToMessage, setReplyToMessage] = useState<{id: number, senderName: string, content: string} | null>(null);
   
   // Reaction picker state
   const [showReactionPicker, setShowReactionPicker] = useState<number | null>(null);
@@ -1171,16 +1174,18 @@ export default function OhweeesPage() {
 
   const handleSendMessage = () => {
     if ((!messageInput.trim() && pendingAttachments.length === 0) || !selectedRoomId) return;
-    
+
     // Clear typing status when sending
     clearTyping.mutate({ roomId: selectedRoomId });
-    
+
     sendMessage.mutate({
       roomId: selectedRoomId,
       content: messageInput.trim() || (pendingAttachments.length > 0 ? "[Datei]" : ""),
       attachments: pendingAttachments.length > 0 ? pendingAttachments : undefined,
+      parentId: replyToMessage?.id, // Include parentId for quote-reply
     });
     setPendingAttachments([]);
+    setReplyToMessage(null); // Clear reply after sending
   };
 
   const handleEditMessage = () => {
@@ -1678,11 +1683,19 @@ export default function OhweeesPage() {
               <div className="py-2">
                 {currentRoom?.messages?.map((message, index) => {
                   const prevMessage = currentRoom.messages?.[index - 1];
-                  const showDateSeparator = !prevMessage || 
+                  const showDateSeparator = !prevMessage ||
                     !isSameDay(new Date(message.ohweee.createdAt), new Date(prevMessage.ohweee.createdAt));
                   const isOwn = message.sender.id === user?.id;
                   const messageReactions = reactionsData?.[message.ohweee.id] || [];
                   const msgReadReceipts = readReceiptsData?.[message.ohweee.id] || [];
+
+                  // Find quoted message if parentId exists
+                  const parentMsg = message.ohweee.parentId
+                    ? currentRoom.messages?.find(m => m.ohweee.id === message.ohweee.parentId)
+                    : null;
+                  const quotedMessage = parentMsg
+                    ? { senderName: parentMsg.sender.name || "Unbekannt", content: parentMsg.ohweee.content }
+                    : null;
 
                   return (
                     <div key={message.ohweee.id} id={`message-${message.ohweee.id}`}>
@@ -1694,6 +1707,7 @@ export default function OhweeesPage() {
                         isOwn={isOwn}
                         currentUserId={user?.id || 0}
                         reactions={messageReactions}
+                        quotedMessage={quotedMessage}
                         readReceipts={msgReadReceipts?.map((r: { userId: number; userName: string | null; userAvatar: string | null }) => ({
                           id: r.userId,
                           name: r.userName,
@@ -1701,8 +1715,11 @@ export default function OhweeesPage() {
                           readAt: new Date(),
                         }))}
                         onReply={() => {
-                          setThreadParentId(message.ohweee.id);
-                          setShowThreadDialog(true);
+                          setReplyToMessage({
+                            id: message.ohweee.id,
+                            senderName: message.sender.name || "Unbekannt",
+                            content: message.ohweee.content,
+                          });
                         }}
                         onEdit={() => {
                           setEditingMessageId(message.ohweee.id);
@@ -1747,7 +1764,7 @@ export default function OhweeesPage() {
 
             {/* Mobile Input - Fixed directly above navigation bar (h-16 + pb-safe) */}
             {/* Mobile Input - Fixed above bottom navigation */}
-<div className="flex-shrink-0 bg-[#FAFAF8] dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 pb-3">
+<div className="flex-shrink-0">
              <MobileChatInput
   value={messageInput}
   onChange={(value) => {
@@ -1762,6 +1779,8 @@ export default function OhweeesPage() {
   }}
   onSend={handleSendMessage}
   onAttach={() => fileInputRef.current?.click()}
+  replyTo={replyToMessage}
+  onCancelReply={() => setReplyToMessage(null)}
   onSendVoice={async (blob, duration) => {
   if (!selectedRoomId) return;
 

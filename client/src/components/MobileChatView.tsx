@@ -1,27 +1,21 @@
 import { useRef, useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { WhatsAppVoicePlayer } from "./WhatsAppVoicePlayer";
 import { QuickReactions, ReactionsDisplay, useLongPress, SwipeToReply } from "./WhatsAppReactions";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   ChevronLeft,
   MoreVertical,
   Send,
   Smile,
-  Reply,
-  Pencil,
-  Trash2,
-  Pin,
   Mic,
   Plus,
   Check,
   CheckCheck,
+  X,
+  Reply,
+  Pencil,
+  Trash2,
+  Pin,
 } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
 import { de } from "date-fns/locale";
@@ -83,21 +77,21 @@ const formatDuration = (s: number) =>
 // Date Separator
 export function MobileDateSeparator({ date }: { date: Date }) {
   const label = isToday(date)
-    ? "HEUTE"
+    ? "Heute"
     : isYesterday(date)
-    ? "GESTERN"
-    : format(date, "d. MMMM yyyy", { locale: de }).toUpperCase();
+    ? "Gestern"
+    : format(date, "d. MMMM yyyy", { locale: de });
 
   return (
-    <div className="flex justify-center py-3">
-      <span className="px-3 py-1 text-[11px] font-medium text-gray-500 bg-white/80 dark:bg-gray-800/80 rounded-lg shadow-sm">
+    <div className="flex justify-center py-4">
+      <span className="px-4 py-1.5 text-xs font-medium text-white bg-gray-800/60 dark:bg-gray-700 rounded-full">
         {label}
       </span>
     </div>
   );
 }
 
-// Message Bubble
+// Message Bubble - Clean WhatsApp Style
 export function MobileMessage({
   message,
   isOwn,
@@ -129,15 +123,13 @@ export function MobileMessage({
   showSenderName?: boolean;
 }) {
   const [showReactions, setShowReactions] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
+  const [showActions, setShowActions] = useState(false);
   const time = formatTime(message.ohweee.createdAt);
 
-  // Parse attachments
   const attachments = (message.ohweee.attachments as { url: string; mimeType: string }[] | null) || [];
   const audioUrl = attachments.find((a) => a.mimeType?.startsWith("audio/"))?.url;
   const imageUrls = attachments.filter((a) => a.mimeType?.startsWith("image/")).map((a) => a.url);
 
-  // Group reactions
   const groupedReactions = reactions.reduce((acc, r) => {
     if (!acc[r.reaction.emoji]) acc[r.reaction.emoji] = { users: [], hasReacted: false };
     acc[r.reaction.emoji].users.push(r.user);
@@ -146,127 +138,114 @@ export function MobileMessage({
   }, {} as Record<string, { users: { id: number; name: string | null }[]; hasReacted: boolean }>);
 
   const reactionsList = Object.entries(groupedReactions).map(([emoji, data]) => ({
-    emoji,
-    users: data.users,
-    hasReacted: data.hasReacted,
+    emoji, users: data.users, hasReacted: data.hasReacted,
   }));
 
   const longPress = useLongPress({
     onLongPress: () => setShowReactions(true),
-    delay: 400,
+    delay: 300,
   });
-
-  const renderContent = (content: string) => {
-    // Handle mentions
-    return content.replace(/@\[(.*?)\]\(\d+\)/g, "@$1");
-  };
 
   const isVoiceMessage = audioUrl && message.ohweee.content.includes("Sprachnachricht");
 
   return (
     <SwipeToReply onReply={onReply} isOwn={isOwn}>
-      <div className={`flex px-3 mb-1 ${isOwn ? "justify-end" : "justify-start"}`}>
-        <div className="relative max-w-[80%]">
+      <div className={`flex px-3 mb-0.5 ${isOwn ? "justify-end" : "justify-start"}`}>
+        <div className="relative max-w-[85%]">
           {/* Quick Reactions */}
           <QuickReactions
             isVisible={showReactions}
-            onReaction={onAddReaction}
-            onShowMore={() => onShowEmojiPicker?.()}
+            onReaction={(emoji) => { onAddReaction(emoji); setShowReactions(false); }}
+            onShowMore={() => { onShowEmojiPicker?.(); setShowReactions(false); }}
             onClose={() => setShowReactions(false)}
             align={isOwn ? "right" : "left"}
           />
 
-          <DropdownMenu open={showMenu} onOpenChange={setShowMenu}>
-            <DropdownMenuTrigger asChild>
-              <div
-                {...longPress}
-                onClick={() => setShowMenu(true)}
-                className={`relative px-3 py-2 rounded-2xl shadow-sm select-none ${
-                  isOwn
-                    ? "bg-rose-500 text-white rounded-br-md"
-                    : "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md"
-                }`}
-              >
-                {/* Sender name */}
-                {showSenderName && !isOwn && (
-                  <p className="text-[13px] font-semibold text-rose-500 mb-0.5">
-                    {message.sender.name}
-                  </p>
-                )}
-
-                {/* Quoted reply */}
-                {quotedMessage && (
-                  <div
-                    className={`mb-2 pl-2 border-l-2 py-1 pr-2 rounded-r ${
-                      isOwn ? "border-white/50 bg-white/10" : "border-rose-400 bg-rose-50 dark:bg-rose-900/20"
-                    }`}
-                  >
-                    <p className={`text-[12px] font-semibold ${isOwn ? "text-white/90" : "text-rose-600"}`}>
-                      {quotedMessage.senderName}
-                    </p>
-                    <p className={`text-[12px] line-clamp-1 ${isOwn ? "text-white/70" : "text-gray-500"}`}>
-                      {quotedMessage.content}
-                    </p>
-                  </div>
-                )}
-
-                {/* Images */}
-                {imageUrls.length > 0 && (
-                  <div className={`mb-2 -mx-3 -mt-2 ${imageUrls.length > 1 ? "grid grid-cols-2 gap-0.5" : ""}`}>
-                    {imageUrls.map((url, i) => (
-                      <img key={i} src={url} alt="" className="w-full rounded-t-2xl object-cover max-h-60" />
-                    ))}
-                  </div>
-                )}
-
-                {/* Voice or Text */}
-                {audioUrl ? (
-                  <WhatsAppVoicePlayer url={audioUrl} isOwn={isOwn} />
-                ) : (
-                  !isVoiceMessage && (
-                    <p className="text-[15px] whitespace-pre-wrap break-words">
-                      {renderContent(message.ohweee.content)}
-                    </p>
-                  )
-                )}
-
-                {/* Time & Status */}
-                <div className={`flex items-center gap-1 mt-1 justify-end ${isOwn ? "text-white/70" : "text-gray-400"}`}>
-                  {message.ohweee.isEdited && <span className="text-[10px]">bearbeitet</span>}
-                  <span className="text-[11px]">{time}</span>
-                  {isOwn && (
-                    readReceipts && readReceipts.length > 0 ? (
-                      <CheckCheck className="w-4 h-4 text-sky-200" />
-                    ) : (
-                      <Check className="w-4 h-4" />
-                    )
-                  )}
-                </div>
-              </div>
-            </DropdownMenuTrigger>
-
-            <DropdownMenuContent align={isOwn ? "end" : "start"} className="w-44">
-              <DropdownMenuItem onClick={onReply}>
-                <Reply className="w-4 h-4 mr-2" /> Antworten
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowReactions(true)}>
-                <Smile className="w-4 h-4 mr-2" /> Reagieren
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onPin}>
-                <Pin className="w-4 h-4 mr-2" /> {message.ohweee.isPinned ? "Lösen" : "Anheften"}
-              </DropdownMenuItem>
+          {/* Actions Menu */}
+          {showActions && (
+            <div
+              className={`absolute ${isOwn ? "right-0" : "left-0"} bottom-full mb-1 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-1 min-w-[140px]`}
+              onClick={() => setShowActions(false)}
+            >
+              <button onClick={onReply} className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <Reply className="w-4 h-4 text-gray-500" /> Antworten
+              </button>
+              <button onClick={() => setShowReactions(true)} className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <Smile className="w-4 h-4 text-gray-500" /> Reagieren
+              </button>
               {isOwn && (
                 <>
-                  <DropdownMenuItem onClick={onEdit}>
-                    <Pencil className="w-4 h-4 mr-2" /> Bearbeiten
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={onDelete} className="text-red-600">
-                    <Trash2 className="w-4 h-4 mr-2" /> Löschen
-                  </DropdownMenuItem>
+                  <button onClick={onEdit} className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <Pencil className="w-4 h-4 text-gray-500" /> Bearbeiten
+                  </button>
+                  <button onClick={onDelete} className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-red-500">
+                    <Trash2 className="w-4 h-4" /> Löschen
+                  </button>
                 </>
               )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </div>
+          )}
+
+          {/* Bubble */}
+          <div
+            {...longPress}
+            onClick={() => setShowActions(!showActions)}
+            className={`relative px-3 py-1.5 rounded-2xl select-none ${
+              isOwn
+                ? "bg-rose-500 text-white rounded-br-sm"
+                : "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-sm shadow-sm"
+            }`}
+          >
+            {/* Sender name in groups */}
+            {showSenderName && !isOwn && (
+              <p className="text-[13px] font-semibold text-rose-500 mb-0.5">
+                {message.sender.name}
+              </p>
+            )}
+
+            {/* Quoted reply */}
+            {quotedMessage && (
+              <div className={`mb-1.5 pl-2 border-l-2 py-1 pr-2 rounded-r text-[13px] ${
+                isOwn ? "border-white/50 bg-white/15" : "border-rose-400 bg-rose-50 dark:bg-rose-900/30"
+              }`}>
+                <p className={`font-semibold ${isOwn ? "text-white/90" : "text-rose-600"}`}>
+                  {quotedMessage.senderName}
+                </p>
+                <p className={`line-clamp-1 ${isOwn ? "text-white/70" : "text-gray-500"}`}>
+                  {quotedMessage.content}
+                </p>
+              </div>
+            )}
+
+            {/* Images */}
+            {imageUrls.length > 0 && (
+              <div className={`mb-1.5 -mx-3 -mt-1.5 rounded-t-2xl overflow-hidden ${imageUrls.length > 1 ? "grid grid-cols-2 gap-0.5" : ""}`}>
+                {imageUrls.map((url, i) => (
+                  <img key={i} src={url} alt="" className="w-full object-cover max-h-52" />
+                ))}
+              </div>
+            )}
+
+            {/* Voice or Text */}
+            {audioUrl ? (
+              <WhatsAppVoicePlayer url={audioUrl} isOwn={isOwn} />
+            ) : !isVoiceMessage && (
+              <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+                {message.ohweee.content.replace(/@\[(.*?)\]\(\d+\)/g, "@$1")}
+              </p>
+            )}
+
+            {/* Time & Status */}
+            <div className={`flex items-center gap-1 mt-0.5 justify-end text-[11px] ${isOwn ? "text-white/60" : "text-gray-400"}`}>
+              {message.ohweee.isEdited && <span>bearbeitet</span>}
+              <span>{time}</span>
+              {isOwn && (
+                readReceipts && readReceipts.length > 0
+                  ? <CheckCheck className="w-4 h-4 text-sky-200" />
+                  : <Check className="w-4 h-4" />
+              )}
+            </div>
+          </div>
 
           {/* Reactions */}
           {reactionsList.length > 0 && (
@@ -280,10 +259,7 @@ export function MobileMessage({
 
 // Chat Header
 export function MobileChatHeader({
-  room,
-  currentUserId,
-  onBack,
-  onInfo,
+  room, currentUserId, onBack, onInfo,
 }: {
   room: Room;
   currentUserId: number;
@@ -294,38 +270,59 @@ export function MobileChatHeader({
   const other = room.type === "direct" && room.participants
     ? room.participants.find((p) => p.id !== currentUserId)
     : null;
-
   const name = other?.name || room.name || "Chat";
-  const avatar = other?.avatarUrl;
 
   return (
-    <div className="flex items-center gap-2 px-2 py-2 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-      <Button variant="ghost" size="sm" onClick={onBack} className="h-9 w-9 p-0">
+    <div className="flex items-center gap-2 px-2 py-2.5 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 safe-area-top">
+      <button onClick={onBack} className="p-2 -ml-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
         <ChevronLeft className="h-6 w-6" />
-      </Button>
+      </button>
 
-      <Avatar className="h-10 w-10" onClick={onInfo}>
-        <AvatarImage src={avatar || undefined} />
-        <AvatarFallback className="bg-rose-100 text-rose-600 font-semibold">
+      <Avatar className="h-9 w-9" onClick={onInfo}>
+        <AvatarImage src={other?.avatarUrl || undefined} />
+        <AvatarFallback className="bg-rose-100 text-rose-600 text-sm font-semibold">
           {room.type === "group" ? "#" : getInitials(name)}
         </AvatarFallback>
       </Avatar>
 
       <div className="flex-1 min-w-0" onClick={onInfo}>
-        <h1 className="font-semibold text-[16px] truncate">{name}</h1>
-        <p className="text-[12px] text-gray-500">
+        <h1 className="font-semibold text-base truncate">{name}</h1>
+        <p className="text-xs text-gray-500">
           {room.type === "direct" ? "online" : `${room.participants?.length || 0} Teilnehmer`}
         </p>
       </div>
 
-      <Button variant="ghost" size="sm" onClick={onInfo} className="h-9 w-9 p-0">
-        <MoreVertical className="h-5 w-5" />
-      </Button>
+      <button onClick={onInfo} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+        <MoreVertical className="h-5 w-5 text-gray-500" />
+      </button>
     </div>
   );
 }
 
-// Chat Input
+// Reply Preview Component
+function ReplyPreview({
+  senderName,
+  content,
+  onCancel
+}: {
+  senderName: string;
+  content: string;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 border-l-4 border-rose-500">
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold text-rose-500">{senderName}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{content}</p>
+      </div>
+      <button onClick={onCancel} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full">
+        <X className="w-5 h-5 text-gray-500" />
+      </button>
+    </div>
+  );
+}
+
+// Chat Input with Reply
 export function MobileChatInput({
   value,
   onChange,
@@ -334,6 +331,8 @@ export function MobileChatInput({
   onAttach,
   onShowEmoji,
   isLoading,
+  replyTo,
+  onCancelReply,
   placeholder = "Nachricht",
 }: {
   value: string;
@@ -343,6 +342,8 @@ export function MobileChatInput({
   onAttach?: () => void;
   onShowEmoji?: () => void;
   isLoading?: boolean;
+  replyTo?: { senderName: string; content: string } | null;
+  onCancelReply?: () => void;
   placeholder?: string;
 }) {
   const [isRecording, setIsRecording] = useState(false);
@@ -360,8 +361,14 @@ export function MobileChatInput({
   const recordingTimeRef = useRef(0);
   const startXRef = useRef(0);
   const cancelledRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const hasText = value.trim().length > 0;
+
+  // Focus input when replying
+  useEffect(() => {
+    if (replyTo) inputRef.current?.focus();
+  }, [replyTo]);
 
   const startRecording = async () => {
     try {
@@ -390,7 +397,6 @@ export function MobileChatInput({
           const blob = new Blob(chunksRef.current, { type: chunksRef.current[0]?.type || "audio/mp4" });
           onSendVoice?.(blob, recordingTimeRef.current);
         }
-
         chunksRef.current = [];
         setRecordingTime(0);
         setAudioLevels(Array(20).fill(0.1));
@@ -414,8 +420,7 @@ export function MobileChatInput({
         animationRef.current = requestAnimationFrame(updateLevels);
       };
       updateLevels();
-    } catch (err) {
-      console.error("Mic error:", err);
+    } catch {
       alert("Mikrofon-Zugriff wurde verweigert");
     }
   };
@@ -433,17 +438,6 @@ export function MobileChatInput({
     stopRecording();
   };
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    startXRef.current = e.touches[0].clientX;
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!isRecording) return;
-    const diff = startXRef.current - e.touches[0].clientX;
-    setSlideOffset(Math.max(0, Math.min(diff, 120)));
-    if (diff > 100) cancelRecording();
-  };
-
   useEffect(() => {
     return () => {
       intervalRef.current && clearInterval(intervalRef.current);
@@ -455,8 +449,12 @@ export function MobileChatInput({
     return (
       <div
         className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-3 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
+        onTouchStart={(e) => { startXRef.current = e.touches[0].clientX; }}
+        onTouchMove={(e) => {
+          const diff = startXRef.current - e.touches[0].clientX;
+          setSlideOffset(Math.max(0, Math.min(diff, 120)));
+          if (diff > 100) cancelRecording();
+        }}
         onTouchEnd={() => slideOffset < 100 && setSlideOffset(0)}
       >
         <div className="flex items-center gap-3">
@@ -475,10 +473,7 @@ export function MobileChatInput({
             <span className="text-red-500 font-mono font-semibold">{formatDuration(recordingTime)}</span>
           </div>
 
-          <button
-            onClick={stopRecording}
-            className="w-11 h-11 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-md active:scale-95"
-          >
+          <button onClick={stopRecording} className="w-11 h-11 rounded-full bg-rose-500 text-white flex items-center justify-center shadow active:scale-95">
             <Send className="w-5 h-5" />
           </button>
         </div>
@@ -487,32 +482,40 @@ export function MobileChatInput({
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-2 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
-      <div className="flex items-center gap-2">
-        <div className="flex-1 flex items-center bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 px-1">
-          <button onClick={onShowEmoji} className="w-10 h-10 flex items-center justify-center text-gray-400">
-            <Smile className="w-6 h-6" />
-          </button>
-          <input
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && hasText && !isLoading && onSend()}
-            placeholder={placeholder}
-            className="flex-1 bg-transparent outline-none text-[16px] py-2.5"
-          />
-          <button onClick={onAttach} className="w-10 h-10 flex items-center justify-center text-gray-400">
-            <Plus className="w-6 h-6" />
+    <div className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
+      {/* Reply Preview */}
+      {replyTo && (
+        <ReplyPreview senderName={replyTo.senderName} content={replyTo.content} onCancel={onCancelReply || (() => {})} />
+      )}
+
+      <div className="px-2 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+        <div className="flex items-center gap-2">
+          <div className="flex-1 flex items-center bg-gray-100 dark:bg-gray-800 rounded-full px-1">
+            <button onClick={onShowEmoji} className="w-10 h-10 flex items-center justify-center text-gray-500">
+              <Smile className="w-6 h-6" />
+            </button>
+            <input
+              ref={inputRef}
+              type="text"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && hasText && !isLoading && onSend()}
+              placeholder={placeholder}
+              className="flex-1 bg-transparent outline-none text-base py-2.5"
+            />
+            <button onClick={onAttach} className="w-10 h-10 flex items-center justify-center text-gray-500">
+              <Plus className="w-6 h-6" />
+            </button>
+          </div>
+
+          <button
+            onClick={hasText ? onSend : startRecording}
+            disabled={hasText && isLoading}
+            className="w-11 h-11 rounded-full bg-rose-500 text-white flex items-center justify-center shadow active:scale-95 disabled:opacity-50"
+          >
+            {hasText ? <Send className="w-5 h-5" /> : <Mic className="w-6 h-6" />}
           </button>
         </div>
-
-        <button
-          onClick={hasText ? onSend : startRecording}
-          disabled={hasText && isLoading}
-          className="w-11 h-11 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-md active:scale-95 disabled:opacity-50"
-        >
-          {hasText ? <Send className="w-5 h-5" /> : <Mic className="w-6 h-6" />}
-        </button>
       </div>
     </div>
   );
@@ -520,9 +523,7 @@ export function MobileChatInput({
 
 // Room List Item
 export function MobileRoomListItem({
-  room,
-  currentUserId,
-  onSelect,
+  room, currentUserId, onSelect,
 }: {
   room: Room;
   currentUserId: number;
@@ -531,17 +532,13 @@ export function MobileRoomListItem({
   const other = room.type === "direct" && room.participants
     ? room.participants.find((p) => p.id !== currentUserId)
     : null;
-
   const name = other?.name || room.name || "Chat";
   const time = room.lastMessage?.createdAt ? format(new Date(room.lastMessage.createdAt), "HH:mm") : "";
-  const preview = room.lastMessage?.content?.replace(/@\[(.*?)\]\(\d+\)/g, "@$1").slice(0, 35) || "Keine Nachrichten";
+  const preview = room.lastMessage?.content?.replace(/@\[(.*?)\]\(\d+\)/g, "@$1").slice(0, 40) || "Keine Nachrichten";
   const isOwnLast = room.lastMessage?.senderId === currentUserId;
 
   return (
-    <button
-      onClick={onSelect}
-      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 active:bg-gray-100"
-    >
+    <button onClick={onSelect} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 active:bg-gray-100">
       <div className="relative">
         <Avatar className="h-12 w-12">
           <AvatarImage src={other?.avatarUrl || undefined} />
@@ -550,7 +547,7 @@ export function MobileRoomListItem({
           </AvatarFallback>
         </Avatar>
         {room.unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
             {room.unreadCount > 99 ? "99+" : room.unreadCount}
           </span>
         )}
@@ -558,14 +555,14 @@ export function MobileRoomListItem({
 
       <div className="flex-1 min-w-0 text-left">
         <div className="flex justify-between items-center">
-          <span className={`font-semibold truncate ${room.unreadCount > 0 ? "text-gray-900 dark:text-white" : "text-gray-600 dark:text-gray-300"}`}>
+          <span className={`font-medium truncate ${room.unreadCount > 0 ? "text-gray-900 dark:text-white" : "text-gray-600 dark:text-gray-300"}`}>
             {name}
           </span>
-          <span className={`text-[12px] ${room.unreadCount > 0 ? "text-rose-500" : "text-gray-400"}`}>{time}</span>
+          <span className={`text-xs ${room.unreadCount > 0 ? "text-rose-500 font-medium" : "text-gray-400"}`}>{time}</span>
         </div>
         <div className="flex items-center gap-1 mt-0.5">
-          {isOwnLast && <CheckCheck className="w-4 h-4 text-gray-400" />}
-          <p className={`text-[14px] truncate ${room.unreadCount > 0 ? "text-gray-800 dark:text-gray-200 font-medium" : "text-gray-500"}`}>
+          {isOwnLast && <CheckCheck className="w-4 h-4 text-gray-400 flex-shrink-0" />}
+          <p className={`text-sm truncate ${room.unreadCount > 0 ? "text-gray-800 dark:text-gray-200" : "text-gray-500"}`}>
             {preview}
           </p>
         </div>
@@ -576,26 +573,23 @@ export function MobileRoomListItem({
 
 // Avatar Bar
 export function MobileAvatarBar({
-  rooms,
-  currentUserId,
-  onRoomSelect,
-  onNewChat,
+  rooms, currentUserId, onRoomSelect, onNewChat,
 }: {
   rooms: Room[];
   currentUserId: number;
   onRoomSelect: (roomId: number) => void;
   onNewChat: () => void;
 }) {
-  const directRooms = rooms.filter((r) => r.type === "direct").slice(0, 10);
+  const directRooms = rooms.filter((r) => r.type === "direct").slice(0, 8);
 
   return (
-    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-x-auto">
+    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-x-auto scrollbar-hide">
       <div className="flex gap-4">
-        <button onClick={onNewChat} className="flex flex-col items-center gap-1">
-          <div className="h-14 w-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border-2 border-dashed border-gray-300">
-            <Plus className="h-6 w-6 text-gray-400" />
+        <button onClick={onNewChat} className="flex flex-col items-center gap-1.5 flex-shrink-0">
+          <div className="h-14 w-14 rounded-full bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center border-2 border-dashed border-rose-200 dark:border-rose-800">
+            <Plus className="h-6 w-6 text-rose-400" />
           </div>
-          <span className="text-[11px] text-gray-500">Neu</span>
+          <span className="text-[11px] text-gray-500 font-medium">Neu</span>
         </button>
 
         {directRooms.map((room) => {
@@ -603,8 +597,8 @@ export function MobileAvatarBar({
           const firstName = (other?.name || "?").split(" ")[0];
 
           return (
-            <button key={room.id} onClick={() => onRoomSelect(room.id)} className="flex flex-col items-center gap-1">
-              <div className={`p-0.5 rounded-full ${room.unreadCount > 0 ? "bg-rose-500" : "bg-gray-200 dark:bg-gray-700"}`}>
+            <button key={room.id} onClick={() => onRoomSelect(room.id)} className="flex flex-col items-center gap-1.5 flex-shrink-0">
+              <div className={`p-0.5 rounded-full ${room.unreadCount > 0 ? "bg-rose-500" : "bg-transparent"}`}>
                 <Avatar className="h-13 w-13 ring-2 ring-white dark:ring-gray-900">
                   <AvatarImage src={other?.avatarUrl || undefined} />
                   <AvatarFallback className="bg-rose-100 text-rose-600 font-semibold">
@@ -612,7 +606,7 @@ export function MobileAvatarBar({
                   </AvatarFallback>
                 </Avatar>
               </div>
-              <span className="text-[11px] text-gray-600 dark:text-gray-400 max-w-[56px] truncate">{firstName}</span>
+              <span className="text-[11px] text-gray-600 dark:text-gray-400 max-w-[56px] truncate font-medium">{firstName}</span>
             </button>
           );
         })}
