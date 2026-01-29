@@ -60,7 +60,6 @@ export function WhatsAppVoicePlayer({
       setIsLoaded(true);
     };
 
-    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleEnded = () => {
       setIsPlaying(false);
       setCurrentTime(0);
@@ -69,7 +68,6 @@ export function WhatsAppVoicePlayer({
 
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
     audio.addEventListener("canplay", () => setIsLoaded(true));
-    audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("ended", handleEnded);
 
     audio.src = url;
@@ -80,6 +78,26 @@ export function WhatsAppVoicePlayer({
       audio.src = "";
     };
   }, [url]);
+
+  // Use requestAnimationFrame for smooth progress updates
+  useEffect(() => {
+    let animationId: number;
+
+    const updateProgress = () => {
+      if (audioRef.current && isPlaying) {
+        setCurrentTime(audioRef.current.currentTime);
+        animationId = requestAnimationFrame(updateProgress);
+      }
+    };
+
+    if (isPlaying) {
+      animationId = requestAnimationFrame(updateProgress);
+    }
+
+    return () => {
+      if (animationId) cancelAnimationFrame(animationId);
+    };
+  }, [isPlaying]);
 
   const togglePlayback = useCallback(async () => {
     const audio = audioRef.current;

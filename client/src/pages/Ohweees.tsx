@@ -717,7 +717,25 @@ export default function OhweeesPage() {
       setMobileView("chat");
     }
   }, [isMobile, selectedRoomId]);
-  
+
+  // Prevent iOS Safari overscroll/bounce effect on mobile
+  useEffect(() => {
+    if (!isMobile) return;
+
+    // Lock body scroll on mobile to prevent rubber band effect
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.width = "100%";
+    document.body.style.height = "100%";
+
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.height = "";
+    };
+  }, [isMobile]);
+
   // Initialize notification sound
   useEffect(() => {
     notificationSoundRef.current = new Audio("/notification.mp3");
