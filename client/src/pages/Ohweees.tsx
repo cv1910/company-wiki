@@ -1632,8 +1632,8 @@ export default function OhweeesPage() {
             )}
           </>
         ) : (
-          // Mobile Chat View - fixed with proper spacing for app header (48px) and bottom nav (64px)
-         <div className="fixed inset-x-0 top-12 bottom-16 flex flex-col bg-[#FAFAF8] dark:bg-gray-900 z-40">
+          // Mobile Chat View - positioned to fill space between app header and bottom nav
+         <div className="fixed inset-x-0 top-[88px] bottom-[70px] flex flex-col bg-[#FAFAF8] dark:bg-gray-900 z-40">
 
             {/* Mobile Chat Header */}
             {currentRoom && !showChatSearch && (
