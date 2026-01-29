@@ -1477,7 +1477,7 @@ export default function OhweeesPage() {
   }
 
 
-  // Mobile View - simplified version that works
+  // Mobile View - minimal version that works
   if (isMobile) {
     if (mobileView === "list") {
       return (
@@ -1486,33 +1486,29 @@ export default function OhweeesPage() {
             <h1 className="text-xl font-bold">Ohweees</h1>
           </div>
           <div className="flex-1 overflow-y-auto" data-scrollable="true">
-            {rooms?.map((room) => (
-              <MobileRoomListItem
-                key={room.id}
-                room={{
-                  id: room.id,
-                  name: room.name,
-                  type: room.type as "direct" | "group" | "team",
-                  participants: room.participants?.map(p => ({
-                    id: p.id,
-                    name: p.name,
-                    avatarUrl: p.avatarUrl,
-                  })),
-                  unreadCount: room.unreadCount,
-                  lastMessage: room.lastMessage ? {
-                    content: room.lastMessage.content,
-                    createdAt: room.lastMessage.createdAt,
-                    senderId: room.lastMessage.senderId,
-                    senderName: room.lastMessage.senderName,
-                  } : undefined,
-                }}
-                currentUserId={user?.id || 0}
-                onSelect={() => {
-                  setSelectedRoomId(room.id);
-                  setLocation(`/taps/${room.id}`);
-                }}
-              />
-            ))}
+            {rooms?.map((room) => {
+              const otherUser = room.type === "direct" && room.participants
+                ? room.participants.find((p) => p.id !== user?.id)
+                : null;
+              const displayName = otherUser?.name || room.name || "Chat";
+              return (
+                <div
+                  key={room.id}
+                  className="p-4 border-b cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                  onClick={() => {
+                    setSelectedRoomId(room.id);
+                    setLocation(`/taps/${room.id}`);
+                  }}
+                >
+                  <div className="font-medium">{displayName}</div>
+                  {room.lastMessage && (
+                    <div className="text-sm text-gray-500 truncate">
+                      {room.lastMessage.content}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       );
@@ -1526,23 +1522,19 @@ export default function OhweeesPage() {
       );
     }
 
+    const chatOtherUser = currentRoom.type === "direct" && currentRoom.participants
+      ? currentRoom.participants.find((p) => p.id !== user?.id)
+      : null;
+    const chatDisplayName = chatOtherUser?.name || currentRoom.name || "Chat";
+
     return (
       <div className="flex flex-col h-[calc(100dvh-56px-56px)] overflow-hidden">
-        <MobileChatHeader
-          room={{
-            id: currentRoom.id,
-            name: currentRoom.name,
-            type: currentRoom.type as "direct" | "group" | "team",
-            participants: currentRoom.participants?.map(p => ({
-              id: p.id,
-              name: p.name,
-              avatarUrl: p.avatarUrl,
-            })),
-            unreadCount: 0,
-          }}
-          currentUserId={user?.id || 0}
-          onBack={() => setMobileView("list")}
-        />
+        <div className="px-4 py-3 border-b flex items-center gap-3 bg-white dark:bg-gray-900">
+          <button onClick={() => setMobileView("list")} className="text-primary font-medium">
+            ← Zurück
+          </button>
+          <span className="font-semibold">{chatDisplayName}</span>
+        </div>
 
         <div className="flex-1 overflow-y-auto p-2 bg-[#FAFAF8] dark:bg-gray-900" data-scrollable="true">
           {currentRoom?.messages?.map((message, index) => {
