@@ -1484,7 +1484,15 @@ export default function OhweeesPage() {
       );
     }
 
-    // Chat View
+    // Chat View - wait for room to load
+    if (!currentRoom) {
+      return (
+        <div className="flex items-center justify-center h-[calc(100dvh-56px-56px)]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col h-[calc(100dvh-56px-56px)] overflow-hidden">
         {/* Header */}
