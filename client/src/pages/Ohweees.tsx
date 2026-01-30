@@ -46,9 +46,11 @@ export default function OhweeesPage() {
   const [messageInput, setMessageInput] = useState("");
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
-  const [activeMessageMenu, setActiveMessageMenu] = useState<number | null>(null);
   const [replyToMessage, setReplyToMessage] = useState<{id: number, senderName: string, content: string} | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
+  const [showTaskDialog, setShowTaskDialog] = useState(false);
+  const [taskTitle, setTaskTitle] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Resize handler
   useEffect(() => {
@@ -203,10 +205,59 @@ export default function OhweeesPage() {
     reader.readAsDataURL(blob);
   };
 
-  // Handle task creation
+  // Task creation mutation
+  const createTask = trpc.tasks.create.useMutation({
+    onSuccess: () => {
+      setShowTaskDialog(false);
+      setTaskTitle("");
+      utils.tasks.list.invalidate();
+    },
+  });
+
+  // Handle task creation - show dialog
   const handleCreateTask = () => {
-    if (!selectedRoomId) return;
-    setLocation(`/aufgaben/neu?fromRoom=${selectedRoomId}`);
+    setShowTaskDialog(true);
+  };
+
+  // Submit task from dialog
+  const handleSubmitTask = () => {
+    if (!taskTitle.trim()) return;
+    createTask.mutate({
+      title: taskTitle.trim(),
+    });
+  };
+
+  // Handle file attachment
+  const handleAttach = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedRoomId) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1];
+      uploadFile.mutate(
+        {
+          filename: file.name,
+          mimeType: file.type,
+          base64Data: base64,
+        },
+        {
+          onSuccess: (data) => {
+            sendMessage.mutate({
+              roomId: selectedRoomId,
+              content: file.type.startsWith("image/") ? `📷 Bild` : `📎 ${file.name}`,
+              attachments: [{ url: data.url, mimeType: file.type }],
+            });
+          },
+        }
+      );
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
   };
 
   const handleSendMessage = () => {
@@ -325,11 +376,7 @@ export default function OhweeesPage() {
                   isOwn={isOwn}
                   currentUserId={user?.id || 0}
                   reactions={reactionsData?.[message.ohweee.id] || []}
-                  isMenuOpen={activeMessageMenu === message.ohweee.id}
-                  onMenuOpen={() => setActiveMessageMenu(message.ohweee.id)}
-                  onMenuClose={() => setActiveMessageMenu(null)}
                   onReply={() => {
-                    setActiveMessageMenu(null);
                     setReplyToMessage({
                       id: message.ohweee.id,
                       senderName: message.sender.name || "Unbekannt",
@@ -337,16 +384,13 @@ export default function OhweeesPage() {
                     });
                   }}
                   onEdit={() => {
-                    setActiveMessageMenu(null);
                     setEditingMessageId(message.ohweee.id);
                     setMessageInput(message.ohweee.content);
                   }}
                   onDelete={() => {
-                    setActiveMessageMenu(null);
                     deleteMessage.mutate({ id: message.ohweee.id });
                   }}
                   onPin={() => {
-                    setActiveMessageMenu(null);
                     togglePin.mutate({ id: message.ohweee.id });
                   }}
                   onAddReaction={(emoji) => {
@@ -366,6 +410,7 @@ export default function OhweeesPage() {
             onChange={setMessageInput}
             onSend={handleSendMessage}
             onSendVoice={handleSendVoice}
+            onAttach={handleAttach}
             onCreateTask={handleCreateTask}
             replyTo={replyToMessage}
             onCancelReply={() => setReplyToMessage(null)}
@@ -376,6 +421,49 @@ export default function OhweeesPage() {
             }}
           />
         </div>
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+        {/* Task Creation Dialog */}
+        {showTaskDialog && (
+          <>
+            <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowTaskDialog(false)} />
+            <div className="fixed left-4 right-4 top-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-2xl p-4 z-50 shadow-xl">
+              <h3 className="text-lg font-semibold mb-4">Neue Aufgabe</h3>
+              <input
+                type="text"
+                value={taskTitle}
+                onChange={(e) => setTaskTitle(e.target.value)}
+                placeholder="Aufgabentitel..."
+                className="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-transparent text-base mb-4"
+                autoFocus
+                onKeyDown={(e) => e.key === "Enter" && handleSubmitTask()}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowTaskDialog(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400"
+                >
+                  Abbrechen
+                </button>
+                <button
+                  onClick={handleSubmitTask}
+                  disabled={!taskTitle.trim() || createTask.isPending}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-500 text-white disabled:opacity-50"
+                >
+                  {createTask.isPending ? "..." : "Erstellen"}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </>
     );
   }

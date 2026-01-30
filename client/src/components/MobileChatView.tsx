@@ -143,9 +143,17 @@ export function MobileMessage({
     emoji, users: data.users, hasReacted: data.hasReacted,
   }));
 
+  // Long press = Action menu, Short tap = Emoji reactions
   const longPress = useLongPress({
-    onLongPress: () => setShowReactions(true),
-    delay: 300,
+    onLongPress: () => {
+      setShowActions(true);
+      setShowReactions(false);
+    },
+    onClick: () => {
+      setShowReactions(!showReactions);
+      setShowActions(false);
+    },
+    delay: 500,
   });
 
   const isVoiceMessage = audioUrl && message.ohweee.content.includes("Sprachnachricht");
@@ -154,7 +162,7 @@ export function MobileMessage({
     <SwipeToReply onReply={onReply} isOwn={isOwn}>
       <div className={`flex px-3 mb-0.5 ${isOwn ? "justify-end" : "justify-start"}`}>
         <div className="relative max-w-[85%]">
-          {/* Quick Reactions */}
+          {/* Quick Reactions - shown on short tap */}
           <QuickReactions
             isVisible={showReactions}
             onReaction={(emoji) => { onAddReaction(emoji); setShowReactions(false); }}
@@ -163,35 +171,33 @@ export function MobileMessage({
             align={isOwn ? "right" : "left"}
           />
 
-          {/* Actions Menu */}
+          {/* Actions Menu - shown on long press */}
           {showActions && (
-            <div
-              className={`absolute ${isOwn ? "right-0" : "left-0"} bottom-full mb-1 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-1 min-w-[140px]`}
-              onClick={() => setShowActions(false)}
-            >
-              <button onClick={onReply} className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <Reply className="w-4 h-4 text-gray-500" /> Antworten
-              </button>
-              <button onClick={() => setShowReactions(true)} className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <Smile className="w-4 h-4 text-gray-500" /> Reagieren
-              </button>
-              {isOwn && (
-                <>
-                  <button onClick={onEdit} className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <Pencil className="w-4 h-4 text-gray-500" /> Bearbeiten
-                  </button>
-                  <button onClick={onDelete} className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-red-500">
-                    <Trash2 className="w-4 h-4" /> Löschen
-                  </button>
-                </>
-              )}
-            </div>
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowActions(false)} />
+              <div
+                className={`absolute ${isOwn ? "right-0" : "left-0"} bottom-full mb-1 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-1 min-w-[140px]`}
+              >
+                <button onClick={() => { onReply(); setShowActions(false); }} className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Reply className="w-4 h-4 text-gray-500" /> Antworten
+                </button>
+                {isOwn && (
+                  <>
+                    <button onClick={() => { onEdit(); setShowActions(false); }} className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700">
+                      <Pencil className="w-4 h-4 text-gray-500" /> Bearbeiten
+                    </button>
+                    <button onClick={() => { onDelete(); setShowActions(false); }} className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-red-500">
+                      <Trash2 className="w-4 h-4" /> Löschen
+                    </button>
+                  </>
+                )}
+              </div>
+            </>
           )}
 
           {/* Bubble */}
           <div
             {...longPress}
-            onClick={() => setShowActions(!showActions)}
             className={`relative px-3 py-1.5 rounded-2xl select-none ${
               isOwn
                 ? "bg-rose-500 text-white rounded-br-sm"
