@@ -143,18 +143,30 @@ export function MobileMessage({
     emoji, users: data.users, hasReacted: data.hasReacted,
   }));
 
-  // Long press = Action menu, Double tap = Emoji reactions
+  // Track double tap separately
+  const lastTapRef = useRef(0);
+
+  // Long press = Action menu only
   const longPress = useLongPress({
     onLongPress: () => {
       setShowActions(true);
       setShowReactions(false);
     },
-    onDoubleTap: () => {
-      setShowReactions(!showReactions);
-      setShowActions(false);
-    },
     delay: 500,
   });
+
+  // Handle double tap for emoji reactions
+  const handleTap = () => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) {
+      // Double tap - show reactions
+      setShowReactions(!showReactions);
+      setShowActions(false);
+      lastTapRef.current = 0;
+    } else {
+      lastTapRef.current = now;
+    }
+  };
 
   const isVoiceMessage = audioUrl && message.ohweee.content.includes("Sprachnachricht");
 
@@ -207,6 +219,7 @@ export function MobileMessage({
           {/* Bubble */}
           <div
             {...longPress}
+            onClick={handleTap}
             className={`relative px-3 py-1.5 rounded-2xl select-none ${
               isOwn
                 ? "bg-rose-500 text-white rounded-br-sm"
