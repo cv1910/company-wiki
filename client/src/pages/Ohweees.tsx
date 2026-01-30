@@ -201,7 +201,7 @@ export default function OhweeesPage() {
     // Room list
     if (mobileView === "list") {
       return (
-        <div className="flex flex-col h-full overflow-hidden bg-white dark:bg-gray-900 touch-none">
+        <div className="flex flex-col overflow-hidden bg-white dark:bg-gray-900 touch-none" style={{ height: 'calc(100dvh - 56px - 56px - env(safe-area-inset-bottom, 0px))' }}>
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
             <h1 className="text-xl font-bold">Ohweees</h1>
           </div>
@@ -242,14 +242,14 @@ export default function OhweeesPage() {
     // Chat view
     if (!currentRoom) {
       return (
-        <div className="flex items-center justify-center h-full">
+        <div className="flex items-center justify-center" style={{ height: 'calc(100dvh - 56px - 56px - env(safe-area-inset-bottom, 0px))' }}>
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       );
     }
 
     return (
-      <div className="flex flex-col h-full overflow-hidden bg-[#FAFAF8] dark:bg-gray-900 touch-none">
+      <div className="flex flex-col overflow-hidden bg-[#FAFAF8] dark:bg-gray-900 touch-none" style={{ height: 'calc(100dvh - 56px - 56px - env(safe-area-inset-bottom, 0px))' }}>
         <MobileChatHeader
           room={{
             id: currentRoom.id,

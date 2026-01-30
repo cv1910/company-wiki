@@ -650,7 +650,7 @@ function DashboardLayoutContent({
         )}
         <main className={`flex-1 page-transition bg-background overflow-x-hidden w-full max-w-full ${
           isMobile && location.startsWith("/taps")
-            ? "p-0 pb-14 overflow-hidden overscroll-none"
+            ? "p-0 overflow-hidden overscroll-none"
             : "p-6 pb-24 md:pb-6 min-h-screen overflow-y-auto"
         }`}>
           <SwipeNavigationWrapper enabled={isMobile && !location.startsWith("/taps")}>
