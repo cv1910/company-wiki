@@ -75,11 +75,17 @@ export default function OhweeesPage() {
     document.body.style.position = "fixed";
     document.body.style.width = "100%";
     document.body.style.height = "100%";
+    document.body.style.overscrollBehavior = "none";
+    document.documentElement.style.overflow = "hidden";
+    document.documentElement.style.overscrollBehavior = "none";
     return () => {
       document.body.style.overflow = "";
       document.body.style.position = "";
       document.body.style.width = "";
       document.body.style.height = "";
+      document.body.style.overscrollBehavior = "";
+      document.documentElement.style.overflow = "";
+      document.documentElement.style.overscrollBehavior = "";
     };
   }, [isMobile]);
 
@@ -159,7 +165,7 @@ export default function OhweeesPage() {
   if (isMobile) {
     if (mobileView === "list") {
       return (
-        <div className="flex flex-col h-[calc(100dvh-56px)] overflow-hidden bg-white dark:bg-gray-900">
+        <div className="flex flex-col h-[calc(100dvh-56px)] overflow-hidden overscroll-none bg-white dark:bg-gray-900">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
             <h1 className="text-xl font-bold">Ohweees</h1>
           </div>
@@ -176,7 +182,7 @@ export default function OhweeesPage() {
             onRoomSelect={(roomId) => setSelectedRoomId(roomId)}
             onNewChat={() => {}}
           />
-          <div className="flex-1 overflow-y-auto" data-scrollable="true">
+          <div className="flex-1 overflow-y-auto overscroll-none" data-scrollable="true">
             {rooms?.map((room) => (
               <MobileRoomListItem
                 key={room.id}
@@ -206,7 +212,7 @@ export default function OhweeesPage() {
     }
 
     return (
-      <div className="flex flex-col h-[calc(100dvh-56px-56px)] overflow-hidden bg-[#FAFAF8] dark:bg-gray-900">
+      <div className="flex flex-col h-[calc(100dvh-56px-56px)] overflow-hidden overscroll-none bg-[#FAFAF8] dark:bg-gray-900">
         <MobileChatHeader
           room={{
             id: currentRoom.id,
@@ -219,7 +225,7 @@ export default function OhweeesPage() {
           onBack={() => setMobileView("list")}
         />
 
-        <div className="flex-1 overflow-y-auto p-2" data-scrollable="true">
+        <div className="flex-1 overflow-y-auto overscroll-none p-2" data-scrollable="true">
           {currentRoom?.messages?.map((message, index) => {
             const prevMessage = currentRoom.messages?.[index - 1];
             const showDateSeparator = !prevMessage ||
