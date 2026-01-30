@@ -134,10 +134,18 @@ export function useLongPress({ onLongPress, onDoubleTap, delay = 400 }: UseLongP
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isLongPressRef = useRef(false);
   const startPosRef = useRef({ x: 0, y: 0 });
-  const lastTapRef = useRef(0);
+  const lastTapTimeRef = useRef(0);
+  const preventMouseRef = useRef(false);
 
   const start = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
+      // Prevent mouse events after touch
+      if ("touches" in e) {
+        preventMouseRef.current = true;
+      } else if (preventMouseRef.current) {
+        return;
+      }
+
       isLongPressRef.current = false;
       const pos = "touches" in e ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY };
       startPosRef.current = pos;
@@ -161,7 +169,13 @@ export function useLongPress({ onLongPress, onDoubleTap, delay = 400 }: UseLongP
     }
   }, []);
 
-  const end = useCallback(() => {
+  const end = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    // Prevent mouse events after touch
+    if (!("touches" in e) && preventMouseRef.current) {
+      preventMouseRef.current = false;
+      return;
+    }
+
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -170,11 +184,14 @@ export function useLongPress({ onLongPress, onDoubleTap, delay = 400 }: UseLongP
     // Check for double-tap (only if it wasn't a long press)
     if (!isLongPressRef.current && onDoubleTap) {
       const now = Date.now();
-      if (now - lastTapRef.current < 300) {
+      const timeSinceLastTap = now - lastTapTimeRef.current;
+
+      if (timeSinceLastTap < 350 && timeSinceLastTap > 50) {
+        // Double tap detected
         onDoubleTap();
-        lastTapRef.current = 0; // Reset to prevent triple-tap
+        lastTapTimeRef.current = 0;
       } else {
-        lastTapRef.current = now;
+        lastTapTimeRef.current = now;
       }
     }
   }, [onDoubleTap]);
