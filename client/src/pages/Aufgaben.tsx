@@ -24,6 +24,7 @@ import {
   Edit2,
   Repeat,
   Filter,
+  Paperclip,
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import { formatDistanceToNow, format } from "date-fns";
@@ -32,7 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SwipeableTaskCard } from "@/components/SwipeableTaskCard";
 import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
 import { useTaskReminders } from "@/hooks/useTaskReminders";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -176,6 +177,19 @@ function TaskCard({
             </p>
           )}
 
+          {/* Attachment */}
+          {task.task.attachmentUrl && (
+            <a
+              href={task.task.attachmentUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 mt-2 text-sm text-primary hover:underline"
+            >
+              <Paperclip className="h-3.5 w-3.5" />
+              {task.task.attachmentFilename || "Anhang"}
+            </a>
+          )}
+
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
             {task.task.dueDate && (
               <div className={`flex items-center gap-1 ${isOverdue ? "text-red-600" : ""}`}>
@@ -257,6 +271,11 @@ export default function Aufgaben() {
   // Edit mode
   const [editingTask, setEditingTask] = useState<any>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+  // Attachment state
+  const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
+  const [attachmentFilename, setAttachmentFilename] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Snooze dialog state
   const [snoozeDialogOpen, setSnoozeDialogOpen] = useState(false);
@@ -313,6 +332,8 @@ export default function Aufgaben() {
     },
   });
 
+  const uploadFile = trpc.ohweees.uploadFile.useMutation();
+
   const createComment = trpc.tasks.createComment.useMutation({
     onSuccess: () => {
       toast.success("Kommentar hinzugefügt");
@@ -347,6 +368,37 @@ export default function Aufgaben() {
     setReminderUnit("days");
     setReminders([]);
     setEditingTask(null);
+    setAttachmentUrl(null);
+    setAttachmentFilename(null);
+  };
+
+  // Handle file upload for task attachment
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1];
+      uploadFile.mutate(
+        {
+          filename: file.name,
+          mimeType: file.type,
+          base64Data: base64,
+        },
+        {
+          onSuccess: (data) => {
+            setAttachmentUrl(data.url);
+            setAttachmentFilename(data.filename);
+          },
+          onError: () => {
+            toast.error("Fehler beim Hochladen");
+          },
+        }
+      );
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
   };
 
   // Konvertiere Erinnerungswert zu Minuten für die API
@@ -428,6 +480,9 @@ export default function Aufgaben() {
     }
     setReminderValue(0);
     setReminderUnit("days");
+    // Load existing attachment
+    setAttachmentUrl(task.task.attachmentUrl || null);
+    setAttachmentFilename(task.task.attachmentFilename || null);
     setEditDialogOpen(true);
   };
 
@@ -458,6 +513,8 @@ export default function Aufgaben() {
       dueDate: dueDateValue,
       assignedToId,
       reminderMinutes: dueDate ? firstReminder : 0,
+      attachmentUrl: attachmentUrl,
+      attachmentFilename: attachmentFilename,
     }, {
       onSuccess: () => {
         toast.success("Aufgabe aktualisiert");
@@ -493,6 +550,8 @@ export default function Aufgaben() {
       recurrencePattern,
       recurrenceEndDate: recurrenceEndDate ? new Date(recurrenceEndDate) : null,
       reminderMinutes: dueDate ? firstReminder : 0,
+      attachmentUrl: attachmentUrl || undefined,
+      attachmentFilename: attachmentFilename || undefined,
     });
   };
 
@@ -913,6 +972,43 @@ export default function Aufgaben() {
                   )}
                 </div>
               )}
+
+              {/* Anhang */}
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-1.5">Anhang</label>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx"
+                />
+                {attachmentUrl ? (
+                  <div className="flex items-center gap-3 px-4 py-3 bg-muted/50 rounded-xl">
+                    <span className="flex-1 text-sm truncate">{attachmentFilename}</span>
+                    <a href={attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-sm hover:underline">
+                      Öffnen
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => { setAttachmentUrl(null); setAttachmentFilename(null); }}
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadFile.isPending}
+                    className="w-full h-11 border-dashed"
+                  >
+                    {uploadFile.isPending ? "Wird hochgeladen..." : "+ Datei hinzufügen"}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1063,6 +1159,36 @@ export default function Aufgaben() {
                   )}
                 </div>
               )}
+
+              {/* Anhang */}
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-1.5">Anhang</label>
+                {attachmentUrl ? (
+                  <div className="flex items-center gap-3 px-4 py-3 bg-muted/50 rounded-xl">
+                    <span className="flex-1 text-sm truncate">{attachmentFilename}</span>
+                    <a href={attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-sm hover:underline">
+                      Öffnen
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => { setAttachmentUrl(null); setAttachmentFilename(null); }}
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadFile.isPending}
+                    className="w-full h-11 border-dashed"
+                  >
+                    {uploadFile.isPending ? "Wird hochgeladen..." : "+ Datei hinzufügen"}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 

@@ -5895,7 +5895,9 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           assignedToId: z.number().optional().nullable(),
           recurrencePattern: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
           recurrenceEndDate: z.date().optional().nullable(),
-          reminderMinutes: z.number().min(0).default(0), // Minuten vor Fälligkeit (0 = keine Erinnerung)
+          reminderMinutes: z.number().min(0).default(0),
+          attachmentUrl: z.string().optional().nullable(),
+          attachmentFilename: z.string().optional().nullable(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -5911,6 +5913,8 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           recurrenceEndDate: input.recurrenceEndDate || null,
           reminderMinutes: input.reminderMinutes,
           reminderSent: false,
+          attachmentUrl: input.attachmentUrl || null,
+          attachmentFilename: input.attachmentFilename || null,
         } as any);
 
         // Create notification for assigned user
@@ -5953,7 +5957,9 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
           priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
           dueDate: z.date().optional().nullable(),
           assignedToId: z.number().optional().nullable(),
-          reminderMinutes: z.number().min(0).optional(), // Minuten vor Fälligkeit
+          reminderMinutes: z.number().min(0).optional(),
+          attachmentUrl: z.string().optional().nullable(),
+          attachmentFilename: z.string().optional().nullable(),
         })
       )
       .mutation(async ({ ctx, input }) => {

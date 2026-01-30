@@ -1307,6 +1307,9 @@ export const tasks = mysqlTable("tasks", {
   // Erinnerungen (in Minuten gespeichert für flexible Zeiteinheiten)
   reminderMinutes: int("reminderMinutes").default(0), // Minuten vor Fälligkeit für Erinnerung (0 = keine)
   reminderSent: boolean("reminderSent").default(false), // Wurde die Erinnerung bereits gesendet?
+  // Anhang
+  attachmentUrl: text("attachmentUrl"),
+  attachmentFilename: varchar("attachmentFilename", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
