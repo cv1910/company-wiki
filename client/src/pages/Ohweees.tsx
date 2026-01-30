@@ -249,7 +249,7 @@ export default function OhweeesPage() {
     }
 
     return (
-      <div className="flex flex-col overflow-hidden bg-[#FAFAF8] dark:bg-gray-900 touch-none" style={{ height: 'calc(100dvh - 56px)' }}>
+      <div className="flex flex-col overflow-hidden touch-none" style={{ height: 'calc(100dvh - 56px - 56px - 60px - env(safe-area-inset-bottom, 0px))' }}>
         <MobileChatHeader
           room={{
             id: currentRoom.id,
@@ -262,7 +262,7 @@ export default function OhweeesPage() {
           onBack={() => setMobileView("list")}
         />
 
-        <div className="flex-1 overflow-y-auto overscroll-contain touch-pan-y p-2 pb-20" data-scrollable="true">
+        <div className="flex-1 overflow-y-auto overscroll-contain touch-pan-y p-2 bg-[#FAFAF8] dark:bg-gray-900" data-scrollable="true">
           {currentRoom?.messages?.map((message, index) => {
             const prevMessage = currentRoom.messages?.[index - 1];
             const showDateSeparator = !prevMessage ||
