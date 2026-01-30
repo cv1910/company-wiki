@@ -2,7 +2,13 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { format, isSameDay } from "date-fns";
+import { format, isToday, isYesterday, isSameDay } from "date-fns";
+import { de } from "date-fns/locale";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { MessageCircle, Send } from "lucide-react";
 import {
   MobileChatHeader,
   MobileChatInput,
@@ -11,6 +17,21 @@ import {
   MobileDateSeparator,
   MobileMessage,
 } from "@/components/MobileChatView";
+
+// Desktop date separator
+function DateSeparator({ date }: { date: Date }) {
+  let label = format(date, "EEEE, d. MMMM", { locale: de });
+  if (isToday(date)) label = "Heute";
+  else if (isYesterday(date)) label = "Gestern";
+
+  return (
+    <div className="flex items-center justify-center my-4">
+      <div className="bg-amber-500 text-white text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wide">
+        {label}
+      </div>
+    </div>
+  );
+}
 
 export default function OhweeesPage() {
   const { roomId } = useParams<{ roomId?: string }>();
@@ -42,6 +63,43 @@ export default function OhweeesPage() {
       setMobileView("chat");
     }
   }, [isMobile, selectedRoomId]);
+
+  // iOS overscroll prevention
+  useEffect(() => {
+    if (!isMobile) return;
+
+    let startY = 0;
+    const handleTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      const scrollable = target.closest('[data-scrollable="true"]') as HTMLElement;
+
+      if (!scrollable) {
+        e.preventDefault();
+        return;
+      }
+
+      const { scrollTop, scrollHeight, clientHeight } = scrollable;
+      const deltaY = e.touches[0].clientY - startY;
+      const atTop = scrollTop <= 0;
+      const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
+
+      if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener("touchstart", handleTouchStart, { passive: true });
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+
+    return () => {
+      document.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, [isMobile]);
 
   // Queries - NO refetchInterval
   const { data: rooms, isLoading: roomsLoading } = trpc.ohweees.rooms.useQuery();
@@ -257,12 +315,131 @@ export default function OhweeesPage() {
     );
   }
 
-  // Desktop - minimal
+  // Helper functions
+  const getInitials = (name: string) => name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+
+  const getRoomDisplayName = (room: NonNullable<typeof rooms>[0]) => {
+    if (room.name) return room.name;
+    if (room.type === "direct" && room.participants) {
+      const otherUser = room.participants.find((p) => p.id !== user?.id);
+      return otherUser?.name || otherUser?.email || "Direktnachricht";
+    }
+    return "Chat";
+  };
+
+  // Desktop View
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">Ohweees (Desktop)</h1>
-      <p>Räume: {rooms?.length || 0}</p>
-      <p>Ausgewählt: {selectedRoomId || "Keiner"}</p>
+    <div className="flex h-[calc(100vh-120px)] -m-6">
+      {/* Sidebar */}
+      <div className="w-80 border-r bg-muted/20 flex flex-col">
+        <div className="p-4 border-b">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80">
+              <MessageCircle className="h-5 w-5 text-white" />
+            </div>
+            <h1 className="text-xl font-bold">Ohweees</h1>
+          </div>
+        </div>
+
+        <ScrollArea className="flex-1">
+          <div className="p-2 space-y-1">
+            {rooms?.map((room) => (
+              <button
+                key={room.id}
+                onClick={() => {
+                  setSelectedRoomId(room.id);
+                  setLocation(`/taps/${room.id}`);
+                }}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${
+                  selectedRoomId === room.id ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                }`}
+              >
+                <Avatar>
+                  <AvatarFallback>{getInitials(getRoomDisplayName(room))}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">{getRoomDisplayName(room)}</p>
+                  {room.lastMessage && (
+                    <p className="text-sm text-muted-foreground truncate">{room.lastMessage.content}</p>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Main Chat */}
+      <div className="flex-1 flex flex-col">
+        {selectedRoomId && currentRoom ? (
+          <>
+            <div className="p-4 border-b">
+              <h2 className="font-semibold">{getRoomDisplayName(currentRoom as any)}</h2>
+            </div>
+
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-4 max-w-3xl mx-auto">
+                {currentRoom.messages?.map((message, index) => {
+                  const prevMessage = currentRoom.messages?.[index - 1];
+                  const showDateSeparator = !prevMessage ||
+                    !isSameDay(new Date(message.ohweee.createdAt), new Date(prevMessage.ohweee.createdAt));
+                  const isOwn = message.sender.id === user?.id;
+
+                  return (
+                    <div key={message.ohweee.id}>
+                      {showDateSeparator && <DateSeparator date={new Date(message.ohweee.createdAt)} />}
+                      <div className={`flex gap-3 ${isOwn ? "flex-row-reverse" : ""}`}>
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={message.sender.avatarUrl || undefined} />
+                          <AvatarFallback>{getInitials(message.sender.name || "")}</AvatarFallback>
+                        </Avatar>
+                        <div className={`max-w-[70%] ${isOwn ? "text-right" : ""}`}>
+                          <div className={`inline-block px-4 py-2 rounded-2xl ${
+                            isOwn ? "bg-primary text-primary-foreground" : "bg-muted"
+                          }`}>
+                            {message.ohweee.content}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {format(new Date(message.ohweee.createdAt), "HH:mm")}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+
+            <div className="p-4 border-t">
+              <div className="flex gap-2 max-w-3xl mx-auto">
+                <Textarea
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  placeholder="Nachricht schreiben..."
+                  className="flex-1 min-h-[44px] max-h-32 resize-none"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                />
+                <Button onClick={handleSendMessage} disabled={!messageInput.trim()}>
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-muted-foreground">
+            <div className="text-center">
+              <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Wähle einen Chat aus</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
