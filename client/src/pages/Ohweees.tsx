@@ -72,8 +72,7 @@ import { de } from "date-fns/locale";
 import { EmojiPicker } from "@/components/EmojiPicker";
 import { MessageContent } from "@/components/MessageContent";
 import { ImageLightbox } from "@/components/ImageLightbox";
-import { VoiceRecorder } from "@/components/VoiceRecorder";
-import { WhatsAppVoicePlayer } from "@/components/WhatsAppVoicePlayer";
+import { VoiceRecorder, VoiceMessagePlayer } from "@/components/VoiceRecorder";
 import { PollDisplay } from "@/components/PollDisplay";
 import { ChatSearch, ChatSearchBar } from "@/components/ChatSearch";
 import {
@@ -312,7 +311,12 @@ function OhweeeMessage({
                         <p className="text-xs text-muted-foreground mt-1">{attachment.filename}</p>
                       </button>
                     ) : attachment.mimeType.startsWith("audio/") ? (
-                      <WhatsAppVoicePlayer url={attachment.url} isOwn={isOwn} />
+  <VoiceMessagePlayer
+    url={attachment.url}
+    isOwn={isOwn}
+    senderAvatar={message.ohweee.sender?.avatarUrl || undefined}
+    senderName={message.ohweee.sender?.displayName || message.ohweee.sender?.email}
+  />
                     ) : attachment.mimeType === "application/pdf" ? (
                       <div className={`rounded-lg overflow-hidden border ${isOwn ? "border-amber-300/50" : "border-border"}`}>
                         <div className="bg-gradient-to-r from-red-500 to-red-600 p-3 flex items-center gap-3">
@@ -637,10 +641,7 @@ export default function OhweeesPage() {
 
   // Mobile quote-reply state (WhatsApp style)
   const [replyToMessage, setReplyToMessage] = useState<{id: number, senderName: string, content: string} | null>(null);
-
-  // Mobile message menu state (only one open at a time)
-  const [activeMessageMenu, setActiveMessageMenu] = useState<number | null>(null);
-
+  
   // Reaction picker state
   const [showReactionPicker, setShowReactionPicker] = useState<number | null>(null);
   
@@ -1002,14 +1003,14 @@ export default function OhweeesPage() {
   // Reaction mutations
   const addReaction = trpc.ohweees.addReaction.useMutation({
     onSuccess: () => {
-      utils.ohweees.getReactionsBatch.invalidate();
+      utils.ohweees.getRoom.invalidate({ id: selectedRoomId! });
       setShowReactionPicker(null);
     },
   });
 
   const removeReaction = trpc.ohweees.removeReaction.useMutation({
     onSuccess: () => {
-      utils.ohweees.getReactionsBatch.invalidate();
+      utils.ohweees.getRoom.invalidate({ id: selectedRoomId! });
     },
   });
 
@@ -1759,11 +1760,7 @@ export default function OhweeesPage() {
                           avatarUrl: r.userAvatar,
                           readAt: new Date(),
                         }))}
-                        isMenuOpen={activeMessageMenu === message.ohweee.id}
-                        onMenuOpen={() => setActiveMessageMenu(message.ohweee.id)}
-                        onMenuClose={() => setActiveMessageMenu(null)}
                         onReply={() => {
-                          setActiveMessageMenu(null);
                           setReplyToMessage({
                             id: message.ohweee.id,
                             senderName: message.sender.name || "Unbekannt",
@@ -1771,23 +1768,19 @@ export default function OhweeesPage() {
                           });
                         }}
                         onEdit={() => {
-                          setActiveMessageMenu(null);
                           setEditingMessageId(message.ohweee.id);
                           setEditContent(message.ohweee.content);
                         }}
                         onDelete={() => {
-                          setActiveMessageMenu(null);
                           deleteMessage.mutate({ id: message.ohweee.id });
                         }}
                         onPin={() => {
-                          setActiveMessageMenu(null);
                           togglePin.mutate({ id: message.ohweee.id });
                         }}
                         onAddReaction={(emoji) => {
                           addReaction.mutate({ ohweeeId: message.ohweee.id, emoji });
                         }}
                         onCreateTask={() => {
-                          setActiveMessageMenu(null);
                           setTaskFromMessageId(message.ohweee.id);
                           setNewTaskTitle(message.ohweee.content.substring(0, 100));
                           setShowCreateTaskDialog(true);
@@ -1817,33 +1810,21 @@ export default function OhweeesPage() {
 
             {/* Input - stays at bottom */}
              <MobileChatInput
-  value={editingMessageId ? editContent : messageInput}
+  value={messageInput}
   onChange={(value) => {
-    if (editingMessageId) {
-      setEditContent(value);
-    } else {
-      setMessageInput(value);
-      if (selectedRoomId) {
-        const now = Date.now();
-        if (now - lastTypingTime > 2000) {
-          setLastTypingTime(now);
-          setTyping.mutate({ roomId: selectedRoomId });
-        }
+    setMessageInput(value);
+    if (selectedRoomId) {
+      const now = Date.now();
+      if (now - lastTypingTime > 2000) {
+        setLastTypingTime(now);
+        setTyping.mutate({ roomId: selectedRoomId });
       }
     }
   }}
-  onSend={editingMessageId ? handleEditMessage : handleSendMessage}
+  onSend={handleSendMessage}
   onAttach={() => fileInputRef.current?.click()}
   replyTo={replyToMessage}
   onCancelReply={() => setReplyToMessage(null)}
-  isEditing={!!editingMessageId}
-  onCancelEdit={() => {
-    setEditingMessageId(null);
-    setEditContent("");
-  }}
-  onCreateTask={() => {
-    setShowCreateTaskDialog(true);
-  }}
   onSendVoice={async (blob, duration) => {
   if (!selectedRoomId) return;
 
@@ -2233,88 +2214,35 @@ export default function OhweeesPage() {
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Neue Aufgabe</DialogTitle>
-              <DialogDescription>Erstelle eine Aufgabe für diesen Chat.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-2">
+            <div className="space-y-4 py-4">
               <div>
                 <Label>Titel</Label>
                 <Input
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
-                  placeholder="Was soll erledigt werden?"
+                  placeholder="Aufgabentitel..."
                 />
               </div>
               <div>
-                <Label>Beschreibung (optional)</Label>
+                <Label>Beschreibung</Label>
                 <Textarea
                   value={newTaskDescription}
                   onChange={(e) => setNewTaskDescription(e.target.value)}
-                  placeholder="Weitere Details..."
-                  rows={2}
+                  placeholder="Beschreibung..."
+                  rows={3}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Priorität</Label>
-                  <select
-                    value={newTaskPriority}
-                    onChange={(e) => setNewTaskPriority(e.target.value as "low" | "medium" | "high")}
-                    className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  >
-                    <option value="low">Niedrig</option>
-                    <option value="medium">Mittel</option>
-                    <option value="high">Hoch</option>
-                  </select>
-                </div>
-                <div>
-                  <Label>Zuweisen an</Label>
-                  <select
-                    value={newTaskAssigneeId || ""}
-                    onChange={(e) => setNewTaskAssigneeId(e.target.value ? parseInt(e.target.value) : null)}
-                    className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  >
-                    <option value="">Niemand</option>
-                    {currentRoom?.participants?.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name || p.email}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div>
+                <Label>Fälligkeitsdatum</Label>
+                <Input
+                  type="date"
+                  value={newTaskDueDate}
+                  onChange={(e) => setNewTaskDueDate(e.target.value)}
+                />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Fällig am</Label>
-                  <Input
-                    type="date"
-                    value={newTaskDueDate.split("T")[0] || ""}
-                    onChange={(e) => {
-                      const time = newTaskDueDate.split("T")[1] || "";
-                      setNewTaskDueDate(e.target.value + (time ? "T" + time : ""));
-                    }}
-                  />
-                </div>
-                <div>
-                  <Label>Uhrzeit</Label>
-                  <Input
-                    type="time"
-                    value={newTaskDueDate.split("T")[1] || ""}
-                    onChange={(e) => {
-                      const date = newTaskDueDate.split("T")[0] || "";
-                      if (date) {
-                        setNewTaskDueDate(date + "T" + e.target.value);
-                      }
-                    }}
-                    disabled={!newTaskDueDate.split("T")[0]}
-                  />
-                </div>
-              </div>
-            </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setShowCreateTaskDialog(false)}>
-                Abbrechen
-              </Button>
               <Button
+                className="w-full"
                 onClick={() => {
                   if (newTaskTitle.trim() && selectedRoomId) {
                     createTask.mutate({
@@ -2326,13 +2254,18 @@ export default function OhweeesPage() {
                       assigneeId: newTaskAssigneeId || undefined,
                       sourceOhweeeId: taskFromMessageId || undefined,
                     });
+                    setShowCreateTaskDialog(false);
+                    setNewTaskTitle("");
+                    setNewTaskDescription("");
+                    setNewTaskDueDate("");
+                    setTaskFromMessageId(null);
                   }
                 }}
-                disabled={!newTaskTitle.trim() || createTask.isPending}
+                disabled={!newTaskTitle.trim()}
               >
-                {createTask.isPending ? "Erstelle..." : "Erstellen"}
+                Aufgabe erstellen
               </Button>
-            </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
@@ -2910,10 +2843,10 @@ export default function OhweeesPage() {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7"
-                      onClick={() => setShowCreateTaskDialog(true)}
-                      title="Aufgabe erstellen"
+                      onClick={() => setShowCreatePollDialog(true)}
+                      title="Umfrage erstellen"
                     >
-                      <ListTodo className="h-4 w-4" />
+                      <BarChart3 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -3328,49 +3261,29 @@ export default function OhweeesPage() {
                 </select>
               </div>
               <div>
-                <label className="text-sm font-medium">Zuweisen an (optional)</label>
-                <select
-                  value={newTaskAssigneeId || ""}
-                  onChange={(e) => setNewTaskAssigneeId(e.target.value ? parseInt(e.target.value) : null)}
-                  className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">Niemand</option>
-                  {currentRoom?.participants?.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name || p.email}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
                 <label className="text-sm font-medium">Fällig am (optional)</label>
                 <Input
                   type="date"
-                  value={newTaskDueDate.split("T")[0] || ""}
-                  onChange={(e) => {
-                    const time = newTaskDueDate.split("T")[1] || "";
-                    setNewTaskDueDate(e.target.value + (time ? "T" + time : ""));
-                  }}
+                  value={newTaskDueDate}
+                  onChange={(e) => setNewTaskDueDate(e.target.value)}
                   className="mt-1"
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium">Uhrzeit</label>
-                <Input
-                  type="time"
-                  value={newTaskDueDate.split("T")[1] || ""}
-                  onChange={(e) => {
-                    const date = newTaskDueDate.split("T")[0] || "";
-                    if (date) {
-                      setNewTaskDueDate(date + "T" + e.target.value);
-                    }
-                  }}
-                  className="mt-1"
-                  disabled={!newTaskDueDate.split("T")[0]}
-                />
-              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Zuweisen an (optional)</label>
+              <select
+                value={newTaskAssigneeId || ""}
+                onChange={(e) => setNewTaskAssigneeId(e.target.value ? parseInt(e.target.value) : null)}
+                className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Niemand</option>
+                {currentRoom?.participants?.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name || p.email}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <DialogFooter>
