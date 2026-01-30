@@ -227,11 +227,16 @@ export default function OhweeesPage() {
         {
           onSuccess: (data) => {
             console.log("Upload success:", data);
-            // Send message with voice attachment
+            // Send message with voice attachment (include all required fields)
             sendMessage.mutate({
               roomId: selectedRoomId,
               content: `🎤 Sprachnachricht (${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, "0")})`,
-              attachments: [{ url: data.url, mimeType }],
+              attachments: [{
+                url: data.url,
+                filename: data.filename,
+                mimeType: data.mimeType,
+                size: data.size,
+              }],
             });
           },
           onError: (err) => {
@@ -341,7 +346,12 @@ export default function OhweeesPage() {
             sendMessage.mutate({
               roomId: selectedRoomId,
               content: file.type.startsWith("image/") ? `📷 Bild` : `📎 ${file.name}`,
-              attachments: [{ url: data.url, mimeType: file.type }],
+              attachments: [{
+                url: data.url,
+                filename: data.filename,
+                mimeType: data.mimeType,
+                size: data.size,
+              }],
             });
           },
         }
