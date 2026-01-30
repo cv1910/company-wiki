@@ -123,29 +123,21 @@ export function ReactionsDisplay({
   );
 }
 
-// Long press hook
+// Long press hook with double-tap support
 interface UseLongPressOptions {
   onLongPress: () => void;
-  onClick?: () => void;
+  onDoubleTap?: () => void;
   delay?: number;
 }
 
-export function useLongPress({ onLongPress, onClick, delay = 400 }: UseLongPressOptions) {
+export function useLongPress({ onLongPress, onDoubleTap, delay = 400 }: UseLongPressOptions) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isLongPressRef = useRef(false);
   const startPosRef = useRef({ x: 0, y: 0 });
-  const isTouchRef = useRef(false);
+  const lastTapRef = useRef(0);
 
   const start = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
-      // Track if this is a touch event to prevent mouse event duplication
-      if ("touches" in e) {
-        isTouchRef.current = true;
-      } else if (isTouchRef.current) {
-        // Skip mouse events if we already handled touch
-        return;
-      }
-
       isLongPressRef.current = false;
       const pos = "touches" in e ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY };
       startPosRef.current = pos;
@@ -169,27 +161,23 @@ export function useLongPress({ onLongPress, onClick, delay = 400 }: UseLongPress
     }
   }, []);
 
-  const end = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    // Skip mouse events if we're handling touch
-    if (!("touches" in e) && isTouchRef.current) {
-      return;
-    }
-
+  const end = useCallback(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
 
-    // Fire onClick only if it wasn't a long press
-    if (!isLongPressRef.current && onClick) {
-      onClick();
+    // Check for double-tap (only if it wasn't a long press)
+    if (!isLongPressRef.current && onDoubleTap) {
+      const now = Date.now();
+      if (now - lastTapRef.current < 300) {
+        onDoubleTap();
+        lastTapRef.current = 0; // Reset to prevent triple-tap
+      } else {
+        lastTapRef.current = now;
+      }
     }
-
-    // Reset touch tracking after a delay
-    setTimeout(() => {
-      isTouchRef.current = false;
-    }, 100);
-  }, [onClick]);
+  }, [onDoubleTap]);
 
   const cancel = useCallback(() => {
     if (timeoutRef.current) {

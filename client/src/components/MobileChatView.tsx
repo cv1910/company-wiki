@@ -143,13 +143,13 @@ export function MobileMessage({
     emoji, users: data.users, hasReacted: data.hasReacted,
   }));
 
-  // Long press = Action menu, Short tap = Emoji reactions
+  // Long press = Action menu, Double tap = Emoji reactions
   const longPress = useLongPress({
     onLongPress: () => {
       setShowActions(true);
       setShowReactions(false);
     },
-    onClick: () => {
+    onDoubleTap: () => {
       setShowReactions(!showReactions);
       setShowActions(false);
     },
