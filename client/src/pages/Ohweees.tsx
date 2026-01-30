@@ -249,7 +249,7 @@ export default function OhweeesPage() {
     }
 
     return (
-      <div className="flex flex-col overflow-hidden bg-[#FAFAF8] dark:bg-gray-900 touch-none" style={{ height: 'calc(100dvh - 56px - 56px - env(safe-area-inset-bottom, 0px))' }}>
+      <div className="flex flex-col overflow-hidden bg-[#FAFAF8] dark:bg-gray-900 touch-none" style={{ height: 'calc(100dvh - 56px)' }}>
         <MobileChatHeader
           room={{
             id: currentRoom.id,
@@ -262,7 +262,7 @@ export default function OhweeesPage() {
           onBack={() => setMobileView("list")}
         />
 
-        <div className="flex-1 overflow-y-auto overscroll-contain touch-pan-y p-2" data-scrollable="true">
+        <div className="flex-1 overflow-y-auto overscroll-contain touch-pan-y p-2 pb-20" data-scrollable="true">
           {currentRoom?.messages?.map((message, index) => {
             const prevMessage = currentRoom.messages?.[index - 1];
             const showDateSeparator = !prevMessage ||
@@ -313,18 +313,21 @@ export default function OhweeesPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        <MobileChatInput
-          value={messageInput}
-          onChange={setMessageInput}
-          onSend={handleSendMessage}
-          replyTo={replyToMessage}
-          onCancelReply={() => setReplyToMessage(null)}
-          isEditing={!!editingMessageId}
-          onCancelEdit={() => {
-            setEditingMessageId(null);
-            setMessageInput("");
-          }}
-        />
+        {/* Fixed input above bottom nav */}
+        <div className="fixed left-0 right-0 bg-white dark:bg-gray-900 z-40" style={{ bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))' }}>
+          <MobileChatInput
+            value={messageInput}
+            onChange={setMessageInput}
+            onSend={handleSendMessage}
+            replyTo={replyToMessage}
+            onCancelReply={() => setReplyToMessage(null)}
+            isEditing={!!editingMessageId}
+            onCancelEdit={() => {
+              setEditingMessageId(null);
+              setMessageInput("");
+            }}
+          />
+        </div>
       </div>
     );
   }
