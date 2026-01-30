@@ -185,26 +185,58 @@ export default function OhweeesPage() {
   const handleSendVoice = async (blob: Blob, duration: number) => {
     if (!selectedRoomId) return;
 
+    console.log("Sending voice message:", { size: blob.size, type: blob.type, duration });
+
+    // Determine file extension based on mime type
+    const getExtension = (mimeType: string): string => {
+      if (mimeType.includes('webm')) return 'webm';
+      if (mimeType.includes('mp4') || mimeType.includes('m4a')) return 'm4a';
+      if (mimeType.includes('ogg')) return 'ogg';
+      if (mimeType.includes('wav')) return 'wav';
+      return 'webm'; // Default
+    };
+
+    const mimeType = blob.type || "audio/webm";
+    const extension = getExtension(mimeType);
+    const filename = `voice-${Date.now()}.${extension}`;
+
     // Convert blob to base64
     const reader = new FileReader();
+    reader.onerror = () => {
+      console.error("FileReader error");
+      alert("Fehler beim Verarbeiten der Sprachnachricht");
+    };
     reader.onload = () => {
-      const base64 = (reader.result as string).split(",")[1];
-      const filename = `voice-${Date.now()}.webm`;
+      const result = reader.result as string;
+      const base64 = result.split(",")[1];
+
+      if (!base64) {
+        console.error("No base64 data");
+        alert("Fehler beim Verarbeiten der Sprachnachricht");
+        return;
+      }
+
+      console.log("Uploading voice:", { filename, mimeType, base64Length: base64.length });
 
       uploadFile.mutate(
         {
           filename,
-          mimeType: blob.type || "audio/webm",
+          mimeType,
           base64Data: base64,
         },
         {
           onSuccess: (data) => {
+            console.log("Upload success:", data);
             // Send message with voice attachment
             sendMessage.mutate({
               roomId: selectedRoomId,
               content: `🎤 Sprachnachricht (${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, "0")})`,
-              attachments: [{ url: data.url, mimeType: blob.type || "audio/webm" }],
+              attachments: [{ url: data.url, mimeType }],
             });
+          },
+          onError: (err) => {
+            console.error("Upload error:", err);
+            alert("Fehler beim Hochladen der Sprachnachricht");
           },
         }
       );
@@ -503,7 +535,11 @@ export default function OhweeesPage() {
         {showTaskDialog && (
           <>
             <div className="fixed inset-0 bg-black/50 z-50" onClick={resetTaskDialog} />
-            <div className="fixed inset-x-0 bottom-0 bg-white dark:bg-gray-800 rounded-t-3xl z-50 shadow-xl max-h-[85vh] overflow-y-auto" data-scrollable="true">
+            <div
+              className="fixed inset-x-0 bg-white dark:bg-gray-800 rounded-t-3xl z-50 shadow-xl overflow-y-auto"
+              style={{ bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))', maxHeight: 'calc(100vh - 56px - 56px - env(safe-area-inset-bottom, 0px))' }}
+              data-scrollable="true"
+            >
               {/* Handle bar */}
               <div className="flex justify-center pt-3 pb-2">
                 <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />

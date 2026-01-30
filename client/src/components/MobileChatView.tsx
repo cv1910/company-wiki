@@ -385,31 +385,82 @@ export function MobileChatInput({
     if (replyTo || isEditing) inputRef.current?.focus();
   }, [replyTo, isEditing]);
 
+  // Detect best supported audio format
+  const getSupportedMimeType = (): string => {
+    const types = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4',
+      'audio/ogg;codecs=opus',
+      'audio/wav',
+    ];
+    for (const type of types) {
+      if (MediaRecorder.isTypeSupported(type)) {
+        return type;
+      }
+    }
+    return ''; // Let browser choose
+  };
+
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Check if MediaRecorder is supported
+      if (!window.MediaRecorder) {
+        alert("Sprachnachrichten werden auf diesem Gerät nicht unterstützt");
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+        }
+      });
       streamRef.current = stream;
 
-      audioContextRef.current = new AudioContext();
-      const source = audioContextRef.current.createMediaStreamSource(stream);
-      analyserRef.current = audioContextRef.current.createAnalyser();
-      analyserRef.current.fftSize = 64;
-      source.connect(analyserRef.current);
+      // Set up audio context for visualizer
+      try {
+        audioContextRef.current = new AudioContext();
+        const source = audioContextRef.current.createMediaStreamSource(stream);
+        analyserRef.current = audioContextRef.current.createAnalyser();
+        analyserRef.current.fftSize = 64;
+        source.connect(analyserRef.current);
+      } catch (e) {
+        console.warn("AudioContext not available for visualizer", e);
+      }
 
-      const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
-      const recorder = new MediaRecorder(stream, { mimeType });
+      const mimeType = getSupportedMimeType();
+      const recorderOptions: MediaRecorderOptions = mimeType ? { mimeType } : {};
+
+      const recorder = new MediaRecorder(stream, recorderOptions);
       mediaRecorderRef.current = recorder;
       chunksRef.current = [];
       recordingTimeRef.current = 0;
       cancelledRef.current = false;
 
-      recorder.ondataavailable = (e) => e.data.size > 0 && chunksRef.current.push(e.data);
+      // Store the actual mimeType being used
+      const actualMimeType = recorder.mimeType || mimeType || 'audio/webm';
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          chunksRef.current.push(e.data);
+        }
+      };
+
       recorder.onstop = () => {
         streamRef.current?.getTracks().forEach((t) => t.stop());
-        audioContextRef.current?.close();
+        if (audioContextRef.current?.state !== 'closed') {
+          audioContextRef.current?.close().catch(() => {});
+        }
 
         if (!cancelledRef.current && chunksRef.current.length > 0 && recordingTimeRef.current > 0) {
-          const blob = new Blob(chunksRef.current, { type: chunksRef.current[0]?.type || "audio/mp4" });
+          const blob = new Blob(chunksRef.current, { type: actualMimeType });
+          console.log("Voice recording complete:", {
+            chunks: chunksRef.current.length,
+            size: blob.size,
+            type: blob.type,
+            duration: recordingTimeRef.current
+          });
           onSendVoice?.(blob, recordingTimeRef.current);
         }
         chunksRef.current = [];
@@ -417,7 +468,13 @@ export function MobileChatInput({
         setAudioLevels(Array(20).fill(0.1));
       };
 
-      recorder.start(100); // Collect data every 100ms for better compatibility
+      recorder.onerror = (e) => {
+        console.error("MediaRecorder error:", e);
+        stopRecording();
+      };
+
+      // Request data every 1 second
+      recorder.start(1000);
       setIsRecording(true);
       if (navigator.vibrate) navigator.vibrate(20);
 
@@ -435,8 +492,9 @@ export function MobileChatInput({
         animationRef.current = requestAnimationFrame(updateLevels);
       };
       updateLevels();
-    } catch {
-      alert("Mikrofon-Zugriff wurde verweigert");
+    } catch (err) {
+      console.error("Recording error:", err);
+      alert("Mikrofon-Zugriff wurde verweigert oder wird nicht unterstützt");
     }
   };
 
