@@ -64,36 +64,54 @@ export default function OhweeesPage() {
     }
   }, [isMobile, selectedRoomId]);
 
-  // iOS overscroll prevention
+  // iOS overscroll prevention - touch event based
   useEffect(() => {
     if (!isMobile) return;
 
-    // Lock html and body
-    const html = document.documentElement;
-    const body = document.body;
+    let startY = 0;
+    let startX = 0;
 
-    html.style.position = "fixed";
-    html.style.overflow = "hidden";
-    html.style.width = "100%";
-    html.style.height = "100%";
+    const handleTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].clientY;
+      startX = e.touches[0].clientX;
+    };
 
-    body.style.position = "fixed";
-    body.style.overflow = "hidden";
-    body.style.width = "100%";
-    body.style.height = "100%";
-    body.style.overscrollBehavior = "none";
+    const handleTouchMove = (e: TouchEvent) => {
+      // Find if we're inside a scrollable container
+      const target = e.target as HTMLElement;
+      const scrollable = target.closest('[data-scrollable="true"]') as HTMLElement;
+
+      // If not in scrollable area, prevent all scroll
+      if (!scrollable) {
+        e.preventDefault();
+        return;
+      }
+
+      const deltaY = e.touches[0].clientY - startY;
+      const deltaX = e.touches[0].clientX - startX;
+
+      // If horizontal swipe, allow it
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        return;
+      }
+
+      const { scrollTop, scrollHeight, clientHeight } = scrollable;
+      const atTop = scrollTop <= 0;
+      const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
+
+      // Prevent overscroll at boundaries
+      if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+        e.preventDefault();
+      }
+    };
+
+    // Must be non-passive to allow preventDefault
+    document.addEventListener("touchstart", handleTouchStart, { passive: false });
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
 
     return () => {
-      html.style.position = "";
-      html.style.overflow = "";
-      html.style.width = "";
-      html.style.height = "";
-
-      body.style.position = "";
-      body.style.overflow = "";
-      body.style.width = "";
-      body.style.height = "";
-      body.style.overscrollBehavior = "";
+      document.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("touchmove", handleTouchMove);
     };
   }, [isMobile]);
 
@@ -183,7 +201,7 @@ export default function OhweeesPage() {
     // Room list
     if (mobileView === "list") {
       return (
-        <div className="flex flex-col h-[calc(100dvh-56px-56px)] overflow-hidden bg-white dark:bg-gray-900">
+        <div className="flex flex-col h-[calc(100dvh-56px-56px)] overflow-hidden bg-white dark:bg-gray-900 touch-none">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
             <h1 className="text-xl font-bold">Ohweees</h1>
           </div>
@@ -200,7 +218,7 @@ export default function OhweeesPage() {
             onRoomSelect={(id) => setSelectedRoomId(id)}
             onNewChat={() => {}}
           />
-          <div className="flex-1 overflow-y-auto overscroll-contain" data-scrollable="true">
+          <div className="flex-1 overflow-y-auto overscroll-contain touch-pan-y" data-scrollable="true">
             {rooms?.map((room) => (
               <MobileRoomListItem
                 key={room.id}
@@ -231,7 +249,7 @@ export default function OhweeesPage() {
     }
 
     return (
-      <div className="flex flex-col h-[calc(100dvh-56px-56px)] overflow-hidden bg-[#FAFAF8] dark:bg-gray-900">
+      <div className="flex flex-col h-[calc(100dvh-56px-56px)] overflow-hidden bg-[#FAFAF8] dark:bg-gray-900 touch-none">
         <MobileChatHeader
           room={{
             id: currentRoom.id,
@@ -244,7 +262,7 @@ export default function OhweeesPage() {
           onBack={() => setMobileView("list")}
         />
 
-        <div className="flex-1 overflow-y-auto overscroll-contain p-2" data-scrollable="true">
+        <div className="flex-1 overflow-y-auto overscroll-contain touch-pan-y p-2" data-scrollable="true">
           {currentRoom?.messages?.map((message, index) => {
             const prevMessage = currentRoom.messages?.[index - 1];
             const showDateSeparator = !prevMessage ||
