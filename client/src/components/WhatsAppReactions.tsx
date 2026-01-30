@@ -134,9 +134,18 @@ export function useLongPress({ onLongPress, onClick, delay = 400 }: UseLongPress
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isLongPressRef = useRef(false);
   const startPosRef = useRef({ x: 0, y: 0 });
+  const isTouchRef = useRef(false);
 
   const start = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
+      // Track if this is a touch event to prevent mouse event duplication
+      if ("touches" in e) {
+        isTouchRef.current = true;
+      } else if (isTouchRef.current) {
+        // Skip mouse events if we already handled touch
+        return;
+      }
+
       isLongPressRef.current = false;
       const pos = "touches" in e ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY };
       startPosRef.current = pos;
@@ -160,13 +169,34 @@ export function useLongPress({ onLongPress, onClick, delay = 400 }: UseLongPress
     }
   }, []);
 
-  const end = useCallback(() => {
+  const end = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    // Skip mouse events if we're handling touch
+    if (!("touches" in e) && isTouchRef.current) {
+      return;
+    }
+
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    if (!isLongPressRef.current && onClick) onClick();
+
+    // Fire onClick only if it wasn't a long press
+    if (!isLongPressRef.current && onClick) {
+      onClick();
+    }
+
+    // Reset touch tracking after a delay
+    setTimeout(() => {
+      isTouchRef.current = false;
+    }, 100);
   }, [onClick]);
+
+  const cancel = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -178,7 +208,7 @@ export function useLongPress({ onLongPress, onClick, delay = 400 }: UseLongPress
     onMouseDown: start,
     onMouseMove: move,
     onMouseUp: end,
-    onMouseLeave: () => timeoutRef.current && clearTimeout(timeoutRef.current),
+    onMouseLeave: cancel,
     onTouchStart: start,
     onTouchMove: move,
     onTouchEnd: end,

@@ -50,13 +50,14 @@ export function WhatsAppVoicePlayer({
   // Initialize audio
   useEffect(() => {
     const audio = new Audio();
-    audio.preload = "metadata";
+    audio.preload = "auto";
     audio.playsInline = true;
-    audio.crossOrigin = "anonymous";
     audioRef.current = audio;
 
     const handleLoadedMetadata = () => {
-      if (audio.duration && isFinite(audio.duration)) {
+      // WebM from MediaRecorder often has Infinity duration
+      // Only update if we get a valid duration and don't have one yet
+      if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
         setDuration(audio.duration);
       }
       setIsLoaded(true);
@@ -64,11 +65,17 @@ export function WhatsAppVoicePlayer({
 
     const handleCanPlay = () => setIsLoaded(true);
 
+    const handleTimeUpdate = () => {
+      // For webm files, duration might become available during playback
+      if (audio.duration && isFinite(audio.duration) && audio.duration > 0 && duration === 0) {
+        setDuration(audio.duration);
+      }
+    };
+
     const handleEnded = () => {
       setIsPlaying(false);
-      setProgress(0);
-      setCurrentTime(0);
-      audio.currentTime = 0;
+      setProgress(1); // Set to 100% when ended
+      setCurrentTime(duration);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = null;
@@ -77,11 +84,12 @@ export function WhatsAppVoicePlayer({
 
     const handleError = (e: Event) => {
       console.error("Audio error:", e);
-      setIsLoaded(true); // Still allow interaction
+      setIsLoaded(true);
     };
 
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
     audio.addEventListener("canplay", handleCanPlay);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("ended", handleEnded);
     audio.addEventListener("error", handleError);
 
@@ -93,19 +101,31 @@ export function WhatsAppVoicePlayer({
       audio.pause();
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
       audio.removeEventListener("canplay", handleCanPlay);
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
       audio.removeEventListener("ended", handleEnded);
       audio.removeEventListener("error", handleError);
       audio.src = "";
     };
-  }, [url]);
+  }, [url, duration]);
 
   // Animation loop for progress
   const updateProgress = useCallback(() => {
     const audio = audioRef.current;
-    if (audio && isPlaying && duration > 0) {
-      const newProgress = audio.currentTime / duration;
-      setProgress(newProgress);
+    if (audio && isPlaying) {
+      // Update current time always
       setCurrentTime(audio.currentTime);
+
+      // Calculate progress if we have duration
+      const effectiveDuration = duration > 0 ? duration : (audio.duration && isFinite(audio.duration) ? audio.duration : 0);
+      if (effectiveDuration > 0) {
+        const newProgress = Math.min(audio.currentTime / effectiveDuration, 1);
+        setProgress(newProgress);
+        // Update duration if we got it from audio
+        if (duration === 0 && effectiveDuration > 0) {
+          setDuration(effectiveDuration);
+        }
+      }
+
       animationRef.current = requestAnimationFrame(updateProgress);
     }
   }, [isPlaying, duration]);

@@ -158,6 +158,15 @@ export function MobileMessage({
 
   const isVoiceMessage = audioUrl && message.ohweee.content.includes("Sprachnachricht");
 
+  // Parse duration from message content like "🎤 Sprachnachricht (0:05)"
+  const parsedDuration = (() => {
+    const match = message.ohweee.content.match(/\((\d+):(\d+)\)/);
+    if (match) {
+      return parseInt(match[1]) * 60 + parseInt(match[2]);
+    }
+    return 0;
+  })();
+
   return (
     <SwipeToReply onReply={onReply} isOwn={isOwn}>
       <div className={`flex px-3 mb-0.5 ${isOwn ? "justify-end" : "justify-start"}`}>
@@ -236,7 +245,7 @@ export function MobileMessage({
 
             {/* Voice or Text */}
             {audioUrl ? (
-              <WhatsAppVoicePlayer url={audioUrl} isOwn={isOwn} />
+              <WhatsAppVoicePlayer url={audioUrl} isOwn={isOwn} duration={parsedDuration} />
             ) : !isVoiceMessage && (
               <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
                 {message.ohweee.content.replace(/@\[(.*?)\]\(\d+\)/g, "@$1")}
