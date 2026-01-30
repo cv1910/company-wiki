@@ -31,11 +31,15 @@ export async function storagePut(
 
   const base64Data = Buffer.from(data).toString('base64');
 
+  // Clean content type - remove codec parameters that Cloudinary doesn't support
+  // e.g., "audio/webm;codecs=opus" -> "audio/webm"
+  const cleanContentType = contentType.split(';')[0].trim();
+
   // Determine resource type for Cloudinary
   let resourceType: 'image' | 'video' | 'raw' | 'auto' = 'auto';
-  if (contentType.startsWith('image/')) {
+  if (cleanContentType.startsWith('image/')) {
     resourceType = 'image';
-  } else if (contentType.startsWith('video/') || contentType.startsWith('audio/')) {
+  } else if (cleanContentType.startsWith('video/') || cleanContentType.startsWith('audio/')) {
     resourceType = 'video'; // Cloudinary treats audio as video
   } else {
     resourceType = 'raw';
@@ -47,13 +51,14 @@ export async function storagePut(
   console.log("Cloudinary upload:", {
     publicId,
     resourceType,
-    contentType,
+    originalContentType: contentType,
+    cleanContentType,
     dataSize: base64Data.length,
   });
 
   try {
     const result = await cloudinary.uploader.upload(
-      `data:${contentType};base64,${base64Data}`,
+      `data:${cleanContentType};base64,${base64Data}`,
       {
         public_id: publicId,
         resource_type: resourceType,
