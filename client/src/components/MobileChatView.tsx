@@ -417,7 +417,7 @@ export function MobileChatInput({
         setAudioLevels(Array(20).fill(0.1));
       };
 
-      recorder.start();
+      recorder.start(100); // Collect data every 100ms for better compatibility
       setIsRecording(true);
       if (navigator.vibrate) navigator.vibrate(20);
 

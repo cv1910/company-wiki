@@ -50,7 +50,13 @@ export default function OhweeesPage() {
   const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
   const [showTaskDialog, setShowTaskDialog] = useState(false);
   const [taskTitle, setTaskTitle] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
+  const [taskAssignee, setTaskAssignee] = useState<number | null>(null);
+  const [taskDueDate, setTaskDueDate] = useState("");
+  const [taskDueTime, setTaskDueTime] = useState("");
+  const [taskAttachment, setTaskAttachment] = useState<{url: string, name: string} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const taskFileInputRef = useRef<HTMLInputElement>(null);
 
   // Resize handler
   useEffect(() => {
@@ -119,6 +125,7 @@ export default function OhweeesPage() {
 
   // Queries - NO refetchInterval
   const { data: rooms, isLoading: roomsLoading } = trpc.ohweees.rooms.useQuery();
+  const { data: allUsers } = trpc.users.list.useQuery();
 
   const { data: currentRoom } = trpc.ohweees.getRoom.useQuery(
     { id: selectedRoomId! },
@@ -208,22 +215,74 @@ export default function OhweeesPage() {
   // Task creation mutation
   const createTask = trpc.tasks.create.useMutation({
     onSuccess: () => {
-      setShowTaskDialog(false);
-      setTaskTitle("");
+      resetTaskDialog();
       utils.tasks.list.invalidate();
     },
   });
+
+  // Reset task dialog state
+  const resetTaskDialog = () => {
+    setShowTaskDialog(false);
+    setTaskTitle("");
+    setTaskDescription("");
+    setTaskAssignee(null);
+    setTaskDueDate("");
+    setTaskDueTime("");
+    setTaskAttachment(null);
+  };
 
   // Handle task creation - show dialog
   const handleCreateTask = () => {
     setShowTaskDialog(true);
   };
 
+  // Handle task attachment
+  const handleTaskAttachment = () => {
+    taskFileInputRef.current?.click();
+  };
+
+  const handleTaskFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1];
+      uploadFile.mutate(
+        {
+          filename: file.name,
+          mimeType: file.type,
+          base64Data: base64,
+        },
+        {
+          onSuccess: (data) => {
+            setTaskAttachment({ url: data.url, name: file.name });
+          },
+        }
+      );
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
   // Submit task from dialog
   const handleSubmitTask = () => {
     if (!taskTitle.trim()) return;
+
+    let dueDate: Date | null = null;
+    if (taskDueDate) {
+      dueDate = new Date(taskDueDate);
+      if (taskDueTime) {
+        const [hours, minutes] = taskDueTime.split(":").map(Number);
+        dueDate.setHours(hours, minutes, 0, 0);
+      }
+    }
+
     createTask.mutate({
       title: taskTitle.trim(),
+      description: taskDescription.trim() || undefined,
+      assignedToId: taskAssignee,
+      dueDate: dueDate,
     });
   };
 
@@ -431,35 +490,130 @@ export default function OhweeesPage() {
           onChange={handleFileChange}
         />
 
+        {/* Hidden task file input */}
+        <input
+          ref={taskFileInputRef}
+          type="file"
+          accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx"
+          className="hidden"
+          onChange={handleTaskFileChange}
+        />
+
         {/* Task Creation Dialog */}
         {showTaskDialog && (
           <>
-            <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowTaskDialog(false)} />
-            <div className="fixed left-4 right-4 top-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-2xl p-4 z-50 shadow-xl">
-              <h3 className="text-lg font-semibold mb-4">Neue Aufgabe</h3>
-              <input
-                type="text"
-                value={taskTitle}
-                onChange={(e) => setTaskTitle(e.target.value)}
-                placeholder="Aufgabentitel..."
-                className="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-transparent text-base mb-4"
-                autoFocus
-                onKeyDown={(e) => e.key === "Enter" && handleSubmitTask()}
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowTaskDialog(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400"
-                >
-                  Abbrechen
-                </button>
-                <button
-                  onClick={handleSubmitTask}
-                  disabled={!taskTitle.trim() || createTask.isPending}
-                  className="flex-1 py-2.5 rounded-xl bg-rose-500 text-white disabled:opacity-50"
-                >
-                  {createTask.isPending ? "..." : "Erstellen"}
-                </button>
+            <div className="fixed inset-0 bg-black/50 z-50" onClick={resetTaskDialog} />
+            <div className="fixed inset-x-0 bottom-0 bg-white dark:bg-gray-800 rounded-t-3xl z-50 shadow-xl max-h-[85vh] overflow-y-auto" data-scrollable="true">
+              {/* Handle bar */}
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
+              </div>
+
+              <div className="px-5 pb-6">
+                <h3 className="text-lg font-semibold mb-5">Neue Aufgabe</h3>
+
+                {/* Title */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1.5">Titel</label>
+                  <input
+                    type="text"
+                    value={taskTitle}
+                    onChange={(e) => setTaskTitle(e.target.value)}
+                    placeholder="Was muss erledigt werden?"
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-base"
+                    autoFocus
+                  />
+                </div>
+
+                {/* Description */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1.5">Beschreibung</label>
+                  <textarea
+                    value={taskDescription}
+                    onChange={(e) => setTaskDescription(e.target.value)}
+                    placeholder="Details zur Aufgabe..."
+                    rows={3}
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-base resize-none"
+                  />
+                </div>
+
+                {/* Assignee */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1.5">Zuweisen an</label>
+                  <select
+                    value={taskAssignee || ""}
+                    onChange={(e) => setTaskAssignee(e.target.value ? Number(e.target.value) : null)}
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-base appearance-none"
+                  >
+                    <option value="">Nicht zugewiesen</option>
+                    {allUsers?.map((u) => (
+                      <option key={u.id} value={u.id}>{u.name || u.email}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Due Date & Time */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1.5">Fällig am</label>
+                    <input
+                      type="date"
+                      value={taskDueDate}
+                      onChange={(e) => setTaskDueDate(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-base"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1.5">Uhrzeit</label>
+                    <input
+                      type="time"
+                      value={taskDueTime}
+                      onChange={(e) => setTaskDueTime(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-base"
+                    />
+                  </div>
+                </div>
+
+                {/* Attachment */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1.5">Anhang</label>
+                  {taskAttachment ? (
+                    <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
+                      <span className="flex-1 text-sm truncate">{taskAttachment.name}</span>
+                      <button
+                        onClick={() => setTaskAttachment(null)}
+                        className="text-gray-400 hover:text-red-500"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleTaskAttachment}
+                      disabled={uploadFile.isPending}
+                      className="w-full px-4 py-3 border border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 dark:text-gray-400 text-sm"
+                    >
+                      {uploadFile.isPending ? "Wird hochgeladen..." : "+ Datei hinzufügen"}
+                    </button>
+                  )}
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={resetTaskDialog}
+                    className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 font-medium"
+                  >
+                    Abbrechen
+                  </button>
+                  <button
+                    onClick={handleSubmitTask}
+                    disabled={!taskTitle.trim() || createTask.isPending}
+                    className="flex-1 py-3 rounded-xl bg-rose-500 text-white font-medium disabled:opacity-50"
+                  >
+                    {createTask.isPending ? "..." : "Erstellen"}
+                  </button>
+                </div>
               </div>
             </div>
           </>
