@@ -64,40 +64,21 @@ export default function OhweeesPage() {
     }
   }, [isMobile, selectedRoomId]);
 
-  // iOS overscroll prevention
+  // iOS overscroll prevention - lock body when in mobile view
   useEffect(() => {
     if (!isMobile) return;
 
-    let startY = 0;
-    const handleTouchStart = (e: TouchEvent) => {
-      startY = e.touches[0].clientY;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      const target = e.target as HTMLElement;
-      const scrollable = target.closest('[data-scrollable="true"]') as HTMLElement;
-
-      if (!scrollable) {
-        e.preventDefault();
-        return;
-      }
-
-      const { scrollTop, scrollHeight, clientHeight } = scrollable;
-      const deltaY = e.touches[0].clientY - startY;
-      const atTop = scrollTop <= 0;
-      const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
-
-      if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
-        e.preventDefault();
-      }
-    };
-
-    document.addEventListener("touchstart", handleTouchStart, { passive: true });
-    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+    // Lock body scroll
+    document.body.style.position = "fixed";
+    document.body.style.width = "100%";
+    document.body.style.height = "100%";
+    document.body.style.overflow = "hidden";
 
     return () => {
-      document.removeEventListener("touchstart", handleTouchStart);
-      document.removeEventListener("touchmove", handleTouchMove);
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.height = "";
+      document.body.style.overflow = "";
     };
   }, [isMobile]);
 
