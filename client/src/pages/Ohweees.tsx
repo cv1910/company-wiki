@@ -64,21 +64,36 @@ export default function OhweeesPage() {
     }
   }, [isMobile, selectedRoomId]);
 
-  // iOS overscroll prevention - lock body when in mobile view
+  // iOS overscroll prevention
   useEffect(() => {
     if (!isMobile) return;
 
-    // Lock body scroll
-    document.body.style.position = "fixed";
-    document.body.style.width = "100%";
-    document.body.style.height = "100%";
-    document.body.style.overflow = "hidden";
+    // Lock html and body
+    const html = document.documentElement;
+    const body = document.body;
+
+    html.style.position = "fixed";
+    html.style.overflow = "hidden";
+    html.style.width = "100%";
+    html.style.height = "100%";
+
+    body.style.position = "fixed";
+    body.style.overflow = "hidden";
+    body.style.width = "100%";
+    body.style.height = "100%";
+    body.style.overscrollBehavior = "none";
 
     return () => {
-      document.body.style.position = "";
-      document.body.style.width = "";
-      document.body.style.height = "";
-      document.body.style.overflow = "";
+      html.style.position = "";
+      html.style.overflow = "";
+      html.style.width = "";
+      html.style.height = "";
+
+      body.style.position = "";
+      body.style.overflow = "";
+      body.style.width = "";
+      body.style.height = "";
+      body.style.overscrollBehavior = "";
     };
   }, [isMobile]);
 
@@ -185,7 +200,7 @@ export default function OhweeesPage() {
             onRoomSelect={(id) => setSelectedRoomId(id)}
             onNewChat={() => {}}
           />
-          <div className="flex-1 overflow-y-auto" data-scrollable="true">
+          <div className="flex-1 overflow-y-auto overscroll-contain" data-scrollable="true">
             {rooms?.map((room) => (
               <MobileRoomListItem
                 key={room.id}
@@ -229,7 +244,7 @@ export default function OhweeesPage() {
           onBack={() => setMobileView("list")}
         />
 
-        <div className="flex-1 overflow-y-auto p-2" data-scrollable="true">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-2" data-scrollable="true">
           {currentRoom?.messages?.map((message, index) => {
             const prevMessage = currentRoom.messages?.[index - 1];
             const showDateSeparator = !prevMessage ||
