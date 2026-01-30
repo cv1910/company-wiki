@@ -170,6 +170,45 @@ export default function OhweeesPage() {
     onSuccess: () => utils.ohweees.getReactionsBatch.invalidate(),
   });
 
+  const uploadFile = trpc.ohweees.uploadFile.useMutation();
+
+  // Handle voice message
+  const handleSendVoice = async (blob: Blob, duration: number) => {
+    if (!selectedRoomId) return;
+
+    // Convert blob to base64
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1];
+      const filename = `voice-${Date.now()}.webm`;
+
+      uploadFile.mutate(
+        {
+          filename,
+          mimeType: blob.type || "audio/webm",
+          base64Data: base64,
+        },
+        {
+          onSuccess: (data) => {
+            // Send message with voice attachment
+            sendMessage.mutate({
+              roomId: selectedRoomId,
+              content: `🎤 Sprachnachricht (${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, "0")})`,
+              attachments: [{ url: data.url, mimeType: blob.type || "audio/webm" }],
+            });
+          },
+        }
+      );
+    };
+    reader.readAsDataURL(blob);
+  };
+
+  // Handle task creation
+  const handleCreateTask = () => {
+    if (!selectedRoomId) return;
+    setLocation(`/aufgaben/neu?fromRoom=${selectedRoomId}`);
+  };
+
   const handleSendMessage = () => {
     if (!messageInput.trim() || !selectedRoomId) return;
 
@@ -326,6 +365,8 @@ export default function OhweeesPage() {
             value={messageInput}
             onChange={setMessageInput}
             onSend={handleSendMessage}
+            onSendVoice={handleSendVoice}
+            onCreateTask={handleCreateTask}
             replyTo={replyToMessage}
             onCancelReply={() => setReplyToMessage(null)}
             isEditing={!!editingMessageId}
