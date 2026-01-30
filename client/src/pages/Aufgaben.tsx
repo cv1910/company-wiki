@@ -928,51 +928,95 @@ export default function Aufgaben() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
+      {/* Edit Dialog - Chat Style */}
       <Dialog open={editDialogOpen} onOpenChange={(open) => {
         setEditDialogOpen(open);
-        if (!open) {
-          resetForm();
-        }
+        if (!open) resetForm();
       }}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Edit2 className="h-5 w-5" />
-              Aufgabe bearbeiten
-            </DialogTitle>
-            <DialogDescription>
-              Bearbeite die Details dieser Aufgabe.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden">
+          <div className="p-5">
+            <DialogHeader className="mb-5">
+              <DialogTitle className="text-lg">Aufgabe bearbeiten</DialogTitle>
+            </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-title">Titel *</Label>
-              <Input
-                id="edit-title"
-                placeholder="Was muss erledigt werden?"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
+            <div className="space-y-4">
+              {/* Titel */}
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-1.5">Titel</label>
+                <Input
+                  placeholder="Was muss erledigt werden?"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="bg-muted/50 border-0 h-11"
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">Beschreibung</Label>
-              <Textarea
-                id="edit-description"
-                placeholder="Weitere Details zur Aufgabe..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-              />
-            </div>
+              {/* Beschreibung */}
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-1.5">Beschreibung</label>
+                <Textarea
+                  placeholder="Details zur Aufgabe..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  className="bg-muted/50 border-0 resize-none"
+                />
+              </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Priorität</Label>
+              {/* Zuweisen an */}
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-1.5">Zuweisen an</label>
+                <Select
+                  value={assignedToId?.toString() || "none"}
+                  onValueChange={(v) => setAssignedToId(v === "none" ? null : parseInt(v))}
+                >
+                  <SelectTrigger className="bg-muted/50 border-0 h-11">
+                    <SelectValue placeholder="Nicht zugewiesen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nicht zugewiesen</SelectItem>
+                    {allUsers?.map((u) => (
+                      <SelectItem key={u.id} value={u.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-5 w-5">
+                            <AvatarImage src={u.avatarUrl || undefined} />
+                            <AvatarFallback className="text-[10px]">{u.name?.charAt(0) || "?"}</AvatarFallback>
+                          </Avatar>
+                          {u.name || u.email}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Fällig am & Uhrzeit */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1.5">Fällig am</label>
+                  <Input
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    className="bg-muted/50 border-0 h-11"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1.5">Uhrzeit</label>
+                  <Input
+                    type="time"
+                    value={dueTime}
+                    onChange={(e) => setDueTime(e.target.value)}
+                    className="bg-muted/50 border-0 h-11"
+                  />
+                </div>
+              </div>
+
+              {/* Priorität */}
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-1.5">Priorität</label>
                 <Select value={priority} onValueChange={(v) => setPriority(v as any)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-muted/50 border-0 h-11">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -984,149 +1028,51 @@ export default function Aufgaben() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit-dueDate">Fällig am</Label>
-                <Input
-                  id="edit-dueDate"
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {dueDate && (
-              <div className="space-y-2">
-                <Label htmlFor="edit-dueTime" className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Uhrzeit (optional)
-                </Label>
-                <Input
-                  id="edit-dueTime"
-                  type="time"
-                  value={dueTime}
-                  onChange={(e) => setDueTime(e.target.value)}
-                  placeholder="HH:MM"
-                />
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label>Zuweisen an</Label>
-              <Select 
-                value={assignedToId?.toString() || "none"} 
-                onValueChange={(v) => setAssignedToId(v === "none" ? null : parseInt(v))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Niemand zugewiesen" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Niemand zugewiesen</SelectItem>
-                  {allUsers?.map((u) => (
-                    <SelectItem key={u.id} value={u.id.toString()}>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-5 w-5">
-                          <AvatarImage src={u.avatarUrl || undefined} />
-                          <AvatarFallback className="text-[10px]">
-                            {u.name?.charAt(0) || "?"}
-                          </AvatarFallback>
-                        </Avatar>
-                        {u.name || u.email || "Unbekannt"}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Erinnerungen */}
-            {dueDate && (
-              <div className="space-y-3">
-                <Label className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Erinnerungen
-                </Label>
-                
-                {/* Schnellauswahl */}
-                <div className="flex flex-wrap gap-1.5">
-                  {QUICK_REMINDERS.map((qr) => (
-                    <Button
-                      key={qr.minutes}
-                      type="button"
-                      variant={reminders.includes(qr.minutes) ? "default" : "outline"}
-                      size="sm"
-                      className="h-7 text-xs"
-                      onClick={() => reminders.includes(qr.minutes) ? removeReminder(qr.minutes) : addQuickReminder(qr.minutes)}
-                    >
-                      {qr.label}
-                    </Button>
-                  ))}
-                </div>
-
-                {/* Benutzerdefinierte Erinnerung */}
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    min="1"
-                    max="999"
-                    value={reminderValue || ""}
-                    onChange={(e) => setReminderValue(parseInt(e.target.value) || 0)}
-                    placeholder="Zeit"
-                    className="w-20"
-                  />
-                  <Select value={reminderUnit} onValueChange={(v) => setReminderUnit(v as "minutes" | "hours" | "days")}>
-                    <SelectTrigger className="w-28">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="minutes">Minuten</SelectItem>
-                      <SelectItem value="hours">Stunden</SelectItem>
-                      <SelectItem value="days">Tage</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addReminder}
-                    disabled={reminderValue === 0}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Aktive Erinnerungen */}
-                {reminders.length > 0 && (
+              {/* Erinnerungen */}
+              {dueDate && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-muted-foreground">Erinnerungen</label>
                   <div className="flex flex-wrap gap-1.5">
-                    {reminders.map((mins) => (
-                      <Badge
-                        key={mins}
-                        variant="secondary"
-                        className="flex items-center gap-1 cursor-pointer hover:bg-destructive/20"
-                        onClick={() => removeReminder(mins)}
+                    {QUICK_REMINDERS.map((qr) => (
+                      <Button
+                        key={qr.minutes}
+                        type="button"
+                        variant={reminders.includes(qr.minutes) ? "default" : "outline"}
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={() => reminders.includes(qr.minutes) ? removeReminder(qr.minutes) : addQuickReminder(qr.minutes)}
                       >
-                        {formatReminderTime(mins)} vorher
-                        <X className="h-3 w-3" />
-                      </Badge>
+                        {qr.label}
+                      </Button>
                     ))}
                   </div>
-                )}
-                
-                <p className="text-xs text-muted-foreground">
-                  {reminders.length > 0 
-                    ? `${reminders.length} Erinnerung(en) eingestellt`
-                    : "Keine Erinnerungen eingestellt. Wähle Schnelloptionen oder füge eigene hinzu."}
-                </p>
-              </div>
-            )}
+                  {reminders.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {reminders.map((mins) => (
+                        <Badge
+                          key={mins}
+                          variant="secondary"
+                          className="flex items-center gap-1 cursor-pointer hover:bg-destructive/20"
+                          onClick={() => removeReminder(mins)}
+                        >
+                          {formatReminderTime(mins)} vorher
+                          <X className="h-3 w-3" />
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+          {/* Buttons */}
+          <div className="flex gap-3 p-5 pt-0">
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)} className="flex-1 h-11">
               Abbrechen
             </Button>
-            <Button onClick={handleUpdate} disabled={updateTask.isPending}>
-              {updateTask.isPending ? "Speichere..." : "Speichern"}
+            <Button onClick={handleUpdate} disabled={updateTask.isPending} className="flex-1 h-11 bg-rose-500 hover:bg-rose-600">
+              {updateTask.isPending ? "..." : "Speichern"}
             </Button>
           </div>
         </DialogContent>
