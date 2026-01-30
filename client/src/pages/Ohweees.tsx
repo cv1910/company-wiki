@@ -1162,12 +1162,12 @@ export default function OhweeesPage() {
   const setTyping = trpc.ohweees.setTyping.useMutation();
   const clearTyping = trpc.ohweees.clearTyping.useMutation();
   
-  useEffect(() => {
-    if (messageIds.length > 0 && user?.id) {
-      // Mark all visible messages as read
-      markAsRead.mutate({ ohweeeIds: messageIds });
-    }
-  }, [messageIds, user?.id]);
+  // DISABLED: Causes render loop - markAsRead invalidates queries which changes messageIds
+  // useEffect(() => {
+  //   if (messageIds.length > 0 && user?.id) {
+  //     markAsRead.mutate({ ohweeeIds: messageIds });
+  //   }
+  // }, [messageIds, user?.id]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
