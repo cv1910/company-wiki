@@ -28,36 +28,53 @@ export async function storagePut(
   contentType = "application/octet-stream"
 ): Promise<{ key: string; url: string }> {
   getStorageConfig();
-  
-  let base64Data: string;
-  if (typeof data === 'string') {
-    base64Data = Buffer.from(data).toString('base64');
-  } else {
-    base64Data = Buffer.from(data).toString('base64');
-  }
-  
+
+  const base64Data = Buffer.from(data).toString('base64');
+
+  // Determine resource type for Cloudinary
   let resourceType: 'image' | 'video' | 'raw' | 'auto' = 'auto';
   if (contentType.startsWith('image/')) {
     resourceType = 'image';
   } else if (contentType.startsWith('video/') || contentType.startsWith('audio/')) {
-    resourceType = 'video';
+    resourceType = 'video'; // Cloudinary treats audio as video
   } else {
     resourceType = 'raw';
   }
-  
-  const result = await cloudinary.uploader.upload(
-    `data:${contentType};base64,${base64Data}`,
-    {
-      public_id: relKey.replace(/\.[^/.]+$/, ''),
-      resource_type: resourceType,
-      folder: 'company-wiki',
-    }
-  );
-  
-  return { 
-    key: result.public_id, 
-    url: result.secure_url 
-  };
+
+  // Remove extension from public_id (Cloudinary adds it based on format)
+  const publicId = relKey.replace(/\.[^/.]+$/, '');
+
+  console.log("Cloudinary upload:", {
+    publicId,
+    resourceType,
+    contentType,
+    dataSize: base64Data.length,
+  });
+
+  try {
+    const result = await cloudinary.uploader.upload(
+      `data:${contentType};base64,${base64Data}`,
+      {
+        public_id: publicId,
+        resource_type: resourceType,
+        folder: 'company-wiki',
+      }
+    );
+
+    console.log("Cloudinary result:", {
+      publicId: result.public_id,
+      url: result.secure_url,
+      format: result.format,
+    });
+
+    return {
+      key: result.public_id,
+      url: result.secure_url
+    };
+  } catch (error) {
+    console.error("Cloudinary upload error:", error);
+    throw error;
+  }
 }
 
 export async function storageGet(relKey: string): Promise<{ key: string; url: string }> {

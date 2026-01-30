@@ -4812,36 +4812,64 @@ ${context || "Keine relevanten Inhalte gefunden."}${conversationContext}`,
         })
       )
       .mutation(async ({ input, ctx }) => {
-        const { storagePut } = await import("./storage");
-        
-        // Decode base64 data
-        const buffer = Buffer.from(input.base64Data, "base64");
-        const size = buffer.length;
-        
-        // Validate file size (max 10MB)
-        const maxSize = 10 * 1024 * 1024;
-        if (size > maxSize) {
+        try {
+          const { storagePut } = await import("./storage");
+
+          // Decode base64 data
+          const buffer = Buffer.from(input.base64Data, "base64");
+          const size = buffer.length;
+
+          console.log("Upload request:", {
+            filename: input.filename,
+            mimeType: input.mimeType,
+            size,
+            userId: ctx.user.id,
+          });
+
+          // Validate file size (max 10MB)
+          const maxSize = 10 * 1024 * 1024;
+          if (size > maxSize) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Datei zu groß (max. 10MB)",
+            });
+          }
+
+          // Validate that we have data
+          if (size === 0) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Leere Datei",
+            });
+          }
+
+          // Generate simple unique key (Cloudinary friendly)
+          const timestamp = Date.now();
+          const randomSuffix = Math.random().toString(36).substring(2, 8);
+          const extension = input.filename.split('.').pop() || 'bin';
+          const key = `ohweee-${ctx.user.id}-${timestamp}-${randomSuffix}.${extension}`;
+
+          // Upload to Cloudinary
+          const { url } = await storagePut(key, buffer, input.mimeType);
+
+          console.log("Upload success:", { key, url });
+
+          return {
+            url,
+            filename: input.filename,
+            mimeType: input.mimeType,
+            size,
+          };
+        } catch (error) {
+          console.error("Upload error:", error);
+          if (error instanceof TRPCError) {
+            throw error;
+          }
           throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Datei zu groß (max. 10MB)",
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Upload fehlgeschlagen: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`,
           });
         }
-        
-        // Generate unique filename
-        const timestamp = Date.now();
-        const randomSuffix = Math.random().toString(36).substring(2, 8);
-        const safeFilename = input.filename.replace(/[^a-zA-Z0-9.-]/g, "_");
-        const key = `ohweees/${ctx.user.id}/${timestamp}-${randomSuffix}-${safeFilename}`;
-        
-        // Upload to S3
-        const { url } = await storagePut(key, buffer, input.mimeType);
-        
-        return {
-          url,
-          filename: input.filename,
-          mimeType: input.mimeType,
-          size,
-        };
       }),
 
     // Get all users for starting DM (with recent chats first)
