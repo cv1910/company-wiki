@@ -65,6 +65,21 @@ export default function OhweeesPage() {
     if (isMobile && selectedRoomId) setMobileView("chat");
   }, [isMobile, selectedRoomId]);
 
+  // iOS overscroll prevention
+  useEffect(() => {
+    if (!isMobile) return;
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.width = "100%";
+    document.body.style.height = "100%";
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.height = "";
+    };
+  }, [isMobile]);
+
   // Queries
   const { data: rooms, isLoading: roomsLoading } = trpc.ohweees.rooms.useQuery();
   const { data: currentRoom } = trpc.ohweees.getRoom.useQuery(
