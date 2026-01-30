@@ -8,7 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageCircle, Send } from "lucide-react";
+import { MessageCircle, Send, Paperclip, Plus, Reply, Pencil, Trash2, Smile, MoreHorizontal } from "lucide-react";
+import { WhatsAppVoicePlayer } from "@/components/WhatsAppVoicePlayer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import data from "@emoji-mart/data";
+import Picker from "@emoji-mart/react";
 import {
   MobileChatHeader,
   MobileChatInput,
@@ -738,21 +747,126 @@ export default function OhweeesPage() {
                     !isSameDay(new Date(message.ohweee.createdAt), new Date(prevMessage.ohweee.createdAt));
                   const isOwn = message.sender.id === user?.id;
 
+                  // Parse attachments
+                  const attachments = (message.ohweee.attachments as { url: string; mimeType: string; filename?: string }[] | null) || [];
+                  const audioAttachment = attachments.find((a) => a.mimeType?.startsWith("audio/"));
+                  const imageAttachments = attachments.filter((a) => a.mimeType?.startsWith("image/"));
+                  const fileAttachments = attachments.filter((a) => !a.mimeType?.startsWith("audio/") && !a.mimeType?.startsWith("image/"));
+                  const isVoiceMessage = audioAttachment && message.ohweee.content.includes("Sprachnachricht");
+
+                  // Parse duration from content
+                  const parsedDuration = (() => {
+                    const match = message.ohweee.content.match(/\((\d+):(\d+)\)/);
+                    if (match) return parseInt(match[1]) * 60 + parseInt(match[2]);
+                    return 0;
+                  })();
+
+                  // Get reactions for this message
+                  const messageReactions = reactionsData?.[message.ohweee.id] || [];
+                  const groupedReactions = messageReactions.reduce((acc, r) => {
+                    if (!acc[r.reaction.emoji]) acc[r.reaction.emoji] = { users: [], hasReacted: false };
+                    acc[r.reaction.emoji].users.push(r.user);
+                    if (r.user.id === user?.id) acc[r.reaction.emoji].hasReacted = true;
+                    return acc;
+                  }, {} as Record<string, { users: { id: number; name: string | null }[]; hasReacted: boolean }>);
+
                   return (
                     <div key={message.ohweee.id}>
                       {showDateSeparator && <DateSeparator date={new Date(message.ohweee.createdAt)} />}
-                      <div className={`flex gap-3 ${isOwn ? "flex-row-reverse" : ""}`}>
-                        <Avatar className="h-8 w-8">
+                      <div className={`group flex gap-3 ${isOwn ? "flex-row-reverse" : ""}`}>
+                        <Avatar className="h-8 w-8 flex-shrink-0">
                           <AvatarImage src={message.sender.avatarUrl || undefined} />
                           <AvatarFallback>{getInitials(message.sender.name || "")}</AvatarFallback>
                         </Avatar>
                         <div className={`max-w-[70%] ${isOwn ? "text-right" : ""}`}>
-                          <div className={`inline-block px-4 py-2 rounded-2xl ${
+                          <div className={`relative inline-block px-4 py-2 rounded-2xl ${
                             isOwn ? "bg-primary text-primary-foreground" : "bg-muted"
                           }`}>
-                            {message.ohweee.content}
+                            {/* Images */}
+                            {imageAttachments.length > 0 && (
+                              <div className={`mb-2 -mx-4 -mt-2 rounded-t-2xl overflow-hidden ${imageAttachments.length > 1 ? "grid grid-cols-2 gap-0.5" : ""}`}>
+                                {imageAttachments.map((img, i) => (
+                                  <img key={i} src={img.url} alt="" className="w-full object-cover max-h-64 cursor-pointer hover:opacity-90" onClick={() => window.open(img.url, '_blank')} />
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Voice message */}
+                            {audioAttachment ? (
+                              <WhatsAppVoicePlayer url={audioAttachment.url} duration={parsedDuration} isOwn={isOwn} />
+                            ) : !isVoiceMessage && (
+                              <p className="whitespace-pre-wrap break-words">
+                                {message.ohweee.content.replace(/@\[(.*?)\]\(\d+\)/g, "@$1")}
+                              </p>
+                            )}
+
+                            {/* File attachments */}
+                            {fileAttachments.length > 0 && (
+                              <div className="mt-2 space-y-1">
+                                {fileAttachments.map((file, i) => (
+                                  <a key={i} href={file.url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 text-sm ${isOwn ? "text-primary-foreground/80 hover:text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+                                    <Paperclip className="h-4 w-4" />
+                                    {file.filename || "Datei"}
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Hover actions */}
+                            <div className={`absolute top-0 ${isOwn ? "left-0 -translate-x-full pl-2" : "right-0 translate-x-full pr-2"} opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1`}>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button className="p-1.5 rounded-full hover:bg-muted">
+                                    <Smile className="h-4 w-4 text-muted-foreground" />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align={isOwn ? "end" : "start"}>
+                                  <div className="flex gap-1 p-1">
+                                    {["👍", "❤️", "😂", "😮", "😢", "🙏"].map((emoji) => (
+                                      <button key={emoji} onClick={() => addReaction.mutate({ ohweeeId: message.ohweee.id, emoji })} className="text-xl hover:scale-125 transition-transform p-1">
+                                        {emoji}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                              <button onClick={() => setReplyToMessage({ id: message.ohweee.id, senderName: message.sender.name || "Unbekannt", content: message.ohweee.content })} className="p-1.5 rounded-full hover:bg-muted">
+                                <Reply className="h-4 w-4 text-muted-foreground" />
+                              </button>
+                              {isOwn && (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button className="p-1.5 rounded-full hover:bg-muted">
+                                      <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align={isOwn ? "end" : "start"}>
+                                    <DropdownMenuItem onClick={() => { setEditingMessageId(message.ohweee.id); setMessageInput(message.ohweee.content); }}>
+                                      <Pencil className="h-4 w-4 mr-2" /> Bearbeiten
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => deleteMessage.mutate({ id: message.ohweee.id })} className="text-destructive">
+                                      <Trash2 className="h-4 w-4 mr-2" /> Löschen
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
+                            </div>
                           </div>
+
+                          {/* Reactions display */}
+                          {Object.keys(groupedReactions).length > 0 && (
+                            <div className={`flex flex-wrap gap-1 mt-1 ${isOwn ? "justify-end" : "justify-start"}`}>
+                              {Object.entries(groupedReactions).map(([emoji, data]) => (
+                                <button key={emoji} onClick={() => addReaction.mutate({ ohweeeId: message.ohweee.id, emoji })} className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-sm ${data.hasReacted ? "bg-primary/20" : "bg-muted"}`}>
+                                  <span>{emoji}</span>
+                                  {data.users.length > 1 && <span className="text-xs text-muted-foreground">{data.users.length}</span>}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
                           <div className="text-xs text-muted-foreground mt-1">
+                            {message.ohweee.isEdited && <span className="mr-1">bearbeitet</span>}
                             {format(new Date(message.ohweee.createdAt), "HH:mm")}
                           </div>
                         </div>
@@ -764,12 +878,40 @@ export default function OhweeesPage() {
               </div>
             </ScrollArea>
 
+            {/* Reply preview */}
+            {replyToMessage && (
+              <div className="px-4 py-2 border-t bg-muted/50 flex items-center gap-2">
+                <div className="flex-1 border-l-2 border-primary pl-3">
+                  <p className="text-xs font-medium text-primary">{replyToMessage.senderName}</p>
+                  <p className="text-sm text-muted-foreground truncate">{replyToMessage.content}</p>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setReplyToMessage(null)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            {/* Edit indicator */}
+            {editingMessageId && (
+              <div className="px-4 py-2 border-t bg-amber-50 dark:bg-amber-900/20 flex items-center gap-2">
+                <Pencil className="h-4 w-4 text-amber-600" />
+                <span className="flex-1 text-sm text-amber-700 dark:text-amber-400">Nachricht bearbeiten</span>
+                <Button variant="ghost" size="icon" onClick={() => { setEditingMessageId(null); setMessageInput(""); }}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
             <div className="p-4 border-t">
               <div className="flex gap-2 max-w-3xl mx-auto">
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx" onChange={handleFileChange} />
+                <Button variant="ghost" size="icon" onClick={handleAttach}>
+                  <Plus className="h-5 w-5" />
+                </Button>
                 <Textarea
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
-                  placeholder="Nachricht schreiben..."
+                  placeholder={editingMessageId ? "Nachricht bearbeiten..." : "Nachricht schreiben..."}
                   className="flex-1 min-h-[44px] max-h-32 resize-none"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
