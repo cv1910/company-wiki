@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -25,6 +25,9 @@ export default function OhweeesPage() {
   const [messageInput, setMessageInput] = useState("");
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  const [activeMessageMenu, setActiveMessageMenu] = useState<number | null>(null);
+  const [replyToMessage, setReplyToMessage] = useState<{id: number, senderName: string, content: string} | null>(null);
+  const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
 
   // Resize handler
   useEffect(() => {
@@ -48,25 +51,68 @@ export default function OhweeesPage() {
     { enabled: !!selectedRoomId }
   );
 
+  // Get message IDs for reactions query
+  const messageIds = useMemo(
+    () => currentRoom?.messages?.map((m) => m.ohweee.id) || [],
+    [currentRoom?.messages]
+  );
+
+  // Reactions query
+  const { data: reactionsData } = trpc.ohweees.getReactionsBatch.useQuery(
+    { ohweeeIds: messageIds },
+    { enabled: messageIds.length > 0 }
+  );
+
   // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [currentRoom?.messages]);
 
-  // Send message mutation
+  // Mutations
   const sendMessage = trpc.ohweees.send.useMutation({
     onSuccess: () => {
       utils.ohweees.getRoom.invalidate({ id: selectedRoomId! });
       utils.ohweees.rooms.invalidate();
       setMessageInput("");
+      setReplyToMessage(null);
     },
+  });
+
+  const deleteMessage = trpc.ohweees.delete.useMutation({
+    onSuccess: () => utils.ohweees.getRoom.invalidate({ id: selectedRoomId! }),
+  });
+
+  const editMessage = trpc.ohweees.edit.useMutation({
+    onSuccess: () => {
+      utils.ohweees.getRoom.invalidate({ id: selectedRoomId! });
+      setEditingMessageId(null);
+      setMessageInput("");
+    },
+  });
+
+  const togglePin = trpc.ohweees.togglePin.useMutation({
+    onSuccess: () => utils.ohweees.getRoom.invalidate({ id: selectedRoomId! }),
+  });
+
+  const addReaction = trpc.ohweees.addReaction.useMutation({
+    onSuccess: () => utils.ohweees.getReactionsBatch.invalidate(),
   });
 
   const handleSendMessage = () => {
     if (!messageInput.trim() || !selectedRoomId) return;
+
+    if (editingMessageId) {
+      editMessage.mutate({
+        id: editingMessageId,
+        content: messageInput.trim(),
+      });
+      return;
+    }
+
     sendMessage.mutate({
       roomId: selectedRoomId,
       content: messageInput.trim(),
+      parentId: replyToMessage?.id,
     });
   };
 
@@ -160,12 +206,34 @@ export default function OhweeesPage() {
                   message={message}
                   isOwn={isOwn}
                   currentUserId={user?.id || 0}
-                  reactions={[]}
-                  onReply={() => {}}
-                  onEdit={() => {}}
-                  onDelete={() => {}}
-                  onPin={() => {}}
-                  onAddReaction={() => {}}
+                  reactions={reactionsData?.[message.ohweee.id] || []}
+                  isMenuOpen={activeMessageMenu === message.ohweee.id}
+                  onMenuOpen={() => setActiveMessageMenu(message.ohweee.id)}
+                  onMenuClose={() => setActiveMessageMenu(null)}
+                  onReply={() => {
+                    setActiveMessageMenu(null);
+                    setReplyToMessage({
+                      id: message.ohweee.id,
+                      senderName: message.sender.name || "Unbekannt",
+                      content: message.ohweee.content,
+                    });
+                  }}
+                  onEdit={() => {
+                    setActiveMessageMenu(null);
+                    setEditingMessageId(message.ohweee.id);
+                    setMessageInput(message.ohweee.content);
+                  }}
+                  onDelete={() => {
+                    setActiveMessageMenu(null);
+                    deleteMessage.mutate({ id: message.ohweee.id });
+                  }}
+                  onPin={() => {
+                    setActiveMessageMenu(null);
+                    togglePin.mutate({ id: message.ohweee.id });
+                  }}
+                  onAddReaction={(emoji) => {
+                    addReaction.mutate({ ohweeeId: message.ohweee.id, emoji });
+                  }}
                 />
               </div>
             );
@@ -177,6 +245,13 @@ export default function OhweeesPage() {
           value={messageInput}
           onChange={setMessageInput}
           onSend={handleSendMessage}
+          replyTo={replyToMessage}
+          onCancelReply={() => setReplyToMessage(null)}
+          isEditing={!!editingMessageId}
+          onCancelEdit={() => {
+            setEditingMessageId(null);
+            setMessageInput("");
+          }}
         />
       </div>
     );
